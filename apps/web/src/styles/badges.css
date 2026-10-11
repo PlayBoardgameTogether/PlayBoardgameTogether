@@ -1,0 +1,186 @@
+@layer components.profile {
+  .badge-shelf {
+    margin-block: 1rem;
+  }
+  .badge-shelf > a {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .badge-pins {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0;
+    list-style: none;
+  }
+  .badge-pins li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    background: var(--panel-raised);
+    color: var(--text);
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+  }
+  .badge-wall {
+    margin-block: 1.5rem;
+  }
+  .badge-heading {
+    height: auto;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .badge-heading h1 {
+    margin-block: 0.3rem;
+  }
+  .badge-heading .eyebrow {
+    color: var(--muted);
+  }
+  .badge-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block: 1.5rem;
+  }
+  .badge-filters button[aria-pressed='true'] {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
+  .badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 1rem;
+  }
+  .badge-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.6rem;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .badge-medal {
+    display: grid;
+    place-items: center;
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    border: 5px double var(--accent);
+    background: var(--panel-raised);
+    box-shadow: 0 5px 0 color-mix(in srgb, var(--accent) 25%, transparent);
+    margin-bottom: 1rem;
+  }
+  .badge-medal span {
+    font-size: 2.4rem;
+  }
+  .badge-card[data-kind='honor'] .badge-medal {
+    border-radius: 24px;
+    transform: rotate(-5deg);
+  }
+  .badge-card[data-kind='honor'] .badge-medal span {
+    transform: rotate(5deg);
+  }
+  .badge-card.is-locked .badge-medal {
+    filter: grayscale(1);
+    border-color: var(--line);
+    box-shadow: none;
+  }
+  .badge-card-body {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    flex: 1;
+  }
+  .badge-card h2 {
+    font-size: 1.2rem;
+    margin: 0;
+  }
+  .badge-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .badge-card small {
+    color: var(--muted);
+  }
+  .badge-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+    margin-top: auto;
+  }
+  .badge-progress progress {
+    min-width: 0;
+    width: 100%;
+    height: 8px;
+    accent-color: var(--accent);
+  }
+  .badge-progress span {
+    white-space: nowrap;
+  }
+  .badge-select {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 44px;
+    margin-top: auto;
+  }
+  .badge-select input {
+    appearance: auto;
+    min-height: 20px;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+  }
+  .badge-feedback {
+    padding: 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--panel-raised);
+    color: var(--text);
+  }
+  .badge-feedback button {
+    margin: 0.3rem;
+  }
+  @media (max-width: 600px) {
+    .badge-card {
+      padding: 1.2rem;
+      flex-direction: row;
+      gap: 1rem;
+    }
+    .badge-medal {
+      width: 64px;
+      height: 64px;
+      flex-shrink: 0;
+      margin: 0;
+    }
+    .badge-medal span {
+      font-size: 1.8rem;
+    }
+  }
+}
+
+@layer theme {
+  .badge-select input[type='checkbox'] {
+    appearance: auto;
+    background: revert;
+    border: revert;
+    border-radius: revert;
+    box-shadow: none;
+  }
+}

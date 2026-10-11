@@ -1,5 +1,13 @@
 # 协议
 
+## 玩家徽章（2026-10-11）
+
+新增认证 GET/PUT `/api/v1/profile/badges`，本人读取完整收藏并提交 `{requestId,expectedRevision,displayed}`（最多三枚无重复且已获得）；GET `/api/v1/profile/badges/:id` 仅返回对方主动精选的有效徽章，不公开完整进度。管理员 GET/PUT `/api/v1/admin/accounts/:id/badges` 读取收藏或提交 `{requestId,expectedRevision,badgeId,granted}`，只能授予/收回三种身份荣誉，不能写成就。所有响应 no-store；写操作保留 Origin/CSRF、事务内 session/身份复验、回执优先和 revision 冲突。共享 schema 位于 protocol/badges.ts；完整语义、SDK 与迁移见 [玩家徽章](badges.md)。
+
+## 管理员更新失败详情（2026-10-11）
+
+`GET /api/v1/admin/updates` 和 `POST /api/v1/admin/updates/check` 的状态 DTO 增加可选、可空的 `failure`。非空时包含严格枚举 `stage` / `reason`、可空整数 `exitCode` 与 ISO `occurredAt`，定义见 `packages/protocol/src/admin.ts`。旧监督进程可缺省该字段；新监督进程在重试受理时返回 null，失败时提供分类详情，经原关联 ID IPC 和共享 schema 校验。原会话、管理员角色、Origin/CSRF、requestId 去重及串行更新保持不变。禁止返回原始命令输出、环境、路径或凭据；无法分类时用 unknown，不伪造具体原因。旧 API 的严格 schema 不接受新增字段，部署必须同时加载新版 API 并重启监督进程，后台刷新加载新版 Web。
+
 ## 社交条件同步（2026-10-11）
 
 新增认证 GET `/api/v1/social/updates`，严格 query 可选 `version` 为 64 位小写十六进制摘要。返回判别式 `socialUpdatesSchema`：变化时 `{changed:true,version,overview:SocialOverview}`，未变时 `{changed:false,version}`。每次认证并读取当前账户一致性快照，摘要包含账户身份及所有概要字段和时间相关资格；不同账户的摘要不能抑制首次完整返回。继续 no-store，不采用 HTTP 304 或浏览器缓存。旧 `/social` 返回保持。SDK 新增 `socialUpdates(version?,signal?)`；客户端登出清除版本，仅在收到 changed=true 时替换概要。

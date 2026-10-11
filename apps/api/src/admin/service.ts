@@ -12,6 +12,8 @@ import type { AuthContext } from '../auth.js';
 import type { Database } from '../db/index.js';
 import type { GameRegistry } from '../registry/index.js';
 import { AppError } from '../errors.js';
+import { BadgeService } from '../badges/service.js';
+import { badgeCollectionSchema, type BadgeGrantInput } from '@boardgame/protocol';
 
 type AccountRow = {
   id: string;
@@ -37,6 +39,20 @@ const accountColumns =
   'id,username_canonical,display_name,role,status,admin_revision,created_at';
 
 export class AdminService {
+  async badges(accountId: string) {
+    return new BadgeService(this.db).collection(accountId);
+  }
+
+  async setBadge(current: AuthContext, accountId: string, input: BadgeGrantInput) {
+    return badgeCollectionSchema.parse(
+      await this.command(
+        current,
+        input.requestId,
+        { operation: 'badge.grant', accountId, ...input },
+        client => new BadgeService(this.db).grant(client, current.account.id, accountId, input),
+      ),
+    );
+  }
   constructor(
     private db: Database,
     private registry: GameRegistry,

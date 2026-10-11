@@ -1,5 +1,9 @@
 import { createRoomResponseSchema } from '@boardgame/protocol';
 import {
+  badgeCollectionSchema, badgeDisplayInputSchema, badgeGrantInputSchema, displayedBadgesSchema,
+  type BadgeDisplayInput, type BadgeGrantInput,
+} from '@boardgame/protocol';
+import {
   sessionPublicSchema,
   loginInputSchema,
   logoutResultSchema,
@@ -378,6 +382,41 @@ export class ApiClient {
   }
   async profile() {
     return profileSchema.parse(await this.request<unknown>('/profile'));
+  }
+  async badges(signal?: AbortSignal) {
+    return badgeCollectionSchema.parse(
+      await this.request<unknown>('/profile/badges', { signal: signal ?? null }),
+    );
+  }
+  async displayedBadges(accountId: string, signal?: AbortSignal) {
+    return displayedBadgesSchema.parse(
+      await this.request<unknown>(`/profile/badges/${encodeURIComponent(accountId)}`, {
+        signal: signal ?? null,
+      }),
+    );
+  }
+  async saveDisplayedBadges(input: BadgeDisplayInput) {
+    return badgeCollectionSchema.parse(
+      await this.request<unknown>('/profile/badges', {
+        method: 'PUT',
+        body: JSON.stringify(badgeDisplayInputSchema.parse(input)),
+      }),
+    );
+  }
+  async adminBadges(accountId: string, signal?: AbortSignal) {
+    return badgeCollectionSchema.parse(
+      await this.request<unknown>(`/admin/accounts/${encodeURIComponent(accountId)}/badges`, {
+        signal: signal ?? null,
+      }),
+    );
+  }
+  async grantBadge(accountId: string, input: BadgeGrantInput) {
+    return badgeCollectionSchema.parse(
+      await this.request<unknown>(`/admin/accounts/${encodeURIComponent(accountId)}/badges`, {
+        method: 'PUT',
+        body: JSON.stringify(badgeGrantInputSchema.parse(input)),
+      }),
+    );
   }
   async saveProfile(input: ProfileInput) {
     return profileSchema.parse(

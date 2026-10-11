@@ -7,6 +7,9 @@ import { registerRegistrationRoutes } from '../registration-routes.js';
 import { ProfileService } from '../profiles.js';
 import { profileInputSchema, matchHistoryQuerySchema } from '@boardgame/protocol';
 import { ModelProfileService } from '../model-profiles.js';
+import { BadgeService } from '../badges/service.js';
+import { badgeDisplayInputSchema, displayedBadgesSchema } from '@boardgame/protocol';
+import { z } from 'zod';
 export function registerAccountRoutes(
   app: FastifyInstance,
   {
@@ -44,6 +47,28 @@ export function registerAccountRoutes(
     });
   });
   const profiles = new ProfileService(db);
+  const badges = new BadgeService(db);
+  app.get('/api/v1/profile/badges', async (request) => {
+    const current = await requireAuth(request);
+    return ok(request, await badges.collection(current!.account.id));
+  });
+  app.put('/api/v1/profile/badges', async (request) => {
+    const current = await protectedWrite(request);
+    return ok(request, await badges.display(current, badgeDisplayInputSchema.parse(request.body)));
+  });
+  app.get('/api/v1/profile/badges/:id', async (request) => {
+    await requireAuth(request);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    const collection = await badges.collection(id);
+    return ok(
+      request,
+      displayedBadgesSchema.parse({
+        items: collection.displayed.flatMap((badgeId) =>
+          collection.items.filter((item) => item.id === badgeId && item.earned),
+        ),
+      }),
+    );
+  });
   app.get('/api/v1/profile', async (request) => {
     const current = await requireAuth(request);
     return ok(request, await profiles.get(current!.account.id));

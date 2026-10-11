@@ -6,6 +6,7 @@ import { api, navigate } from '../platform.js';
 import { FriendIdCard } from '../social/FriendIdCard.js';
 import { useSocialContext } from '../social/SocialProvider.js';
 import { avatars } from '../social/PersonAvatar.js';
+import { BadgeShelf } from '../badges/BadgeShelf.js';
 import '../styles/social.css';
 import '../styles/profile.css';
 
@@ -354,6 +355,7 @@ export function ProfilePage({
                   )}
                 </div>
 
+                <BadgeShelf accountId={profile.id} own />
                 {profile.bio ? (
                   <div className="profile-bio-box">
                     <span className="bio-quote-mark" aria-hidden="true">

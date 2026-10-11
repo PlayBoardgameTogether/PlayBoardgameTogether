@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 
 test('administrator can request an update and distinguish waiting, maintenance and completion', async ({ page }, info) => {
   const state = { enabled: true, branch: 'main', currentSha: 'a'.repeat(40), candidateSha: null as string | null,
-    lastCheckedAt: null as string | null, phase: 'idle' };
+    lastCheckedAt: null as string | null, phase: 'idle', failure: null as null | {
+      stage: string; reason: string; exitCode: number; occurredAt: string;
+    } };
   let commands = 0;
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
@@ -44,6 +46,13 @@ test('administrator can request an update and distinguish waiting, maintenance a
   await expect(page.getByRole('status')).toContainText('更新成功');
   await expect(progress.locator('[data-state="complete"]')).toHaveCount(4);
   await expect(progress.locator('[aria-current="step"]')).toHaveCount(0);
+  state.phase = 'failed';
+  state.failure = { stage: 'install', reason: 'network', exitCode: 1, occurredAt: new Date().toISOString() };
+  await expect(page.getByRole('alert')).toContainText('失败步骤：安装构建依赖');
+  await expect(page.getByRole('alert')).toContainText('网络连接失败');
+  await expect(page.getByRole('alert')).toContainText('退出码：1');
+  await expect(page.getByRole('button', { name: '立即检测并更新' })).toBeEnabled();
+  await page.screenshot({ path: info.outputPath('updates-failure.png'), fullPage: true });
   const navigation = page.getByRole('navigation', { name: '后台导航' });
   expect((await navigation.boundingBox())?.height).toBeLessThan(130);
   if (info.project.name === 'mobile') {

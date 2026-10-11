@@ -2,6 +2,8 @@ import { lazy, type ReactNode } from 'react';
 import { guides } from './developer-guides.js';
 
 const RootPage = lazy(() => import('./RootPage.js'));
+const BadgesPage = lazy(() => import('../pages/BadgesPage.js').then(module => ({ default: module.BadgesPage })));
+const AdminBadgesPage = lazy(() => import('../pages/admin/AdminBadgesPage.js').then(module => ({ default: module.AdminBadgesPage })));
 const LoginPage = lazy(() => import('../pages/LoginPage.js').then(module => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import('../pages/RegisterPage.js').then(module => ({ default: module.RegisterPage })));
 const ProfilePage = lazy(() => import('../pages/ProfilePage.js').then(module => ({ default: module.ProfilePage })));
@@ -38,6 +40,8 @@ export interface PageRoute {
 
 // One owner for route matching, workspace titles and document titles.
 export function resolvePage(path: string): PageRoute {
+  const accountBadges = /^\/admin\/accounts\/([0-9a-f-]{36})\/badges$/i.exec(path);
+  if (accountBadges) return { title: '徽章管理', page: <AdminBadgesPage accountId={accountBadges[1]!} /> };
   const game = /^\/games\/([a-z0-9._-]+)\/([a-z0-9._-]+)(\/(?:new|tutorial))?$/i.exec(path);
   if (game) {
     const selectedGame = { id: game[1]!, version: game[2]! };
@@ -72,6 +76,7 @@ export function resolvePage(path: string): PageRoute {
     case '/login': return { title: '账户登录', page: <LoginPage /> };
     case '/register': return { title: '账号注册', page: <RegisterPage /> };
     case '/profile': return { title: '我的资料', page: <ProfilePage /> };
+    case '/profile/badges': return { title: '我的徽章', page: <BadgesPage /> };
     case '/profile/edit': return { title: '编辑资料', page: <ProfilePage section="edit" /> };
     case '/profile/history': return { title: '对局记录', page: <ProfilePage section="history" /> };
     case '/profile/identity': return { title: '管理好友 ID', page: <ProfilePage section="identity" /> };

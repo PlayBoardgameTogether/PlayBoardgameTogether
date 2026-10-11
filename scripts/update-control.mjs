@@ -14,7 +14,7 @@ export function createUpdateControl({ enabled, branch, currentSha, run }) {
     if (receipts.size > 256) receipts.delete(receipts.values().next().value);
     if (running) return snapshot();
     running = true;
-    patch({ phase: 'checking', lastCheckedAt: new Date().toISOString() });
+    patch({ phase: 'checking', failure: null, lastCheckedAt: new Date().toISOString() });
     // Acknowledge before building/draining, so the triggering HTTP request can finish.
     void Promise.resolve().then(run).catch(() => patch({ phase: 'failed' }))
       .finally(() => { running = false; });

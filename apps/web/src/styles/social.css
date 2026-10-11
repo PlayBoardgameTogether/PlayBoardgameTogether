@@ -1123,3 +1123,11 @@
     }
   }
 }
+
+@layer theme {
+  .public-chat-person.secondary {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+}

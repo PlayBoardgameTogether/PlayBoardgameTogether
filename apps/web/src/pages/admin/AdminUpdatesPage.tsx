@@ -15,7 +15,34 @@ const messages: Record<AdminUpdateStatus['phase'], string> = {
   maintenance: '新版包含数据库迁移，需要维护者确认兼容性并备份后安排更新。',
   applying: '正在切换版本，服务暂时不可用；对局进度保留，连接恢复后继续。',
   updated: '新版本已更新成功。已打开的页面可手动刷新以使用新版界面。',
-  failed: '更新未完成，请稍后重试；维护者可检查更新日志和服务就绪状态。',
+  failed: '更新未完成，请根据下方原因处理后重试。',
+};
+type Failure = NonNullable<AdminUpdateStatus['failure']>;
+const failureStages: Record<Failure['stage'], string> = {
+  fetch: '拉取发布版本', history: '检查版本历史', checkout: '准备版本目录',
+  install: '安装构建依赖', build: '构建生产版本', drain: '等待在途请求',
+  stop: '停止旧服务', migrate: '数据库迁移', sync: '同步游戏版本',
+  start: '启动并验证新版服务', persist: '保存激活版本', restart: '恢复当前服务',
+};
+const failureReasons: Record<Failure['reason'], string> = {
+  migration_changed: '已应用的数据库迁移与发布文件不一致，已拒绝继续。请维护者核对迁移历史，保留数据库和校验保护。',
+  build_tool_missing: '所需模块或构建工具缺失，请检查发布依赖声明与完整依赖安装。',
+  compilation: '发布代码未通过编译，请维护者在相同提交执行 pnpm build 修复后重新发布。',
+  disk_full: '磁盘空间不足，请清理可安全删除的文件后重试，保留数据库、资源和仍在使用的旧构建。',
+  permission: '部署账户无文件访问或执行权限，请检查更新目录权限。',
+  authentication: '仓库访问认证失败，请检查部署账户的 GitHub 权限和 Git credential helper。',
+  network: '网络连接失败，请检查服务器到 GitHub 或依赖仓库的连接后重试。',
+  lockfile: '依赖锁文件与安装配置不一致，需要维护者修复并提交锁文件后重新发布。',
+  branch_missing: '远程发布分支不存在，请检查 UPDATE_BRANCH 配置并重启更新器。',
+  command_failed: '命令执行失败，请结合失败步骤和退出码检查发布代码、依赖或部署配置。',
+  command_missing: '所需命令未安装或不在服务 PATH 中，请检查 Git、Node.js 和 pnpm。',
+  pnpm_unavailable: '未找到 pnpm 启动入口，请通过 pnpm start:online 启动，或配置 UPDATE_PNPM_CLI 后重启。',
+  timeout: '命令执行超时，请检查网络、磁盘和构建负载后重试。',
+  history_diverged: '当前版本不在发布分支的历史中，已阻止自动切换；请维护者核对部署版本与发布分支。',
+  drain_timeout: '在途请求未在 30 秒内结束，已取消切换并恢复接收请求；请稍后重试。',
+  readiness: 'API 退出或未通过就绪检查，请检查服务日志、端口、数据库连接和游戏版本。',
+  recovery_failed: '更新失败且旧服务恢复失败，需要维护者立即检查 API 日志和 /health/ready。',
+  unknown: '此步骤发生未分类错误，请按下方时间检查更新器和 API 日志。',
 };
 const working = new Set(['checking', 'building', 'waiting', 'applying']);
 const steps = ['检测发布版本', '安装依赖并构建', '等待安全切换', '切换并验证服务'];
@@ -99,6 +126,15 @@ function UpdatePanel() {
   return (
     <section className="admin-update-section" aria-label="服务更新">
       <p role="status">{status ? messages[status.phase] : '正在读取更新状态…'}</p>
+      {status?.phase === 'failed' && <div role="alert">
+        {status.failure ? <>
+          <p><strong>失败步骤：{failureStages[status.failure.stage]}</strong></p>
+          <p>{failureReasons[status.failure.reason]}</p>
+          <p className="muted">失败时间：{new Date(status.failure.occurredAt).toLocaleString('zh-CN')}
+            {status.failure.exitCode !== null && ` · 退出码：${status.failure.exitCode}`}
+            {` · 原因代码：${status.failure.reason}`}</p>
+        </> : <p>旧版更新器未提供失败详情。请维护者升级并重启托管进程后再次检测。</p>}
+      </div>}
       {status && <UpdateProgress phase={status.phase} />}
       {status?.phase === 'waiting' && <div className="admin-update-waiting">
         <p>构建已完成，尚未切换版本。</p>

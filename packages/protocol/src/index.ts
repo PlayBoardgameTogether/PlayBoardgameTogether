@@ -475,3 +475,4 @@ export const matchReplaySchema = z
   })
   .strict();
 export type MatchReplay = z.infer<typeof matchReplaySchema>;
+export * from './badges.js';

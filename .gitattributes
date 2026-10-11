@@ -2,3 +2,4 @@
 /tests/deployment/*.sh text eol=lf
 /deploy/Caddyfile text eol=lf
 /deploy/Dockerfile text eol=lf
+/apps/api/src/db/migrations/030_player_badges.sql text eol=lf
