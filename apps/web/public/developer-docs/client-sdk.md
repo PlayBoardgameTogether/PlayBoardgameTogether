@@ -1,5 +1,15 @@
 # 客户端 SDK
 
+## 社交概要条件同步
+
+`api.socialUpdates(version?, signal?)` 首次省略 version，收到 `{changed:true,version,overview}` 后保留概要和版本；后续带入该版本，`changed:false` 时保留现有概要。每次仍认证并从数据库读取，响应 no-store；退出或更换身份应清除本地版本。不要把未变化结果当作认证缓存。旧 `api.social(signal?)` 继续返回完整概要。正文分页、发送与已读仍使用原接口。
+
+## 超时与取消
+
+通用 HTTP 请求默认 30 秒，二进制上传（含服务端校验）为 120 秒，覆盖响应正文读取。既有对局、回放及消息发送等 10 秒期限保持，以较早的取消/超时为准。`api.me(signal?)`、`api.room(id, signal?)`、`api.matchSnapshot(id, signal?)` 接受页面 AbortSignal；正常完成或失败后会释放默认期限和调用者取消监听。
+
+超时抛出 `TimeoutError`，主动取消抛出 `AbortError`。SDK 不自动重发写请求；动作超时仍可能已经提交，继续使用原 requestId 查询回执或重试，不能换编号。页面离开时可取消读取，防止旧请求继续占用资源。
+
 ## 公共聊天
 
 恢复 session 后通过 `api.publicMessages(before?, signal?, after?)` 读取公共历史；before/after 互斥，nextCursor 非空时按对应方向继续。`api.sendPublicMessage({requestId,text})` 保存公共发言并返回包含公开 sender 的消息。两者使用共享 schema 解析响应，发送也校验输入，沿用同源 cookie/CSRF。确认丢失时保留相同 requestId 和正文重试，不能每次生成新编号。
@@ -19,9 +29,9 @@ import { ApiClient, ApiError } from '@boardgame/client-sdk';
 
 const api = new ApiClient();
 // username/password 来自用户输入，不硬编码或写入日志。
-await api.login<unknown>(username, password);
+await api.login(username, password);
 // 页面刷新后先恢复 session 和 CSRF：
-await api.me<unknown>();
+await api.me();
 const created = await api.createConfiguredRoom({
   requestId: crypto.randomUUID(),
   name: '开发者测试房间',
@@ -55,7 +65,19 @@ const created = await api.createConfiguredRoom({
 | modelProfiles() 与模型配置方法 | 管理本人模型设置与凭证 |
 | assets | AssetClient 资源管理与读取 |
 
-现有 login、me、rooms、room、roomCommand、games 等仍有泛型接口；调用泛型不会自动验证返回数据。外部数据先视为 unknown，使用共享或游戏 schema 解析，不用任意类型断言伪造安全。
+login、me、logout、rooms、room、createRoom、joinRoom 和 matchView 已绑定共享响应 schema，不再接受调用方泛型。只有校验成功的登录/me 响应才能更新 SDK 的 CSRF token。games 和开发实验台旧方法仍需将外部数据作为 unknown 并用共享或游戏 schema 解析。
+
+房间操作使用有类型的命令对象，替代原 `roomCommand(id, path, method, body)`：
+
+```typescript
+const room = await api.room(roomId);
+await api.roomCommand(roomId, {
+  type: 'ready', requestId: crypto.randomUUID(),
+  expectedRoomRevision: room.roomRevision, ready: true,
+});
+```
+
+支持 seat/unseat、ready、config、assets、invite、start、leave、close、host、add-bot/configure-bot/remove-bot。机器人命令带 seatId，新增/编辑带 settings（脚本 policyId 或模型 controllerType/profileId）。SDK 负责选择固定 URL/HTTP method、移除本地 type/seatId/settings 包装并校验输入与各操作响应；HTTP 格式、会话身份、revision 与请求去重语义保持。
 
 ## 提交正式动作
 

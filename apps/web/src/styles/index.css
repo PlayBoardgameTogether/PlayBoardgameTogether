@@ -1,0 +1,18 @@
+/* Low to high priority. Lazy styles join their declared layer rather than depending on load order. */
+@layer foundation, platform, components, games, shell, theme;
+@layer platform.room-base, platform.game-base, platform.environment, platform.interaction, platform.appearance;
+@layer components.social, components.assets, components.catalog, components.tutorial, components.models, components.rooms, components.profile, components.admin, components.developers, components.replay;
+@layer games.splendor, games.azul;
+@import './base.css';
+@import './stage2.css';
+@import './assets.css';
+@import './stage9.css';
+@import './vibrancy.css';
+@import './usability.css';
+@import './catalog.css';
+@import './tutorial.css';
+@import './model-settings.css';
+@import './theme-refresh.css';
+@import './rooms.css';
+@import './themes.css';
+@import './shell-social.css';

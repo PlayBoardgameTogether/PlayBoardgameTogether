@@ -27,7 +27,7 @@ export function DashboardPage() {
     let disposed = false;
     active.current = true;
     setLoadError('');
-    void Promise.all([api.me<unknown>(), api.rooms<unknown>()]).then(([rawAccount, rawPage]) => {
+    void Promise.all([api.me(), api.rooms()]).then(([rawAccount, rawPage]) => {
       if (disposed) return;
       const account = meSchema.parse(rawAccount);
       const page = roomsSchema.parse(rawPage);
@@ -43,7 +43,7 @@ export function DashboardPage() {
   async function more() {
     if (!cursor) return;
     try {
-      const page = roomsSchema.parse(await api.rooms<unknown>(cursor));
+      const page = roomsSchema.parse(await api.rooms(cursor));
       if (active.current) { setRooms(current => [...current, ...page.items]); setCursor(page.nextCursor); }
     } catch (cause) { if (active.current) setError(cause instanceof Error ? cause.message : '加载失败'); }
   }

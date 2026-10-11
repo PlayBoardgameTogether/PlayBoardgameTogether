@@ -1,3 +1,4 @@
+import { sessionFixture } from '../fixtures/session.js';
 import { test, expect } from '@playwright/test';
 import type { AdminGame } from '@boardgame/protocol';
 
@@ -12,7 +13,7 @@ test('select a game before managing its versions and preserve selection on refre
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
     let data: unknown;
-    if (path === '/api/v1/auth/me') data = { account: { role: 'administrator' } };
+    if (path === '/api/v1/auth/me') data = sessionFixture({ role: 'administrator' });
     else if (path === '/api/v1/admin/games') data = games;
     else if (route.request().method() === 'PUT' && path.includes('/admin/games/')) {
       expect(path).toContain('online.gomoku');

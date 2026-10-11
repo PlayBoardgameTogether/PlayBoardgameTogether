@@ -1,5 +1,21 @@
 # 协议
 
+## 社交条件同步（2026-10-11）
+
+新增认证 GET `/api/v1/social/updates`，严格 query 可选 `version` 为 64 位小写十六进制摘要。返回判别式 `socialUpdatesSchema`：变化时 `{changed:true,version,overview:SocialOverview}`，未变时 `{changed:false,version}`。每次认证并读取当前账户一致性快照，摘要包含账户身份及所有概要字段和时间相关资格；不同账户的摘要不能抑制首次完整返回。继续 no-store，不采用 HTTP 304 或浏览器缓存。旧 `/social` 返回保持。SDK 新增 `socialUpdates(version?,signal?)`；客户端登出清除版本，仅在收到 changed=true 时替换概要。
+
+## 网络恢复与请求期限（2026-10-11）
+
+认证 WS 仅在确认 session 过期、撤销或账户失效时使用关闭码 4001。鉴权、订阅和广播中的临时服务异常使用 1013，客户端重新鉴权、订阅及读取本人快照；不发送 subscription.revoked，也不因此清除待确认动作。订阅权限确实丢失仍发送 subscription.revoked。握手阶段明确未认证返回 401，临时服务异常返回 503，两者均 no-store。Origin 和各次投递权限检查保留。
+
+client-sdk 通用 HTTP 请求默认 30 秒，二进制上传及其服务端校验默认 120 秒，期限涵盖响应正文读取；原有对局/私聊等 10 秒期限继续生效，以较早的取消或超时为准。me(signal?)、room(id, signal?)、matchSnapshot(id, signal?) 支持页面取消。超时为 TimeoutError，主动取消为 AbortError；SDK 不自动重发写请求，动作结果仍通过原 requestId/回执确认。
+
+## 账户与房间客户端契约（2026-10-05）
+
+protocol/auth 提供 AccountPublic、SessionPublic 与登录/登出响应 schema；RoomService 的公开 RoomSnapshot 直接使用共享 schema 推导类型。房间 revision、座位、准备、配置、房主、加入等输入由 protocol 定义，API 与 client-sdk 复用。旧 HTTP 格式不变。
+
+client-sdk 的账户/房间方法不再允许调用者指定返回泛型，所有响应先作为 unknown 校验。roomCommand 接收 RoomCommand 判别对象，选择固定传输路径与响应 schema；type/seatId/settings 仅为 SDK 包装，不进入原 HTTP 正文。迁移示例见 [客户端 SDK](../apps/web/public/developer-docs/client-sdk.md)。
+
 ## 对局回放（2026-10-04）
 
 新增认证 GET `/api/v1/matches/:id/replay?revision=N`，严格 query 和本人投影响应由 matchReplayQuerySchema/matchReplaySchema 定义。仅固定参与者读取 finished/aborted 对局，no-store；未指定 revision 从可用起点开始。完整 DTO、错误与隐私约束见 [回放协议](replays.md#协议)。

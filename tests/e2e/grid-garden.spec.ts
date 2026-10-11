@@ -12,7 +12,7 @@ test('Grid Garden completes three simultaneous rounds with script placement', as
   await page.getByLabel('游戏与版本').selectOption('grid-garden@1.0.0');
   await page.getByLabel('房间名').fill(`Grid Garden ${test.info().project.name}`);
   await page.getByRole('button', { name: '创建并生成邀请码' }).click();
-  await expect(page.getByText(/grid-garden@1.0.0/)).toBeVisible();
+  await expect(page.getByRole('link', { name: '返回游戏详情', exact: false })).toHaveAttribute('href', '/games/grid-garden/1.0.0');
   await page.getByRole('button', { name: '添加脚本 AI' }).click();
   await page.getByRole('button', { name: '准备', exact: true }).click();
   await expect(page.getByRole('button', { name: '开始游戏' })).toBeEnabled();

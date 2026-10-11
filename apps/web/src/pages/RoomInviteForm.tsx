@@ -19,7 +19,7 @@ export function RoomInviteForm({ embedded = false }: { embedded?: boolean } = {}
     locked.current = true; setJoining(true); setError('');
     const fields = new FormData(event.currentTarget);
     try {
-      const room = joinedRoomSchema.parse(await api.joinRoom<unknown>({
+      const room = joinedRoomSchema.parse(await api.joinRoom({
         requestId: command(), inviteCode: String(fields.get('invite')),
         ...(fields.get('password') ? { password: String(fields.get('password')) } : {}),
       }));

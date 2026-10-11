@@ -1,79 +1,111 @@
-.tutorial-entry, .tutorial-toolbar, .tutorial-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.tutorial-entry {
-  margin-block: 24px;
-  padding: 24px 28px !important;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
-  border-radius: 16px !important;
-}
-.tutorial-entry h2, .tutorial-entry p { margin-block: 4px; }
-.tutorial-page { max-width: 1120px; margin-inline: auto; padding-bottom: 40px; }
-.tutorial-toolbar { margin-bottom: 24px; }
-.tutorial-intro h1 { font-size: 32px !important; margin-block: 6px 12px !important; }
+/* Owned by components.tutorial. Cascade order is declared in index.css. */
+@layer components.tutorial {
+  .tutorial-entry,
+  .tutorial-toolbar,
+  .tutorial-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .tutorial-entry {
+    margin-block: 24px;
+    padding: 24px 28px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 16px;
+  }
+  .tutorial-entry h2,
+  .tutorial-entry p {
+    margin-block: 4px;
+  }
+  .tutorial-page {
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-bottom: 40px;
+  }
+  .tutorial-toolbar {
+    margin-bottom: 24px;
+  }
+  .tutorial-intro h1 {
+    font-size: 32px;
+    margin-block: 6px 12px;
+  }
 
-.tutorial-guide {
-  margin-block: 24px;
-  padding: 28px 32px !important;
-  border-radius: 18px !important;
-  background: rgba(18, 24, 38, 0.92) !important;
-  border: 1px solid rgba(59, 130, 246, 0.35) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.15) !important;
+  .tutorial-guide {
+    margin-block: 24px;
+    padding: 28px 32px;
+    border-radius: 18px;
+    background: rgba(18, 24, 38, 0.92);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(59, 130, 246, 0.15);
+  }
+  .tutorial-guide progress {
+    width: 100%;
+    height: 8px;
+    accent-color: var(--accent);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-block: 8px 16px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .tutorial-guide progress::-webkit-progress-bar {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+  }
+  .tutorial-guide progress::-webkit-progress-value {
+    background: var(--accent-gradient);
+    border-radius: 4px;
+  }
+  .tutorial-guide h2 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .tutorial-feedback {
+    min-height: 1.5em;
+    padding: 10px 14px;
+    background: var(--accent-soft);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13.5px;
+    margin-block: 14px 18px;
+  }
+  .tutorial-actions {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .tutorial-board [data-tutorial-target] {
+    outline: 3px solid #60a5fa;
+    outline-offset: 4px;
+    box-shadow: 0 0 16px rgba(96, 165, 250, 0.6);
+    animation: tutorial-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes tutorial-pulse {
+    0%,
+    100% {
+      outline-color: #60a5fa;
+      box-shadow: 0 0 14px rgba(96, 165, 250, 0.5);
+    }
+    50% {
+      outline-color: #3b82f6;
+      box-shadow: 0 0 24px rgba(59, 130, 246, 0.85);
+    }
+  }
+  .tutorial-board {
+    min-width: 0;
+  }
+  @media (max-width: 600px) {
+    .tutorial-entry {
+      align-items: flex-start;
+    }
+    .tutorial-actions button,
+    .tutorial-actions .button-link {
+      flex: 1 1 120px;
+    }
+  }
 }
-.tutorial-guide progress {
-  width: 100%;
-  height: 8px;
-  accent-color: var(--accent);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-block: 8px 16px;
-  background: rgba(255, 255, 255, 0.08);
-}
-.tutorial-guide progress::-webkit-progress-bar {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-}
-.tutorial-guide progress::-webkit-progress-value {
-  background: var(--accent-gradient);
-  border-radius: 4px;
-}
-.tutorial-guide h2 {
-  font-size: 22px !important;
-  margin-bottom: 8px !important;
-  color: #ffffff !important;
-}
-.tutorial-feedback {
-  min-height: 1.5em;
-  padding: 10px 14px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 8px;
-  color: #93c5fd !important;
-  font-size: 13.5px;
-  margin-block: 14px 18px;
-}
-.tutorial-actions {
-  justify-content: flex-start;
-  gap: 12px;
-}
-.tutorial-board [data-tutorial-target] {
-  outline: 3px solid #60a5fa !important;
-  outline-offset: 4px !important;
-  box-shadow: 0 0 16px rgba(96, 165, 250, 0.6) !important;
-  animation: tutorial-pulse 1.8s ease-in-out infinite;
-}
-@keyframes tutorial-pulse {
-  0%, 100% { outline-color: #60a5fa; box-shadow: 0 0 14px rgba(96, 165, 250, 0.5); }
-  50% { outline-color: #3b82f6; box-shadow: 0 0 24px rgba(59, 130, 246, 0.85); }
-}
-.tutorial-board { min-width: 0; }
-@media (max-width: 600px) {
-  .tutorial-entry { align-items: flex-start; }
-  .tutorial-actions button, .tutorial-actions .button-link { flex: 1 1 120px; }
-}
-

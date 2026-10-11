@@ -100,7 +100,7 @@ test('璀璨宝石双图包：选择、图片失败回退、私密恢复及完�
   await page.getByRole('button', { name: /^盲抽3级牌堆/ }).click();
   await page.getByRole('button', { name: '确认盲抽预留' }).click();
   await expect.poll(async () => (await snapshot()).view.myReserved.length).toBe(1);
-  await expect(page.getByRole('region', { name: '公开行动记录' })).toContainText('你盲抽预留了一张卡');
+  await expect(page.getByRole('region', { name: '公开行动记录' })).toContainText('玩家 D（你）盲抽预留了一张卡');
   if (testInfo.project.name === 'desktop') {
     await page.setViewportSize({ width: 1366, height: 768 });
     expect(await page.getByRole('region', { name: '发展卡市场' }).evaluate(element => element.getBoundingClientRect().bottom <= window.innerHeight)).toBe(true);
@@ -130,10 +130,10 @@ test('璀璨宝石双图包：选择、图片失败回退、私密恢复及完�
     if (view.phase === 'finished') break;
     const bought = view.players[view.seats[1]!]!.purchased.length;
     if (bought > opponentBuys) {
-      await expect(page.getByRole('region', { name: '公开行动记录' })).toContainText('座位 2购买了发展卡');
+      await expect(page.getByRole('region', { name: '公开行动记录' })).toContainText('电脑 2购买了发展卡');
       if (!sawOpponentBuy) {
         const reveal = table.locator('.sp-action-reveal');
-        await expect(reveal).toContainText('座位 2购买了发展卡');
+        await expect(reveal).toContainText('电脑 2购买了发展卡');
         await expect.poll(() => reveal.evaluate(element => getComputedStyle(element).opacity)).toBe('1');
         expect(await reveal.evaluate(element => {
           const bounds = element.getBoundingClientRect();

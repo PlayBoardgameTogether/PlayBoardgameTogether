@@ -1,210 +1,773 @@
-/* Loaded last. Game artwork and rule colors retain their own palettes. */
-.theme-select {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 13px;
-}
-.theme-select select { width: 100%; min-width: 0; }
-@media (max-width: 700px) {
-  /* The open menu must sit above the workspace toolbar (z-index: 80). */
-  .site-header:has(.nav-tools[open]) { z-index: 81; }
-}
+/* Owned by theme. Cascade order is declared in index.css. */
+@layer theme {
+  /* ==========================================================================
+     PlayBoard - Cozy Boardgame Theme System (2026-10-11)
+     Inspired by the official PlayBoard visual baseline:
+     Sunny cream lobbies, golden amber accents, meeple tokens, and dark wooden boardgame tables.
+     ========================================================================== */
 
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #f4f6fa;
-  --panel: #ffffff;
-  --panel-raised: #e9edf4;
-  --panel-hover: #e2e8f1;
-  --text: #202938;
-  --text-secondary: #445167;
-  --muted: #58657a;
-  --muted-dark: #58657a;
-  --line: #2029381f;
-  --line-strong: #20293833;
-  --control-line: #788599;
-  --control-line-focus: #075bc8;
-  --accent: #075bc8;
-  --accent-hover: #064da9;
-  --accent-soft: #e7effc;
-  --accent-gradient: linear-gradient(135deg, #1267d6, #075bc8);
-  --accent-glow: 0 0 0 3px #075bc81f;
-  --success: #087348;
-  --success-soft: #e5f5ec;
-  --warning: #845100;
-  --warning-soft: #fff3d6;
-  --danger: #b51d3a;
-  --danger-soft: #fff0f2;
-  --neutral-rgb: 32 41 56;
-  --surface-rgb: 255 255 255;
-  --shadow: 0 1px 2px #2029380a;
-  --shadow-sm: 0 2px 8px #2029380a;
-  --shadow-card: 0 4px 20px #2029380a;
-  --shadow-card-hover: 0 8px 24px #20293814;
-}
+  .theme-select {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .theme-select select {
+    width: 100%;
+    min-width: 0;
+  }
+  @media (max-width: 700px) {
+    /* The open menu must sit above the workspace toolbar (z-index: 80). */
+    .site-header:has(.nav-tools[open]) {
+      z-index: 81;
+    }
+  }
 
-:root[data-theme="light"] body { background-image: none; }
-:root[data-theme="light"] .workspace { background: var(--bg); }
-:root[data-theme="light"] :is(.site-header, .auth-card, .nav-tools > div) {
-  box-shadow: var(--shadow-card) !important;
-}
-:root[data-theme="light"] :is(.page-heading h1, .hero h1, .empty h1) {
-  background: none;
-  -webkit-text-fill-color: var(--text);
-}
-:root[data-theme="light"] :is(
-  .workspace-toolbar strong, .room-row strong, .seat-card h2,
-  .detail-support-title, .auth-back:hover,
-  .site-header nav > a:hover, .site-header nav a[aria-current="page"],
-  .nav-tools summary:hover, .nav-tools a:hover,
-  .detail-support-card:hover .detail-support-chevron,
-  .rules-text, .developer-table th, .developer-toc a:hover,
-  .status-service-card h2, .advanced-options-details summary:hover,
-  .guest-banner-info h3, .round-complete h2
-) { color: var(--text) !important; }
-:root[data-theme="light"] .brand-symbol rect { fill: var(--accent-soft) !important; }
-:root[data-theme="light"] .brand-symbol path { fill: var(--accent) !important; }
-:root[data-theme="light"] :is(.game-card, .game-cover, .game-art-fallback) {
-  background: var(--panel-raised);
-}
-:root[data-theme="light"] .game-card { background: var(--panel); }
-:root[data-theme="light"] :is(.detail-support-card, .room-row) {
-  box-shadow: var(--shadow-sm) !important;
-}
-:root[data-theme="light"] :is(.detail-support-card[open], .detail-support-card:hover, .room-row:hover:not(:disabled)) {
-  background: var(--panel) !important;
-  box-shadow: var(--shadow-card) !important;
-}
-:root[data-theme="light"] :is(input, select, textarea) {
-  border-color: var(--control-line) !important;
-  box-shadow: none;
-}
-:root[data-theme="light"] :is(input, select, textarea):hover:not(:disabled) {
-  border-color: var(--text-secondary) !important;
-}
-:root[data-theme="light"] :is(input, select, textarea):focus-visible {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 2px;
-}
-:root[data-theme="light"] :is(button.secondary, .button-link.secondary):hover {
-  color: var(--text) !important;
-}
-:root[data-theme="light"] :is(button.danger, .error-notice, .status--error) {
-  color: var(--danger) !important;
-  background: var(--danger-soft) !important;
-}
-:root[data-theme="light"] .status--ok {
-  color: var(--success) !important;
-  background: var(--success-soft) !important;
-}
-:root[data-theme="light"] .status--warn {
-  color: var(--warning) !important;
-  background: var(--warning-soft) !important;
-}
-:root[data-theme="light"] :is(.action-hint, .invite-box strong, .detail-support-icon--invite, .detail-support-card[open] .detail-support-chevron) {
-  color: var(--accent) !important;
-}
-:root[data-theme="light"] :is(.rules-notice, .detail-support-icon--rules) { color: var(--success) !important; }
-:root[data-theme="light"] .detail-support-body > p { color: var(--muted) !important; }
-:root[data-theme="light"] .invite-box strong { text-shadow: none; }
-:root[data-theme="light"] .color-card small { color: var(--text); }
-/* Felt and tile tables are game artwork, with their own readable dark controls. */
-:root[data-theme="light"] :is(.sp-table, .az-table) {
-  color-scheme: dark;
-  --bg: #1c1c1e;
-  --panel: #2c2c2e;
-  --panel-raised: #3a3a3c;
-  --text: #f2f2f3;
-  --text-secondary: #cbd5e1;
-  --muted: #b8b8bd;
-  --line: #ffffff1f;
-  --line-strong: #ffffff33;
-  --accent: #0a84ff;
-  --accent-hover: #60a5fa;
-  --accent-soft: #0a84ff26;
-  --neutral-rgb: 255 255 255;
-}
-:root[data-theme="light"] .az-table {
-  background: #102531;
-  border-radius: var(--radius);
-  padding: 12px;
-}
-:root[data-theme="light"] :is(.developer-code, .developer-article code, .developer-table th) {
-  background: var(--panel-raised);
-  border-color: var(--line-strong);
-  box-shadow: none;
-}
-:root[data-theme="light"] :is(.tutorial-guide, .model-toolbar, .guest-welcome-banner) {
-  background: var(--panel) !important;
-  box-shadow: var(--shadow-card) !important;
-}
-:root[data-theme="light"] :is(.tutorial-guide h2, .tutorial-feedback) { color: var(--text) !important; }
-:root[data-theme="light"] .tutorial-guide progress::-webkit-progress-bar { background: var(--panel-raised); }
-:root[data-theme="light"] .model-status-badge.status-ready { color: var(--success); }
-:root[data-theme="light"] .model-status-badge.status-mock { color: var(--accent); }
-:root[data-theme="light"] .model-status-badge.status-missing-key { color: var(--warning); }
+  /* --------------------------------------------------------------------------
+     1. Dark Mode / Immersive Tabletop Surface (:root & [data-theme='dark'])
+     -------------------------------------------------------------------------- */
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: #141210;
+    --panel: #201c18;
+    --panel-raised: #2a241e;
+    --panel-hover: #352d26;
+    --text: #faf5eb;
+    --text-secondary: #d4cbc0;
+    --muted: #9e9385;
+    --muted-dark: #6d6458;
+    --line: rgba(255, 235, 210, 0.08);
+    --line-strong: rgba(255, 235, 210, 0.16);
+    --control-line: #52473b;
+    --control-line-focus: #f6c445;
+    --accent: #f6c445;
+    --accent-hover: #f8cd59;
+    --accent-active: #e5ac25;
+    --accent-soft: rgba(246, 196, 69, 0.16);
+    --accent-gradient: linear-gradient(135deg, #f8cd59 0%, #f5b738 100%);
+    --accent-glow: 0 0 16px -2px rgba(246, 196, 69, 0.45);
+    --accent-text: #1e1810;
+    --color-join: #10b981;
+    --color-join-hover: #059669;
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.16);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --radius-sm: 8px;
+    --radius: 16px;
+    --radius-lg: 20px;
+    --radius-pill: 9999px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 235, 210, 0.06);
+    --shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(246, 196, 69, 0.35);
+    --neutral-rgb: 250 245 235;
+    --surface-rgb: 32 28 24;
+  }
 
-/* macOS Vibrancy Light Mode refinement for Lobby and Social */
-:root[data-theme="light"] :is(.room-row, button.room-row) {
-  background: var(--panel) !important;
-  border-color: var(--line) !important;
-  color: var(--text) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-}
-:root[data-theme="light"] :is(.room-row, button.room-row):hover:not(:disabled) {
-  background: #f4f6fa !important;
-  border-color: var(--line-strong) !important;
-  transform: none !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
-}
-:root[data-theme="light"] .room-row strong {
-  color: var(--text) !important;
-}
-:root[data-theme="light"] .lobby-filters,
-:root[data-theme="light"] .game-room-page .lobby-filters {
-  background: var(--panel) !important;
-  border-color: var(--line) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-}
-:root[data-theme="light"] :is(.social-directory, .social-invitations, .social-request-layout .panel, .direct-chat, .social-add-layout .panel) {
-  background: var(--panel) !important;
-  border-color: var(--line) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-}
-:root[data-theme="light"] .social-row:hover {
-  background: #f8f9fc !important;
-}
-:root[data-theme="light"] .social-navigation {
-  background: var(--panel-raised) !important;
-  border-color: var(--line) !important;
-}
-:root[data-theme="light"] .social-navigation a[aria-current="page"] {
-  background: var(--panel) !important;
-  color: var(--text) !important;
-  border-color: var(--line) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
-}
-:root[data-theme="light"] .invitation-row {
-  background: #f9fafc !important;
-  border-color: var(--line) !important;
-}
-:root[data-theme="light"] .invitation-row:hover {
-  border-color: var(--line-strong) !important;
-}
-:root[data-theme="light"] .chat-history li {
-  background: #e5e5ea !important;
-  color: #1c1c1e !important;
-  border-color: transparent !important;
-}
-:root[data-theme="light"] .chat-history li.chat-message--mine {
-  background: #007aff !important;
-  color: #ffffff !important;
-}
+  /* --------------------------------------------------------------------------
+     2. Light Mode / PlayBoard Sunny Park (:root[data-theme='light'])
+     -------------------------------------------------------------------------- */
+  :root[data-theme='light'] {
+    color-scheme: light;
+    --bg: #faf7f2;
+    --panel: #ffffff;
+    --panel-raised: #f4efe6;
+    --panel-hover: #ede6d8;
+    --text: #231f1c;
+    --text-secondary: #4d4339;
+    --muted: #675c50;
+    --muted-dark: #918475;
+    --line: rgba(60, 45, 30, 0.08);
+    --line-strong: rgba(60, 45, 30, 0.15);
+    --control-line: #d5ccc0;
+    --control-line-focus: #f6c445;
+    --accent: #f6c445;
+    --accent-hover: #f8cd59;
+    --accent-active: #e5ac25;
+    --accent-soft: #fef6de;
+    --accent-gradient: linear-gradient(135deg, #f8cd59 0%, #f5b738 100%);
+    --accent-glow: 0 0 0 3px rgba(246, 196, 69, 0.28);
+    --accent-text: #1e1810;
+    --color-join: #10b981;
+    --color-join-hover: #059669;
+    --success: #10b981;
+    --success-soft: #dcfce7;
+    --warning: #d97706;
+    --warning-soft: #fef3c7;
+    --danger: #ef4444;
+    --danger-soft: #fee2e2;
+    --neutral-rgb: 35 31 28;
+    --surface-rgb: 255 255 255;
+    --shadow: 0 1px 3px rgba(45, 30, 15, 0.05);
+    --shadow-sm: 0 2px 8px rgba(45, 30, 15, 0.06);
+    --shadow-card: 0 4px 20px rgba(45, 30, 15, 0.05), 0 0 0 1px rgba(60, 45, 30, 0.04);
+    --shadow-card-hover: 0 12px 30px rgba(45, 30, 15, 0.1), 0 0 0 1px rgba(246, 196, 69, 0.35);
+  }
 
-@media (forced-colors: active) {
-  .theme-select select { appearance: auto; }
+  /* Warm ambient backgrounds */
+  body {
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(246, 196, 69, 0.08) 0%, transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(234, 88, 12, 0.05) 0%, transparent 45%),
+      radial-gradient(circle at 50% 40%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
+    background-attachment: fixed;
+    color: var(--text);
+  }
+
+  :root[data-theme='light'] body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(246, 196, 69, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 85% 15%, rgba(251, 146, 60, 0.06) 0%, transparent 35%),
+      radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.04) 0%, transparent 40%);
+  }
+
+  .workspace {
+    background: transparent;
+  }
+
+  /* --------------------------------------------------------------------------
+     3. Brand Symbol & Meeple Styling
+     -------------------------------------------------------------------------- */
+  .brand-symbol {
+    filter: drop-shadow(0 2px 6px rgba(246, 196, 69, 0.4));
+  }
+  .brand-symbol rect {
+    fill: #f6c445;
+    stroke: #e5ac25;
+    stroke-width: 1.5;
+    rx: 8px;
+  }
+  .brand-symbol path {
+    fill: #1e1810;
+  }
+  .brand .brand-name {
+    color: var(--text);
+  }
+
+  /* --------------------------------------------------------------------------
+     4. Navigation & Header Elevation
+     -------------------------------------------------------------------------- */
+  .site-header {
+    background: rgb(var(--surface-rgb) / 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--line);
+  }
+
+  /* Navigation Pills */
+  .site-header nav > a {
+    border-radius: var(--radius-pill, 9999px);
+    color: var(--muted);
+    font-weight: 500;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .site-header nav > a:hover {
+    background: var(--accent-soft);
+    color: var(--text);
+    transform: translateX(3px);
+  }
+  .site-header nav a[aria-current='page'] {
+    background: var(--accent);
+    color: var(--accent-text, #1e1810);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba(246, 196, 69, 0.4);
+    transform: none;
+  }
+  .site-header nav a[aria-current='page'] svg {
+    stroke: var(--accent-text, #1e1810);
+    opacity: 1;
+  }
+
+  /* --------------------------------------------------------------------------
+     5. Buttons - Golden Primary & Fresh Green Join Actions
+     -------------------------------------------------------------------------- */
+  /* Main action buttons: Warm Golden Amber with dark readable text */
+  button:not(.secondary):not(.danger):not(.room-row):not(.color-card):not(.garden-cell):not(
+      .sp-table button
+    ):not(.az-table button),
+  .button-link:not(.secondary) {
+    background: var(--accent-gradient);
+    color: var(--accent-text, #1e1810);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 700;
+    box-shadow: 0 3px 12px -2px rgba(245, 183, 56, 0.45);
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  button:not(.secondary):not(.danger):not(.room-row):not(.color-card):not(.garden-cell):not(
+      .sp-table button
+    ):not(.az-table button):hover:not(:disabled),
+  .button-link:not(.secondary):hover {
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 18px -2px rgba(245, 183, 56, 0.55);
+    background: linear-gradient(135deg, #fadb6e 0%, #f6c445 100%);
+  }
+
+  /* Secondary pill buttons */
+  button.secondary,
+  .button-link.secondary {
+    background: var(--panel-raised);
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 600;
+  }
+  button.secondary:hover:not(:disabled),
+  .button-link.secondary:hover {
+    background: var(--panel-hover);
+    border-color: var(--control-line-focus);
+    color: var(--text);
+  }
+
+  /* Danger pill buttons with clear contrast */
+  button.danger,
+  .button-link.danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 700;
+  }
+  :root[data-theme='dark'] button.danger,
+  :root[data-theme='dark'] .button-link.danger {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+  button.danger:hover:not(:disabled),
+  .button-link.danger:hover {
+    background: #dc2626 !important;
+    border-color: #b91c1c !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  }
+
+  /* --------------------------------------------------------------------------
+     6. Lobby & Room Row Cards - Matching Reference Art
+     -------------------------------------------------------------------------- */
+  .room-row,
+  button.room-row {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow-sm);
+    color: var(--text);
+    transition: all 180ms ease;
+  }
+  .room-row:hover:not(:disabled),
+  button.room-row:hover:not(:disabled) {
+    background: var(--panel);
+    border-color: rgba(246, 196, 69, 0.4);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1.5px);
+  }
+  .room-row strong {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .room-row small {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* Action button inside room-row */
+  .room-row button {
+    border-radius: var(--radius-pill, 9999px);
+    padding: 8px 24px;
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  /* Default active join button: Emerald Green */
+  .room-row button:not(:disabled) {
+    background: var(--color-join, #10b981);
+    color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+  }
+  .room-row button:not(:disabled):hover {
+    background: var(--color-join-hover, #059669);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.45);
+    transform: translateY(-1px);
+  }
+  /* Disabled room button */
+  .room-row button:disabled {
+    background: var(--panel-raised);
+    color: var(--muted);
+    border: 1px solid var(--line);
+    box-shadow: none;
+    opacity: 0.75;
+  }
+
+  /* Lobby filter bar */
+  .lobby-filters,
+  .game-room-page .lobby-filters {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .lobby-filters select,
+  .lobby-filters input {
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--bg);
+    border-color: var(--control-line);
+  }
+
+  /* --------------------------------------------------------------------------
+     7. Game Catalog Cards & Artwork
+     -------------------------------------------------------------------------- */
+  .game-card {
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    box-shadow: var(--shadow-sm);
+    transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .game-card:hover {
+    border-color: rgba(246, 196, 69, 0.45);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
+  }
+  .game-cover {
+    border-top-left-radius: 19px;
+    border-top-right-radius: 19px;
+  }
+  .game-card-players {
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--panel-raised);
+    color: var(--muted);
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .game-card-action {
+    color: var(--accent-text, var(--text));
+    font-weight: 700;
+  }
+
+  /* --------------------------------------------------------------------------
+     8. Meeple Badges & Tags System
+     -------------------------------------------------------------------------- */
+  .tag,
+  .status-badge {
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 600;
+    padding: 3px 12px;
+  }
+  :root[data-theme='light'] .status--ok {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  :root[data-theme='light'] .status--warn {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  :root[data-theme='light'] .status--error {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  /* --------------------------------------------------------------------------
+     9. Immersive Boardgame Tables & Specialized Artwork
+     -------------------------------------------------------------------------- */
+  .desktop-shell--game {
+    --bg: #141210;
+  }
+  :root[data-theme='light'] :is(.sp-table, .az-table) {
+    color-scheme: dark;
+    --bg: #181512;
+    --panel: #24201c;
+    --panel-raised: #2f2923;
+    --text: #faf5eb;
+    --text-secondary: #d4cbc0;
+    --muted: #a39789;
+    --line: rgba(255, 235, 210, 0.1);
+    --line-strong: rgba(255, 235, 210, 0.18);
+    --accent: #f6c445;
+    --accent-hover: #f8cd59;
+    --accent-soft: rgba(246, 196, 69, 0.18);
+    --accent-text: #1e1810;
+    --neutral-rgb: 250 245 235;
+  }
+  :root[data-theme='light'] .az-table {
+    background: #11202c;
+    border-radius: var(--radius);
+    padding: 12px;
+  }
+
+  /* Inputs, selects, and textareas */
+  :root[data-theme='light'] :is(input, select, textarea) {
+    background: #ffffff;
+    border-color: var(--control-line);
+    color: var(--text);
+  }
+  :root[data-theme='light'] :is(input, select, textarea):focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* Social and Chat refinements */
+  :root[data-theme='light'] .social-navigation {
+    background: var(--panel-raised);
+    border-color: var(--line);
+    border-radius: var(--radius-pill, 9999px);
+  }
+  :root[data-theme='light'] .social-navigation a[aria-current='page'] {
+    background: var(--accent);
+    color: var(--accent-text, #1e1810);
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 700;
+  }
+  :root[data-theme='light'] .direct-chat:not(.public-chat) .chat-history li {
+    background: #f4efe6;
+    color: var(--text);
+    border-radius: 14px;
+  }
+  :root[data-theme='light'] .direct-chat:not(.public-chat) .chat-history li.chat-message--mine {
+    background: var(--accent);
+    color: var(--accent-text, #1e1810);
+    border-radius: 14px;
+    font-weight: 500;
+  }
+
+  /* Light theme component surfaces & readable text */
+  :root[data-theme='light'] :is(.tutorial-guide, .model-toolbar, .guest-welcome-banner) {
+    background: var(--panel);
+    box-shadow: var(--shadow-card);
+  }
+  :root[data-theme='light'] :is(.tutorial-guide h2, .tutorial-feedback) {
+    color: var(--text);
+  }
+  :root[data-theme='light'] .tutorial-guide progress::-webkit-progress-bar {
+    background: var(--panel-raised);
+  }
+  :root[data-theme='light'] :is(.developer-code, .developer-article code, .developer-table th) {
+    background: var(--panel-raised);
+    border-color: var(--line-strong);
+    color: var(--text);
+    box-shadow: none;
+  }
+  :root[data-theme='light'] .guest-welcome-banner .login-link {
+    background: var(--accent-gradient);
+    color: var(--accent-text, #1e1810);
+  }
+  :root[data-theme='light'] .guest-welcome-banner h3 {
+    color: var(--text);
+  }
+
+  /* Prominent & Crisp Hero Headings */
+  .page-heading h1,
+  .hero h1,
+  .empty h1 {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+    background: none !important;
+    font-size: clamp(34px, 4.5vw, 50px);
+    font-weight: 900;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin-block: 8px 14px;
+    text-shadow: none;
+  }
+
+  /* ==========================================================================
+     ChatDock Tabs - Elegant Segmented Control
+     ========================================================================== */
+  .chat-dock {
+    border-radius: 16px !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16) !important;
+    border: 1px solid var(--line-strong) !important;
+    overflow: hidden;
+  }
+  .desktop-shell .chat-dock-toolbar {
+    background: var(--panel) !important;
+    border-bottom: 1px solid var(--line) !important;
+    padding: 10px 14px !important;
+  }
+  .desktop-shell .chat-dock-toolbar .chat-dock-title {
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .chat-dock-tabs {
+    display: flex !important;
+    width: auto !important;
+    background: var(--panel-raised) !important;
+    padding: 4px !important;
+    border-radius: var(--radius-pill, 9999px) !important;
+    margin: 12px 14px 8px !important;
+    gap: 4px !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  }
+  .desktop-shell .chat-dock-tabs button,
+  .chat-dock-tabs button,
+  .chat-dock-tabs button.secondary {
+    flex: 1 1 50% !important;
+    width: 50% !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 6px 14px !important;
+    border-radius: var(--radius-pill, 9999px) !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--muted) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  .desktop-shell .chat-dock-tabs button:hover,
+  .chat-dock-tabs button:hover {
+    color: var(--text) !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+  }
+  .desktop-shell .chat-dock-tabs button[aria-pressed='true'],
+  .chat-dock-tabs button[aria-pressed='true'],
+  .chat-dock-tabs button.secondary[aria-pressed='true'] {
+    background: var(--panel) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    font-weight: 700 !important;
+  }
+  :root[data-theme='dark'] .chat-dock-tabs button[aria-pressed='true'] {
+    background: var(--panel) !important;
+    color: #faf5eb !important;
+    border: 1px solid rgba(255, 235, 210, 0.1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+  }
+  .chat-dock-tabs .unread-count {
+    background: var(--danger, #ef4444);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 9999px;
+  }
+
+  /* Chat dock guest notice */
+  .chat-dock .panel {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 16px 20px 24px !important;
+  }
+  .chat-dock .panel h1 {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+  }
+  .chat-dock .panel p {
+    color: var(--muted) !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     11. Game Detail Support & Rules Panel
+     -------------------------------------------------------------------------- */
+  .detail-support-card {
+    background: var(--panel) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius, 16px) !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+  .detail-support-card:hover {
+    border-color: var(--line-strong) !important;
+    box-shadow: var(--shadow-card-hover) !important;
+  }
+  .detail-support-card[open] {
+    border-color: var(--accent) !important;
+    box-shadow: var(--shadow-card-hover) !important;
+  }
+  .detail-support-title {
+    color: var(--text) !important;
+    font-weight: 700 !important;
+  }
+  .detail-support-desc {
+    color: var(--muted) !important;
+  }
+  .detail-support-body {
+    border-top: 1px solid var(--line) !important;
+  }
+  .rules-content-box {
+    background: var(--panel-raised) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius-sm, 12px) !important;
+  }
+  .rules-content-box .rules-text {
+    color: var(--text) !important;
+    font-size: 14px !important;
+    line-height: 1.75 !important;
+  }
+  .rules-notice {
+    color: var(--success) !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     12. Color Match Hand Cards & Clarity
+     -------------------------------------------------------------------------- */
+  .color-card {
+    border-radius: 14px !important;
+    font-weight: 700 !important;
+    position: relative !important;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 8px !important;
+    min-width: 96px !important;
+    min-height: 138px !important;
+    aspect-ratio: 2 / 3 !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+    border: 2px solid rgba(0, 0, 0, 0.15) !important;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      outline 160ms ease !important;
+  }
+  .color-card--red {
+    background: linear-gradient(150deg, #ef4444 0%, #b91c1c 100%) !important;
+    color: #ffffff !important;
+  }
+  .color-card--blue {
+    background: linear-gradient(150deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+  }
+  .color-card--yellow {
+    background: linear-gradient(150deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #1e1810 !important;
+  }
+  .color-card--green {
+    background: linear-gradient(150deg, #10b981 0%, #047857 100%) !important;
+    color: #ffffff !important;
+  }
+
+  .color-card > span {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #111827 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    text-align: center !important;
+  }
+  .color-card--red > span {
+    color: #dc2626 !important;
+  }
+  .color-card--blue > span {
+    color: #2563eb !important;
+  }
+  .color-card--yellow > span {
+    color: #b45309 !important;
+  }
+  .color-card--green > span {
+    color: #15803d !important;
+  }
+
+  /* High-contrast status badges on cards */
+  .color-card small {
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    white-space: nowrap !important;
+    letter-spacing: 0.02em !important;
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1.5px solid #cbd5e1 !important;
+  }
+  .color-hand-cards .color-card--legal small {
+    background: #dcfce7 !important;
+    color: #14532d !important;
+    border: 1.5px solid #22c55e !important;
+  }
+  .color-hand-cards .color-card--selected small {
+    background: #fef3c7 !important;
+    color: #78350f !important;
+    border: 1.5px solid #f59e0b !important;
+  }
+  .color-hand-cards .color-card:disabled small {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1.5px solid #cbd5e1 !important;
+  }
+
+  :root[data-theme='dark'] .color-hand-cards .color-card--legal small {
+    background: #064e3b !important;
+    color: #6ee7b7 !important;
+    border-color: #059669 !important;
+  }
+  :root[data-theme='dark'] .color-hand-cards .color-card--selected small {
+    background: #78350f !important;
+    color: #fef08a !important;
+    border-color: #d97706 !important;
+  }
+  :root[data-theme='dark'] .color-hand-cards .color-card:disabled small {
+    background: #1e293b !important;
+    color: #94a3b8 !important;
+    border-color: #475569 !important;
+  }
+
+  /* Outline for playable cards */
+  .color-hand-cards .color-card--legal {
+    outline: 3px solid #38bdf8 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.5) !important;
+  }
+  /* Outline for selected card */
+  .color-hand-cards .color-card--selected {
+    outline: 3px solid #f59e0b !important;
+    outline-offset: 4px !important;
+    box-shadow:
+      0 10px 24px rgba(245, 158, 11, 0.55),
+      0 0 16px rgba(245, 158, 11, 0.4) !important;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .color-hand-cards .color-card--selected {
+      transform: translateY(-6px) !important;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .color-hand-cards .color-card--selected {
+      transform: none !important;
+    }
+  }
+
+  /* Disabled cards */
+  .color-hand-cards .color-card:disabled {
+    opacity: 0.55 !important;
+    filter: saturate(0.7) !important;
+    cursor: not-allowed !important;
+  }
+
+  @media (forced-colors: active) {
+    .theme-select select {
+      appearance: auto;
+    }
+  }
 }

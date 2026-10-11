@@ -1,239 +1,349 @@
-.color-board {
-  position: relative;
-  isolation: isolate;
-  min-width: 0;
-  overflow: hidden;
-  border-radius: 12px;
-}
-.garden-game {
-  display: grid;
-  gap: 18px;
-  min-width: 0;
-}
-.garden-status,
-.garden-player-heading,
-.garden-tools,
-.garden-confirm,
-.garden-choice-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.garden-status h2,
-.garden-player-heading h3 { margin: 0; }
-.garden-energy { display: flex; align-items: center; gap: 8px; }
-.garden-energy img,
-.garden-choice-actions img { width: 24px; height: 24px; object-fit: contain; }
-.garden-energy strong { font-size: 22px; }
-.garden-action-area,
-.garden-results { border-block: 1px solid var(--line); padding: 14px 0; }
-.garden-choice-actions { justify-content: flex-start; }
-.garden-choice-actions button { display: inline-flex; align-items: center; gap: 8px; }
-.garden-player-boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 16px; }
-.garden-player { min-width: 0; }
-.garden-player-heading { justify-content: flex-start; margin-bottom: 8px; }
-.garden-board-wrap { position: relative; width: min(100%, 360px); margin-inline: auto; aspect-ratio: 1; }
-.garden-board-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .22; pointer-events: none; }
-.garden-grid { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; width: 100%; height: 100%; padding: 6px; }
-.garden-cell { position: relative; min-width: 0; min-height: 0; padding: 0; aspect-ratio: 1; overflow: hidden; border: 1px solid #9cae9f; border-radius: 2px; background: rgba(242, 247, 237, .9); color: var(--text); }
-.garden-cell:disabled { opacity: 1; cursor: default; }
-.garden-cell:not(:disabled) { cursor: crosshair; }
-.garden-cell.is-placed { background: #d6e4d0; }
-.garden-cell.is-preview { background: #b9dce0; }
-.garden-cell.is-invalid { background: #f0c9c4; }
-.garden-domino { position: absolute; inset: 2px; display: grid; place-items: center; border-radius: 3px; background: #58a884; color: #123f31; font-size: 12px; }
-.garden-domino img { position: absolute; width: 100%; height: 100%; object-fit: cover; opacity: .45; }
-.garden-domino span { position: relative; }
-.garden-preview { display: block; position: absolute; inset: 4px; border: 2px dashed #27646b; border-radius: 3px; }
-.garden-results p { overflow-wrap: anywhere; }
-.garden-board-wrap .garden-grid { pointer-events: auto; }
-.game-table-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-  opacity: 0.32;
-  pointer-events: none;
-}
-.color-card {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  aspect-ratio: 2/3;
-}
-.color-card .game-asset-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-}
-.color-card > span {
-  background: rgba(255, 255, 255, 0.94);
-  color: #172532;
-  border-radius: 6px;
-  padding: 3px 6px;
-}
-.game-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-.card-backs {
-  display: flex;
-  max-width: 100%;
-  overflow: hidden;
-  gap: 3px;
-  margin-top: 8px;
-}
-.card-back {
-  position: relative;
-  width: 25px;
-  min-width: 14px;
-  height: 38px;
-  border-radius: 3px;
-  background: #304f65;
-  overflow: hidden;
-}
-.card-back img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.card-back > span {
-  font-size: 8px;
-  color: white;
-  position: absolute;
-  bottom: 1px;
-  left: 1px;
-}
-.color-hand-cards {
-  max-width: 100%;
-  overflow-x: auto;
-}
-.color-hand-cards .color-card {
-  flex-shrink: 0;
-}
-.audio-controls {
-  margin-block: 16px;
-}
-.audio-controls label,
-.asset-editor > label {
-  display: block;
-  margin-block: 12px;
-}
-.audio-controls input[type="range"] {
-  max-width: 320px;
-  display: block;
-}
-.audio-controls input[type="checkbox"] {
-  width: auto;
-}
-.asset-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-top: 20px;
-}
-.asset-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.asset-draft-list,
-.asset-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.asset-table-scroll {
-  overflow-x: auto;
-  max-width: 100%;
-  margin-block: 16px;
-}
-.asset-table-scroll table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  min-width: 540px;
-}
-.asset-table-scroll td,
-.asset-table-scroll th {
-  padding: 10px;
-  border-bottom: 1px solid #d1d9df;
-  vertical-align: top;
-}
-.asset-table-scroll select {
-  max-width: 230px;
-}
-.asset-file-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 12px;
-  margin-block: 18px;
-}
-.asset-file-grid article {
-  padding: 12px;
-  border: 1px solid #ced8df;
-  border-radius: 8px;
-  overflow-wrap: anywhere;
-}
-.asset-file-grid img {
-  max-width: 100%;
-  height: 110px;
-  object-fit: contain;
-  display: block;
-}
-.asset-file-grid small {
-  display: block;
-}
-.asset-editor textarea {
-  width: 100%;
-  box-sizing: border-box;
-  font-family: monospace;
-}
-.asset-editor code {
-  overflow-wrap: anywhere;
-}
-.asset-editor > p {
-  overflow-wrap: anywhere;
-}
-.asset-preview {
-  margin-top: 20px;
-  border: 2px dashed #8799aa;
-  padding: 16px;
-  border-radius: 10px;
-}
-.asset-preview .color-board {
-  margin-top: 16px;
-}
-.asset-editor select {
-  max-width: 100%;
-}
-@media (max-width: 600px) {
-  .garden-player-boards { grid-template-columns: 1fr; }
-  .garden-board-wrap { width: min(100%, 320px); }
-  .garden-confirm { align-items: stretch; flex-direction: column; }
-  .asset-preview {
-    padding: 8px;
+/* Owned by components.assets. Cascade order is declared in index.css. */
+@layer components.assets {
+  .color-board {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
   }
-  .asset-table-scroll table {
-    font-size: 13px;
-  }
-  .color-board .panel {
+  .garden-game {
+    display: grid;
+    gap: 18px;
     min-width: 0;
   }
-  .color-hand-cards {
-    flex-wrap: nowrap;
+  .garden-status,
+  .garden-player-heading,
+  .garden-tools,
+  .garden-confirm,
+  .garden-choice-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
   }
-  .asset-toolbar button {
-    flex: 1 1 140px;
+  .garden-status h2,
+  .garden-player-heading h3 {
+    margin: 0;
+  }
+  .garden-energy {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .garden-energy img,
+  .garden-choice-actions img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+  }
+  .garden-energy strong {
+    font-size: 22px;
+  }
+  .garden-action-area,
+  .garden-results {
+    border-block: 1px solid var(--line);
+    padding: 14px 0;
+  }
+  .garden-choice-actions {
+    justify-content: flex-start;
+  }
+  .garden-choice-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .garden-player-boards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: 16px;
+  }
+  .garden-player {
+    min-width: 0;
+  }
+  .garden-player-heading {
+    justify-content: flex-start;
+    margin-bottom: 8px;
+  }
+  .garden-board-wrap {
+    position: relative;
+    width: min(100%, 360px);
+    margin-inline: auto;
+    aspect-ratio: 1;
+  }
+  .garden-board-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+  .garden-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+    width: 100%;
+    height: 100%;
+    padding: 6px;
+  }
+  .garden-cell {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid #9cae9f;
+    border-radius: 2px;
+    background: rgba(242, 247, 237, 0.9);
+    color: var(--text);
+  }
+  .garden-cell:disabled {
+    opacity: 1;
+    cursor: default;
+  }
+  .garden-cell:not(:disabled) {
+    cursor: crosshair;
+  }
+  .garden-cell.is-placed {
+    background: #d6e4d0;
+  }
+  .garden-cell.is-preview {
+    background: #b9dce0;
+  }
+  .garden-cell.is-invalid {
+    background: #f0c9c4;
+  }
+  .garden-domino {
+    position: absolute;
+    inset: 2px;
+    display: grid;
+    place-items: center;
+    border-radius: 3px;
+    background: #58a884;
+    color: #123f31;
+    font-size: 12px;
+  }
+  .garden-domino img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.45;
+  }
+  .garden-domino span {
+    position: relative;
+  }
+  .garden-preview {
+    display: block;
+    position: absolute;
+    inset: 4px;
+    border: 2px dashed #27646b;
+    border-radius: 3px;
+  }
+  .garden-results p {
+    overflow-wrap: anywhere;
+  }
+  .garden-board-wrap .garden-grid {
+    pointer-events: auto;
+  }
+  .game-table-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+    opacity: 0.32;
+    pointer-events: none;
+  }
+  .color-card {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    aspect-ratio: 2/3;
+  }
+  .color-card .game-asset-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }
+  .color-card > span {
+    background: rgba(255, 255, 255, 0.94);
+    color: #172532;
+    border-radius: 6px;
+    padding: 3px 6px;
+  }
+  .game-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .card-backs {
+    display: flex;
+    max-width: 100%;
+    overflow: hidden;
+    gap: 3px;
+    margin-top: 8px;
+  }
+  .card-back {
+    position: relative;
+    width: 25px;
+    min-width: 14px;
+    height: 38px;
+    border-radius: 3px;
+    background: #304f65;
+    overflow: hidden;
+  }
+  .card-back img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .card-back > span {
+    font-size: 8px;
+    color: white;
+    position: absolute;
+    bottom: 1px;
+    left: 1px;
+  }
+  .color-hand-cards {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .color-hand-cards .color-card {
+    flex-shrink: 0;
+  }
+  .audio-controls {
+    margin-block: 16px;
+  }
+  .audio-controls label,
+  .asset-editor > label {
+    display: block;
+    margin-block: 12px;
+  }
+  .audio-controls input[type='range'] {
+    max-width: 320px;
+    display: block;
+  }
+  .audio-controls input[type='checkbox'] {
+    width: auto;
+  }
+  .asset-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .asset-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .asset-draft-list,
+  .asset-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .asset-table-scroll {
+    overflow-x: auto;
+    max-width: 100%;
+    margin-block: 16px;
+  }
+  .asset-table-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    min-width: 540px;
+  }
+  .asset-table-scroll td,
+  .asset-table-scroll th {
+    padding: 10px;
+    border-bottom: 1px solid #d1d9df;
+    vertical-align: top;
+  }
+  .asset-table-scroll select {
+    max-width: 230px;
+  }
+  .asset-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-block: 18px;
+  }
+  .asset-file-grid article {
+    padding: 12px;
+    border: 1px solid #ced8df;
+    border-radius: 8px;
+    overflow-wrap: anywhere;
+  }
+  .asset-file-grid img {
+    max-width: 100%;
+    height: 110px;
+    object-fit: contain;
+    display: block;
+  }
+  .asset-file-grid small {
+    display: block;
+  }
+  .asset-editor textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: monospace;
+  }
+  .asset-editor code {
+    overflow-wrap: anywhere;
+  }
+  .asset-editor > p {
+    overflow-wrap: anywhere;
+  }
+  .asset-preview {
+    margin-top: 20px;
+    border: 2px dashed #8799aa;
+    padding: 16px;
+    border-radius: 10px;
+  }
+  .asset-preview .color-board {
+    margin-top: 16px;
+  }
+  .asset-editor select {
+    max-width: 100%;
+  }
+  @media (max-width: 600px) {
+    .garden-player-boards {
+      grid-template-columns: 1fr;
+    }
+    .garden-board-wrap {
+      width: min(100%, 320px);
+    }
+    .garden-confirm {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .asset-preview {
+      padding: 8px;
+    }
+    .asset-table-scroll table {
+      font-size: 13px;
+    }
+    .color-board .panel {
+      min-width: 0;
+    }
+    .color-hand-cards {
+      flex-wrap: nowrap;
+    }
+    .asset-toolbar button {
+      flex: 1 1 140px;
+    }
   }
 }

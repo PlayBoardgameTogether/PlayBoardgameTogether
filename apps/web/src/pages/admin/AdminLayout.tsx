@@ -37,7 +37,7 @@ export function AdminLayout({
     let disposed = false;
     setState('loading');
     void api
-      .me<unknown>()
+      .me()
       .then((raw) => {
         if (!disposed)
           setState(

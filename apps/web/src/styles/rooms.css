@@ -1,268 +1,276 @@
-/* Room pages keep the seating and the next action ahead of auxiliary settings. */
-.new-room-page {
-  max-width: 660px;
-  margin-inline: auto;
-}
-.room-create-shell {
-  padding-block: 16px 32px;
-}
-.room-create-shell > .muted {
-  margin-bottom: 28px;
-}
-.room-create-fields {
-  min-width: 0;
-  border: 0;
-  padding: 0;
-  margin: 0;
-}
-.room-create-form .game-form-desc {
-  margin-top: -8px;
-}
-.room-disclosure {
-  border-bottom: 1px solid var(--line-strong);
-  padding-block: 8px;
-}
-.room-disclosure > summary {
-  cursor: pointer;
-  min-height: 44px;
-  align-content: center;
-  font-weight: 600;
-}
-.room-disclosure > summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-.room-advanced label {
-  margin-block: 16px;
-}
-.room-page {
-  max-width: 1040px;
-  margin-inline: auto;
-}
-.room-back {
-  display: inline-block;
-  margin-bottom: 16px;
-}
-.room-page .room-heading {
-  margin-bottom: 32px;
-}
-.room-heading-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.room-page h1, .room-page h3 {
-  overflow-wrap: anywhere;
-}
-.room-page h2 {
-  font-size: 20px;
-  margin: 0;
-}
-.room-page h3 {
-  font-size: 19px;
-  margin-block: 8px;
-}
-.room-section-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.room-page .seat-grid {
-  margin-block: 16px 24px;
-  gap: 16px;
-}
-.room-page .seat-card {
-  min-width: 0;
-  min-height: 160px;
-  padding: 22px;
-  background: var(--panel);
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
-  box-shadow: none;
-}
-.room-page .seat-card:hover {
-  transform: none;
-  box-shadow: none;
-}
-.room-page .seat-card--mine {
-  border-color: var(--accent);
-}
-.room-page .seat-card--empty {
-  background: transparent;
-  border-style: dashed;
-}
-.room-page .seat-card .eyebrow {
-  margin: 0;
-}
-.room-page .seat-card .muted {
-  margin-bottom: 16px;
-}
-.seat-controls {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-.seat-controls .bot-settings {
-  width: 100%;
-}
-.room-page .waiting-members {
-  margin-block: 16px;
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
-}
-.room-ready-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding-block: 24px;
-  border-block: 1px solid var(--line-strong);
-}
-.room-ready-bar > div:first-child {
-  flex: 1 1 280px;
-  min-width: 0;
-}
-.room-ready-bar p {
-  margin-block: 8px;
-}
-.room-ready-controls {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.room-ready-controls button {
-  min-width: 112px;
-}
-.room-blockers {
-  padding-left: 20px;
-  color: var(--muted);
-  margin-bottom: 0;
-}
-.room-support {
-  margin-top: 24px;
-}
-.room-support-body {
-  padding: 12px 0 20px;
-  max-width: 620px;
-}
-.room-support .panel, .room-support .game-rules {
-  background: transparent;
-  box-shadow: none;
-  border: 0;
-  border-radius: 0;
-  margin: 0;
-  padding: 12px 0;
-}
-.room-support .game-rules {
-  border-bottom: 1px solid var(--line-strong);
-}
-.room-support .game-rules > summary {
-  padding: 8px 0;
-}
-.room-support .detail-support-icon, .room-support .detail-support-desc {
-  display: none;
-}
-.room-support .invite-box {
-  margin: 0 0 16px;
-  box-shadow: none;
-  background: var(--panel);
-  border: 1px solid var(--line-strong);
-}
-.room-assets {
-  margin-bottom: 24px;
-}
-.room-danger-zone {
-  border-top: 1px solid var(--line-strong);
-  margin-top: 8px;
-  padding-top: 8px;
-}
-.room-page .round-complete {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding-block: 16px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--line);
-}
-@media (max-width: 700px) {
-  .room-page .seat-grid {
-    grid-template-columns: 1fr;
+/* Owned by components.rooms. Cascade order is declared in index.css. */
+@layer components.rooms {
+  /* Room pages keep the seating and the next action ahead of auxiliary settings. */
+  .new-room-page {
+    max-width: 660px;
+    margin-inline: auto;
   }
-  .room-page .seat-card {
-    padding: 18px;
+  .room-create-shell {
+    padding-block: 16px 32px;
   }
-  .room-ready-controls {
-    width: 100%;
+  .room-create-shell > .muted {
+    margin-bottom: 28px;
   }
-  .room-ready-controls button {
-    flex: 1;
+  .room-create-fields {
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .room-create-form .game-form-desc {
+    margin-top: -8px;
+  }
+  .room-disclosure {
+    border-bottom: 1px solid var(--line-strong);
+    padding-block: 8px;
+  }
+  .room-disclosure > summary {
+    cursor: pointer;
+    min-height: 44px;
+    align-content: center;
+    font-weight: 600;
+  }
+  .room-disclosure > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .room-advanced label {
+    margin-block: 16px;
+  }
+  .room-page {
+    max-width: 1040px;
+    margin-inline: auto;
+  }
+  .room-back {
+    display: inline-block;
+    margin-bottom: 16px;
   }
   .room-page .room-heading {
+    margin-bottom: 32px;
+  }
+  .room-heading-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .room-page h1,
+  .room-page h3 {
+    overflow-wrap: anywhere;
+  }
+  .room-page h2 {
+    font-size: 20px;
+    margin: 0;
+  }
+  .room-page h3 {
+    font-size: 19px;
+    margin-block: 8px;
+  }
+  .room-section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .room-page .seat-grid {
+    margin-block: 16px 24px;
     gap: 16px;
-    margin-bottom: 24px;
+  }
+  .room-page .seat-card {
+    min-width: 0;
+    min-height: 160px;
+    padding: 22px;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .room-page .seat-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .room-page .seat-card--mine {
+    border-color: var(--accent);
+  }
+  .room-page .seat-card--empty {
+    background: transparent;
+    border-style: dashed;
+  }
+  .room-page .seat-card .eyebrow {
+    margin: 0;
+  }
+  .room-page .seat-card .muted {
+    margin-bottom: 16px;
+  }
+  .seat-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .seat-controls .bot-settings {
+    width: 100%;
+  }
+  .room-page .waiting-members {
+    margin-block: 16px;
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+  .room-ready-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-block: 24px;
+    border-block: 1px solid var(--line-strong);
+  }
+  .room-ready-bar > div:first-child {
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+  .room-ready-bar p {
+    margin-block: 8px;
+  }
+  .room-ready-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .room-ready-controls button {
+    min-width: 112px;
+  }
+  .room-blockers {
+    padding-left: 20px;
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+  .room-support {
+    margin-top: 24px;
   }
   .room-support-body {
-    max-width: 100%;
+    padding: 12px 0 20px;
+    max-width: 620px;
   }
-}
-/* The older global theme uses !important; contain its overrides to these pages. */
-.room-page .seat-card {
-  background: var(--panel) !important;
-  border: 1px solid var(--line-strong) !important;
-  border-radius: 12px !important;
-  min-height: 160px !important;
-  box-shadow: none !important;
-}
-.room-page .seat-card--mine {
-  border-color: var(--accent) !important;
-}
-.room-page .seat-card--empty {
-  background: transparent !important;
-  border-style: dashed !important;
-}
-.room-page .seat-card:hover {
-  border-color: var(--control-line) !important;
-}
-.room-page .seat-card button {
-  width: auto !important;
-  margin-top: 0 !important;
-}
-.room-support .panel, .room-support .game-rules {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  backdrop-filter: none !important;
-  padding: 12px 0 !important;
-}
-.room-support .game-rules {
-  border-bottom: 1px solid var(--line-strong) !important;
-}
-.room-support .game-rules > summary {
-  padding: 8px 0 !important;
-  min-height: 44px !important;
-}
-.room-support .game-rules .detail-support-title {
-  font-size: 15px !important;
-}
-.room-page .seat-card {
-  justify-content: flex-start !important;
-}
-.room-page .seat-card .seat-controls {
-  margin-top: auto;
-}
-.room-support .detail-support-icon, .room-support .detail-support-desc {
-  display: none !important;
-}
-.new-room-page .game-rules {
-  margin-top: 24px !important;
-}
-.room-page .room-ready-bar {
-  margin-bottom: 28px;
+  .room-support .panel,
+  .room-support .game-rules {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 12px 0;
+  }
+  .room-support .game-rules {
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .room-support .game-rules > summary {
+    padding: 8px 0;
+  }
+  .room-support .detail-support-icon,
+  .room-support .detail-support-desc {
+    display: none;
+  }
+  .room-support .invite-box {
+    margin: 0 0 16px;
+    box-shadow: none;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+  }
+  .room-assets {
+    margin-bottom: 24px;
+  }
+  .room-danger-zone {
+    border-top: 1px solid var(--line-strong);
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+  .room-page .round-complete {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-block: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (max-width: 700px) {
+    .room-page .seat-grid {
+      grid-template-columns: 1fr;
+    }
+    .room-page .seat-card {
+      padding: 18px;
+    }
+    .room-ready-controls {
+      width: 100%;
+    }
+    .room-ready-controls button {
+      flex: 1;
+    }
+    .room-page .room-heading {
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .room-support-body {
+      max-width: 100%;
+    }
+  }
+  /* Room components own these rules within the declared component layer. */
+  .room-page .seat-card {
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    min-height: 160px;
+    box-shadow: none;
+  }
+  .room-page .seat-card--mine {
+    border-color: var(--accent);
+  }
+  .room-page .seat-card--empty {
+    background: transparent;
+    border-style: dashed;
+  }
+  .room-page .seat-card:hover {
+    border-color: var(--control-line);
+  }
+  .room-page .seat-card button {
+    width: auto;
+    margin-top: 0;
+  }
+  .room-support .panel,
+  .room-support .game-rules {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    backdrop-filter: none;
+    padding: 12px 0;
+  }
+  .room-support .game-rules {
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .room-support .game-rules > summary {
+    padding: 8px 0;
+    min-height: 44px;
+  }
+  .room-support .game-rules .detail-support-title {
+    font-size: 15px;
+  }
+  .room-page .seat-card {
+    justify-content: flex-start;
+  }
+  .room-page .seat-card .seat-controls {
+    margin-top: auto;
+  }
+  .room-support .detail-support-icon,
+  .room-support .detail-support-desc {
+    display: none;
+  }
+  .new-room-page .game-rules {
+    margin-top: 24px;
+  }
+  .room-page .room-ready-bar {
+    margin-bottom: 28px;
+  }
 }

@@ -1,3 +1,4 @@
+import './style.css';
 import { playerLabel, type PlayerNames } from '@boardgame/game-sdk/presentation';
 import { AssetContext, Gem, Visual, inks } from './visuals.js';
 import { selectGem } from './interaction.js';

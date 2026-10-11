@@ -81,7 +81,7 @@ test('璀璨宝石：真人与脚本AI完成整局、私密预留刷新保留、
   await page.getByRole('button', { name: /^盲抽3级牌堆/ }).click();
   await page.getByRole('button', { name: '确认盲抽预留' }).click();
   await expect.poll(async () => (await snapshot()).view.myReserved.length).toBe(1);
-  await expect(page.getByRole('region', { name: '公开行动记录' })).toContainText('你盲抽预留了一张卡');
+  await expect(page.getByRole('region', { name: '公开行动记录' })).toContainText('玩家 D（你）盲抽预留了一张卡');
   if (testInfo.project.name === 'desktop') {
     await page.setViewportSize({ width: 1366, height: 768 });
     expect(await page.getByRole('region', { name: '发展卡市场' }).evaluate(element => element.getBoundingClientRect().bottom <= window.innerHeight)).toBe(true);

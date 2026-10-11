@@ -27,12 +27,13 @@ test('page links preserve the shell, history and keyboard access without a reloa
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/developers');
   await expect(page.locator('#main-content')).toBeFocused();
-  await expect(page.locator('.nav-tools')).toHaveAttribute('open');
+  await expect(page.locator('.nav-tools')).not.toHaveAttribute('open');
   await expect(page.locator('.workspace-toolbar strong')).toHaveText('开发者文档');
   await page.goBack();
   await expect(page.getByRole('heading', { name: '界面固定场景' })).toBeVisible();
   await page.goForward();
   await expect(page.locator('.workspace-toolbar strong')).toHaveText('开发者文档');
+  await page.locator('.nav-tools summary').click();
   await page.getByRole('link', { name: '界面场景', exact: true }).click();
   await page.locator('.nav-tools summary').click();
   await page.getByRole('combobox', { name: '场景', exact: true }).selectOption('room-four');
@@ -47,6 +48,7 @@ test('page links preserve the shell, history and keyboard access without a reloa
   await page.getByRole('link', { name: '开发者文档', exact: true }).click();
   await expect(page.locator('#main-content')).toHaveCSS('animation-name', 'none');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.locator('.nav-tools summary').click();
   await page.getByRole('link', { name: '界面场景', exact: true }).click();
   await expect(page.getByRole('heading', { name: '界面固定场景' })).toBeVisible();
   await page.getByRole('link', { name: '跳到主要内容' }).focus();

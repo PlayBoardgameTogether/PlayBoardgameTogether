@@ -1,3 +1,4 @@
+import { sessionFixture } from '../fixtures/session.js';
 import { test, expect, type Page } from '@playwright/test';
 import type { PublicMessage, SocialOverview } from '@boardgame/protocol';
 
@@ -19,7 +20,7 @@ async function fixture(page: Page, loseConfirmation = false) {
     const url = new URL(route.request().url());
     const path = url.pathname.replace('/api/v1', '');
     const ok = (data: unknown) => route.fulfill({ json: { ok: true, traceId: 'public-chat-ui', data } });
-    if (path === '/auth/me') return ok({ account: { ...self, username: 'alice', role: 'user' }, csrfToken: 'fixture' });
+    if (path === '/auth/me') return ok(sessionFixture({ id: me, displayName: self.displayName }));
     if (path === '/social') return ok(overview);
     if (path === '/social/requests') {
       application = route.request().postDataJSON();

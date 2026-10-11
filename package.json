@@ -9,7 +9,7 @@
     "dev": "pnpm --parallel --filter @boardgame/api --filter @boardgame/web dev",
     "build": "pnpm -r --if-present build && node scripts/check-production-bundle.mjs && node --conditions=production scripts/check-api-runtime.mjs",
     "typecheck": "pnpm -r --if-present typecheck",
-    "lint": "eslint . && tsx scripts/check-boundaries.ts",
+    "lint": "eslint . && tsx scripts/check-boundaries.ts && pnpm format:check",
     "test": "vitest run",
     "test:integration": "tsx --env-file=.env scripts/prepare-test-db.ts && tsx --env-file=.env scripts/migrate.ts --test && tsx --env-file=.env scripts/sync-games.ts --test && tsx --env-file=.env scripts/seed-assets.ts --test && vitest run tests/integration",
     "test:developers": "playwright test --config playwright.developers.config.ts",
@@ -22,7 +22,8 @@
     "games:sync": "tsx --env-file=.env scripts/sync-games.ts",
     "account": "tsx --env-file=.env scripts/accounts.ts",
     "assets:seed": "tsx --env-file=.env scripts/seed-assets.ts",
-    "assets:check": "tsx --env-file=.env scripts/assets-integrity.ts"
+    "assets:check": "tsx --env-file=.env scripts/assets-integrity.ts",
+    "format:check": "prettier --check \"apps/api/src/routes/**/*.ts\" \"apps/api/src/realtime/**/*.ts\" apps/api/src/app.ts apps/api/src/matches.ts apps/api/src/rooms.ts \"apps/web/src/rooms/**/*.ts\" \"apps/web/src/matches/**/*.ts\" apps/web/src/pages/RoomPage.tsx apps/web/src/pages/MatchPage.tsx apps/web/src/pages/ModelSettingsPage.tsx apps/web/src/pages/ModelProfileDirectory.tsx apps/web/src/pages/ModelProfileEditor.tsx apps/web/src/pages/AssetAdminPage.tsx apps/web/src/pages/AssetDraftEditor.tsx apps/web/src/pages/useModelSettings.ts apps/web/src/pages/useAssetWorkspace.ts \"apps/web/src/styles/*.css\""
   },
   "devDependencies": {
     "@boardgame/azul": "workspace:*",
@@ -40,6 +41,7 @@
     "eslint": "9.35.0",
     "fflate": "0.8.2",
     "pg": "8.16.3",
+    "prettier": "3.6.2",
     "tsx": "4.20.5",
     "typescript": "5.9.2",
     "typescript-eslint": "8.42.0",

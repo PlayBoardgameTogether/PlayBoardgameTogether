@@ -1,3 +1,4 @@
+import { platformStyles } from '../fixtures/platform-styles.js';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -70,9 +71,7 @@ test('real sandbox tile drafting, atomic play, privacy, recovery and responsive 
     const result = game.applyAction(state, { kind: 'seat', seatId, controllerEpoch: 0 }, action, rng);
     state = result.state; await publish(false, game.projectEvents(result.events, { kind: 'seat', seatId }));
   });
-  const entry = await readFile(new URL('../../apps/web/src/main.tsx', import.meta.url), 'utf8');
-  const stylesheet = (await Promise.all([...entry.matchAll(/import '\.\/(styles\/[^']+\.css)'/g)].map(match =>
-    readFile(new URL('../../apps/web/src/' + match[1], import.meta.url), 'utf8')))).join('\n');
+  const stylesheet = await platformStyles();
   const fixture = buildSync({ stdin: { contents: `
     import React from 'react';
     import { createRoot } from 'react-dom/client';

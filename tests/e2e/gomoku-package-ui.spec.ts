@@ -1,3 +1,4 @@
+import { platformStyles } from '../fixtures/platform-styles.js';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -35,11 +36,7 @@ test('sandbox desktop completes a QuickJS game and restores the authoritative bo
     state = game.applyAction(state, { kind: 'seat', seatId, controllerEpoch: 0 }, action, rng).state;
     await publish();
   });
-  const entry = await readFile(new URL('../../apps/web/src/main.tsx', import.meta.url), 'utf8');
-  const styles = [...entry.matchAll(/import '\.\/(styles\/[^']+\.css)'/g)];
-  const stylesheet = (await Promise.all(styles.map(match =>
-    readFile(new URL('../../apps/web/src/' + match[1], import.meta.url), 'utf8'),
-  ))).join('\n');
+  const stylesheet = await platformStyles();
   const fixture = buildSync({
     stdin: { contents: `
       import React from 'react';

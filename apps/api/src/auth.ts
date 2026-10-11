@@ -11,7 +11,8 @@ import { registrationInputSchema, registrationResultSchema } from '@boardgame/pr
 export const usernameSchema = z.string().regex(/^[A-Za-z0-9_]{3,32}$/);
 export const passwordSchema = z.string().min(12).max(128);
 export const displayNameSchema = z.string().min(1).max(32);
-export type AccountPublic = { id: string; username: string; displayName: string; role: 'user' | 'administrator'; status: 'active' | 'disabled' };
+export type { AccountPublic } from "@boardgame/protocol";
+import type { AccountPublic } from "@boardgame/protocol";
 export type AuthContext = { sessionId: string; account: AccountPublic; expiresAt: Date; csrfHash: string; tokenHash: string };
 type AccountRow = { id: string; username_canonical: string; display_name: string; password_hash: string; role: AccountPublic['role']; status: AccountPublic['status'] };
 

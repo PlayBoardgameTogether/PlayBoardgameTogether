@@ -13,7 +13,7 @@ async function noOverflow(page: Page) {
 }
 
 test('themed picker keeps keyboard selection and motion respects system preference', async ({ page }, info) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.emulateMedia({ reducedMotion: 'no-preference', colorScheme: 'dark' });
   await page.goto('/dev/ui');
   const scenes = page.getByRole('combobox', { name: '场景', exact: true });
   await scenes.selectOption('create');
@@ -27,7 +27,7 @@ test('themed picker keeps keyboard selection and motion respects system preferen
   await game.click();
   await expect(game).toHaveCSS('appearance', 'base-select');
   await expect(game.locator('option').first()).toBeVisible();
-  await page.screenshot({ path: `docs/screenshots/motion-controls/picker-${info.project.name}.png`, fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path: info.outputPath(`picker-${info.project.name}.png`), fullPage: true, animations: 'disabled' });
   await page.keyboard.press('Escape');
   await expect(game).toBeFocused();
   await noOverflow(page);
@@ -37,7 +37,7 @@ test('themed picker keeps keyboard selection and motion respects system preferen
   await card.click();
   await expect(card).toHaveClass(/color-card--selected/);
   await expect.poll(() => card.evaluate(element => getComputedStyle(element).transform)).toBe('matrix(1, 0, 0, 1, 0, -6)');
-  await page.screenshot({ path: `docs/screenshots/motion-controls/selection-${info.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: info.outputPath(`selection-${info.project.name}.png`), fullPage: true });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(await card.evaluate(element => getComputedStyle(element).transform)).toBe('none');
   expect(await card.evaluate(element => getComputedStyle(element).transitionDuration)).toBe('0s');
@@ -47,7 +47,7 @@ test('themed picker keeps keyboard selection and motion respects system preferen
 
 test('dashboard distinguishes failed loading and clipboard failure offers selectable text', async ({ page }, info) => {
   await page.goto('/login');
-  await page.screenshot({ path: `docs/screenshots/macos-vibrancy/login-${info.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: info.outputPath(`login-${info.project.name}.png`), fullPage: true });
   await login(page, 'stage3_a');
   await page.route('**/api/v1/rooms', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'temporary', retryable: true }, traceId: 'stage9-load' }) }));
   await page.reload();
@@ -57,7 +57,7 @@ test('dashboard distinguishes failed loading and clipboard failure offers select
   await page.unroute('**/api/v1/rooms');
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
-  await page.screenshot({ path: `docs/screenshots/macos-vibrancy/lobby-${info.project.name}.png`, fullPage: true });
+  await page.screenshot({ path: info.outputPath(`lobby-${info.project.name}.png`), fullPage: true });
   await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new Error('denied'); } } }));
   await openRoomCreation(page);
   await page.getByLabel('游戏与版本').selectOption('grid-garden@1.0.0');
@@ -72,6 +72,7 @@ test('dashboard distinguishes failed loading and clipboard failure offers select
 });
 
 test('theme text contrast, touch targets and disclosure keyboard focus meet project thresholds', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/dev/ui');
   await page.setViewportSize({ width: 320, height: 568 });
   await page.getByRole('combobox', { name: '场景', exact: true }).selectOption('garden-start');
@@ -119,7 +120,7 @@ test('development scenes fit viewport matrix and keyboard drafts never send acti
     for (const scene of ['room-four', 'color-long', 'color-target', 'garden-place', 'garden-saved', 'garden-tie', 'conflict', 'offline']) {
       await page.getByRole('combobox', { name: '场景', exact: true }).selectOption(scene);
       await noOverflow(page);
-      if (width === 390 || width === 1440) await page.screenshot({ path: `docs/screenshots/macos-vibrancy/fixture-${scene}-${width}-${info.project.name}.png`, fullPage: true });
+      if (width === 390 || width === 1440) await page.screenshot({ path: info.outputPath(`fixture-${scene}-${width}-${info.project.name}.png`), fullPage: true });
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -181,7 +182,7 @@ test('four real accounts finish three harvest rounds with private choices and a 
     await expect(host.locator('.seat-card').filter({ hasText: '未准备' })).toHaveCount(1);
     await host.getByRole('button', { name: '准备', exact: true }).press('Enter');
     await expect(host.getByRole('button', { name: '开始游戏' })).toBeEnabled();
-    await host.screenshot({ path: `docs/screenshots/macos-vibrancy/room-four-${info.project.name}.png`, fullPage: true, mask: [host.locator('.invite-box')] });
+    await host.screenshot({ path: info.outputPath(`room-four-${info.project.name}.png`), fullPage: true, mask: [host.locator('.invite-box')] });
     await host.getByRole('button', { name: '开始游戏' }).press('Enter');
     for (const round of [1, 2, 3]) {
       for (const [index, page] of pages.entries()) {
@@ -196,7 +197,7 @@ test('four real accounts finish three harvest rounds with private choices and a 
           const other = await pages[1]!.evaluate(async () => (await (await fetch(`/api/v1/matches/${location.pathname.split('/').at(-1)}/view`)).json()).data.view);
           expect(other.myChoice).toBeNull();
           expect(other.revealedChoices).toBeNull();
-          await page.screenshot({ path: `docs/screenshots/macos-vibrancy/multiple-waiting-${round}-${info.project.name}.png`, fullPage: true });
+          await page.screenshot({ path: info.outputPath(`multiple-waiting-${round}-${info.project.name}.png`), fullPage: true });
         }
       }
     }
@@ -208,6 +209,6 @@ test('four real accounts finish three harvest rounds with private choices and a 
       for (const seat of [1, 2, 3, 4]) await expect(page.getByText(`座位 ${seat}：4 分（占格 0 + 能量 4） · 获胜`)).toBeVisible();
       await noOverflow(page);
     }
-    await host.screenshot({ path: `docs/screenshots/macos-vibrancy/tie-real-${info.project.name}.png`, fullPage: true });
+    await host.screenshot({ path: info.outputPath(`tie-real-${info.project.name}.png`), fullPage: true });
   } finally { for (const context of contexts) await context.close(); }
 });

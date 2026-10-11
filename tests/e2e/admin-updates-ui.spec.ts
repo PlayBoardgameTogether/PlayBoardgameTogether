@@ -1,3 +1,4 @@
+import { sessionFixture } from '../fixtures/session.js';
 import { test, expect } from '@playwright/test';
 
 test('administrator can request an update and distinguish waiting, maintenance and completion', async ({ page }, info) => {
@@ -7,7 +8,7 @@ test('administrator can request an update and distinguish waiting, maintenance a
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
     let data: unknown;
-    if (path === '/api/v1/auth/me') data = { account: { role: 'administrator' } };
+    if (path === '/api/v1/auth/me') data = sessionFixture({ role: 'administrator' });
     else if (path === '/api/v1/admin/updates') data = { ...state };
     else if (path === '/api/v1/admin/updates/check') {
       commands++;
@@ -58,10 +59,10 @@ test('administrator can request an update and distinguish waiting, maintenance a
 });
 
 test('unavailable supervisors disable the button and ordinary users cannot see controls', async ({ page }) => {
-  let role = 'administrator';
+  let role: 'administrator' | 'user' = 'administrator';
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
-    const data = path === '/api/v1/auth/me' ? { account: { role } } : {
+    const data = path === '/api/v1/auth/me' ? sessionFixture({ role }) : {
       enabled: false, branch: null, currentSha: null, candidateSha: null, lastCheckedAt: null, phase: 'unavailable',
     };
     await route.fulfill({ json: { ok: true, data, traceId: 'ui-test' } });

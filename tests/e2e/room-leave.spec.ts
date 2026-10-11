@@ -15,6 +15,7 @@ test('顶部退出入口释放席位，最后一位成员退出后关闭房间',
     }
     await openRoomCreation(a);
     await a.getByRole('button', { name: '创建并生成邀请码' }).click();
+    await expect(a).toHaveURL(/\/rooms\/[0-9a-f-]{36}$/);
     const roomUrl = a.url();
     const code = await a.locator('.invite-box strong').innerText();
     await openInviteJoin(b);
@@ -34,7 +35,11 @@ test('顶部退出入口释放席位，最后一位成员退出后关闭房间',
     await expect(a.getByRole('button', { name: '准备', exact: true })).toBeVisible();
     await a.locator('.room-heading').getByRole('button', { name: '退出房间', exact: true }).click();
     await expect(a).toHaveURL('/');
+    const denied = a.waitForResponse(response => response.url().includes('/api/v1/rooms/') && response.request().method() === 'GET');
     await a.goto(roomUrl);
+    expect((await denied).status()).toBe(404);
+    await expect(a.getByRole('heading', { name: '无法进入房间', exact: true })).toBeVisible();
+    await a.getByRole('button', { name: '返回', exact: true }).click();
     await expect(a).toHaveURL('/');
     await openRoomCreation(a);
     await a.getByRole('button', { name: '创建并生成邀请码' }).click();

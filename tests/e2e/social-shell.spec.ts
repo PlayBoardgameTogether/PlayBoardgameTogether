@@ -1,3 +1,5 @@
+import { sessionFixture } from '../fixtures/session.js';
+import { createHash } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import type { SocialOverview } from '@boardgame/protocol';
 
@@ -10,6 +12,7 @@ async function fixture(page: Page) {
   let reads = 0;
   let arrivals = 0;
   let publicReads = 0;
+  const updates: Array<{ version: string | null; changed: boolean }> = [];
   let overview: SocialOverview = {
     identity: { friendId: 'alice', revision: 1, changeIntervalDays: 30, nextChangeAt: null, canChange: true },
     friends: [{ person: { id: friend, friendId: 'bob', displayName: '桌友小明', avatar: 'cat' }, status: 'accepted', direction: 'incoming', revision: 1, unread: 0 }],
@@ -19,10 +22,17 @@ async function fixture(page: Page) {
   await page.route('**/api/v1/**', async route => {
     const path = new URL(route.request().url()).pathname.replace('/api/v1', '');
     const ok = (data: unknown) => route.fulfill({ json: { ok: true, traceId: 'social-ui', data } });
-    if (path === '/auth/logout') { guest = true; return ok({}); }
+    if (path === '/auth/logout') { guest = true; return ok({ loggedOut: true }); }
     if (guest) return route.fulfill({ status: 401, json: { ok: false, traceId: 'social-ui', error: { code: 'UNAUTHENTICATED', message: '请登录', retryable: false } } });
-    if (path === '/auth/me') return ok({ account: { id: me, username: 'alice', displayName: profile.displayName, role: 'user' }, csrfToken: 'fixture-csrf' });
+    if (path === '/auth/me') return ok(sessionFixture({ id: me, displayName: profile.displayName }));
     if (path === '/social') return ok(overview);
+    if (path === '/social/updates') {
+      const version = createHash('sha256').update(JSON.stringify(overview)).digest('hex');
+      const previous = new URL(route.request().url()).searchParams.get('version');
+      const changed = previous !== version;
+      updates.push({ version: previous, changed });
+      return ok(changed ? { changed, version, overview } : { changed, version });
+    }
     if (path === '/social/public/messages') {
       publicReads++;
       return ok({ items: [{ id: messageId, sequence: '1', senderId: friend, sender: overview.friends[0]!.person, text: '公共频道你好', createdAt: timestamp }], nextCursor: null });
@@ -52,8 +62,25 @@ async function fixture(page: Page) {
     readCount: () => reads,
     publicReadCount: () => publicReads,
     invitations(items: SocialOverview["invitations"]) { overview = { ...overview, invitations: items }; },
+    updates,
   };
 }
+
+test('unchanged social polls retain the overview and changed polls update it', async ({ page }) => {
+  const state = await fixture(page);
+  await page.goto('/friends');
+  await expect(page.getByText('桌友小明', { exact: true }).first()).toBeVisible();
+  await expect.poll(() => state.updates.length).toBeGreaterThan(0);
+  const count = state.updates.length;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect.poll(() => state.updates.length).toBeGreaterThan(count);
+  expect(state.updates.at(-1)).toMatchObject({ changed: false, version: expect.stringMatching(/^[a-f0-9]{64}$/) });
+  await expect(page.getByText('桌友小明', { exact: true }).first()).toBeVisible();
+  state.arrive();
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(page.getByRole('button', { name: '通知，2 条未处理' })).toBeVisible();
+  expect(state.updates.at(-1)?.changed).toBe(true);
+});
 
 test('desktop chat stays at bottom right with two channels and retained drafts', async ({ page }, info) => {
   const state = await fixture(page);

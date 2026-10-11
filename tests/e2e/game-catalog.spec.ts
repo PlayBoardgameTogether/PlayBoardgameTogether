@@ -1,6 +1,28 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, type Page } from './fixtures.js';
+import { z } from 'zod';
 
-test('catalog opens details, preserves selected game and supports history and reload', async ({ page }, info) => {
+async function expectInstalledCatalog(page: Page) {
+  const response = await page.request.get('/api/v1/games');
+  expect(response.ok()).toBe(true);
+  const { data } = z
+    .object({
+      ok: z.literal(true),
+      data: z.array(
+        z.object({ id: z.string(), version: z.string(), developmentOnly: z.boolean() }),
+      ),
+    })
+    .parse(await response.json());
+  const playable = data.filter((game) => !game.developmentOnly);
+  await expect(page.locator('a.game-card')).toHaveCount(playable.length);
+  for (const game of playable)
+    await expect(page.locator(`a.game-card[href="/games/${game.id}/${game.version}"]`)).toHaveCount(
+      1,
+    );
+}
+
+test('catalog opens details, preserves selected game and supports history and reload', async ({
+  page,
+}, info) => {
   await page.goto('/login');
   await page.getByLabel('用户名').fill('stage3_a');
   await page.getByLabel('密码', { exact: true }).fill('stage two password');
@@ -8,8 +30,10 @@ test('catalog opens details, preserves selected game and supports history and re
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: '创建房间', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('12 位邀请码')).toHaveCount(0);
-  await expect(page.locator('a.game-card')).toHaveCount(5);
-  await page.evaluate(() => { document.body.dataset.catalogMarker = 'same-document'; });
+  await expectInstalledCatalog(page);
+  await page.evaluate(() => {
+    document.body.dataset.catalogMarker = 'same-document';
+  });
   await page.screenshot({ path: info.outputPath('catalog.png'), fullPage: true });
   const splendor = page.locator('a.game-card[href="/games/splendor.base/1.0.0"]');
   await splendor.focus();
@@ -20,7 +44,11 @@ test('catalog opens details, preserves selected game and supports history and re
   await expect(page.getByRole('button', { name: '加入房间', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('筛选游戏')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('detail.png'), fullPage: true });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
   await page.getByRole('link', { name: '创建房间', exact: true }).click();
   await expect(page.getByLabel('游戏与版本')).toHaveValue('splendor.base@1.0.0');
   await expect(page.getByLabel('人数', { exact: true })).toHaveValue('2');
@@ -47,13 +75,20 @@ test('guest can browse games and catalog failures offer retry', async ({ page })
   await expect(page.getByText('登录后查看并加入公开房间。')).toBeVisible();
   await page.goto('/games/missing/1.0.0');
   await expect(page.getByRole('heading', { name: '游戏暂不可用' })).toBeVisible();
-  await page.route('**/api/v1/games', route => route.fulfill({
-    status: 503, contentType: 'application/json',
-    body: JSON.stringify({ ok: false, error: { code: 'SERVICE_UNAVAILABLE', message: 'temporary', retryable: true }, traceId: 'catalog' }),
-  }));
+  await page.route('**/api/v1/games', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ok: false,
+        error: { code: 'SERVICE_UNAVAILABLE', message: 'temporary', retryable: true },
+        traceId: 'catalog',
+      }),
+    }),
+  );
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '游戏加载失败' })).toBeVisible();
   await page.unroute('**/api/v1/games');
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
-  await expect(page.locator('a.game-card')).toHaveCount(5);
+  await expectInstalledCatalog(page);
 });

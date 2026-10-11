@@ -25,14 +25,14 @@ test('admin configures ID cooldown while compact more navigation preserves the s
     await more.getByRole('link', { name: '管理员后台' }).focus();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { name: '管理员后台', exact: true })).toBeVisible();
-    await expect(more).toHaveAttribute('open');
+    await expect(more).not.toHaveAttribute('open');
     await expect(page.getByLabel('好友 ID 修改间隔（天）')).toHaveValue('30');
     await page.getByLabel('好友 ID 修改间隔（天）').fill('7');
     await page.getByRole('button', { name: '保存修改间隔' }).click();
     await expect(page.getByText('好友 ID 修改间隔已保存，立即生效。')).toBeVisible();
     await page.getByRole('link', { name: '账户管理', exact: true }).click();
     await expect(page.getByRole('heading', { name: '账户管理', exact: true })).toBeVisible();
-    await expect(more).toHaveAttribute('open');
+    await expect(more).not.toHaveAttribute('open');
     await page.goBack();
     await expect(page.getByLabel('好友 ID 修改间隔（天）')).toHaveValue('7');
     expect(documents).toEqual([]);

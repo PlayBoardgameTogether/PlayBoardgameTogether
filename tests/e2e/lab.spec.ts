@@ -1,8 +1,8 @@
 import { test,expect } from './fixtures.js';
 test('catalog and status pages use live API, database, and WebSocket data', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '计数测试游戏' })).toBeVisible();
-  await expect(page.getByText('用于验证扩展契约、服务端规则和私密玩家视图。')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Color Match', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: '选择游戏' }).getByRole('link', { name: '查看 Color Match', exact: true })).toHaveAttribute('href', '/games/color-match/1.0.0');
   await page.goto('/status');
   await page.getByRole('button', { name: '立即检查' }).click();
   await expect(page.getByText('就绪', { exact: true })).toBeVisible();

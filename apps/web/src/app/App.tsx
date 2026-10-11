@@ -1,3 +1,4 @@
+import { useGameOverlayInset } from './useGameOverlayInset.js';
 import { Suspense, useEffect, type MouseEvent } from 'react';
 import { PageFeedback } from '@boardgame/ui';
 import { followPageLink, usePageNavigation } from './navigation.js';
@@ -29,12 +30,13 @@ function AppShell({ path }: { path: string }) {
   }
   const labEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_LAB === 'true';
   const route = resolvePage(path);
+  const header = useGameOverlayInset(!!route.game);
   useEffect(() => {
     document.title = route.documentTitle ?? `${route.title} · 桌游平台`;
   }, [route.title, route.documentTitle]);
   return <div className={`desktop-shell ${route.game ? 'desktop-shell--game' : ''}`} onClick={followLink}>
     <a className="skip-link" href="#main-content">跳到主要内容</a>
-    <header className="site-header">
+    <header className="site-header" ref={header}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
       <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">桌游平台<span>一起坐下来，玩一局</span></span></a>
       <nav aria-label="主导航">

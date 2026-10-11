@@ -1,3 +1,4 @@
+import { sessionFixture } from '../fixtures/session.js';
 import { test, expect } from '@playwright/test';
 
 test('review classifies new and updated games before publishing', async ({ page }, info) => {
@@ -8,7 +9,7 @@ test('review classifies new and updated games before publishing', async ({ page 
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     let data: unknown;
-    if (url.pathname === '/api/v1/auth/me') data = { account: { role: 'administrator' } };
+    if (url.pathname === '/api/v1/auth/me') data = sessionFixture({ role: 'administrator' });
     else if (url.pathname === '/api/v1/admin/games') data = [];
     else if (url.pathname === '/api/v1/admin/game-packages/review') {
       data = { ...result, kind, installedVersions: kind === 'new' ? [] : ['1.0.0'], catalogHash: 'b'.repeat(64) };

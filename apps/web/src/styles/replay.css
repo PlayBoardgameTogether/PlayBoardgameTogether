@@ -1,23 +1,91 @@
-.replay-page { max-width: 1440px; margin: 0 auto; padding: 16px; }
-.replay-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
-.replay-heading h1 { margin: 0; font-size: clamp(24px, 3vw, 36px); }
-.replay-heading p { margin: 4px 0; }
-.replay-table { min-width: 0; }
-.desktop-shell .replay-controls { display: block; position: sticky; bottom: 0; background: var(--panel); padding: 16px 0; border-top: 1px solid var(--line); z-index: 5; }
-.replay-progress { display: grid; grid-template-columns: auto minmax(80px, 1fr) minmax(80px, auto); gap: 16px; align-items: center; }
-.replay-progress input { width: 100%; min-width: 0; accent-color: var(--accent); }
-.replay-buttons { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin-top: 12px; }
-.replay-buttons label { display: flex; align-items: center; gap: 8px; }
-.replay-buttons select { width: auto; }
-@media (max-width: 700px) {
-  .replay-page { padding: 8px; }
-  .replay-heading { align-items: start; }
-  .replay-heading a { font-size: 12px; }
-  .replay-progress { grid-template-columns: 1fr auto; gap: 8px; font-size: 12px; }
-  .replay-progress input { grid-row: 2; grid-column: 1 / -1; }
-  .replay-buttons button { padding: 8px 10px; min-height: 40px; }
-}
+/* Owned by components.replay. Cascade order is declared in index.css. */
+@layer components.replay {
+  .replay-page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  .replay-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .replay-heading h1 {
+    margin: 0;
+    font-size: clamp(24px, 3vw, 36px);
+  }
+  .replay-heading p {
+    margin: 4px 0;
+  }
+  .replay-table {
+    min-width: 0;
+  }
+  .desktop-shell .replay-controls {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    background: var(--panel);
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+    z-index: 5;
+  }
+  .replay-progress {
+    display: grid;
+    grid-template-columns: auto minmax(80px, 1fr) minmax(80px, auto);
+    gap: 16px;
+    align-items: center;
+  }
+  .replay-progress input {
+    width: 100%;
+    min-width: 0;
+    accent-color: var(--accent);
+  }
+  .replay-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .replay-buttons label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .replay-buttons select {
+    width: auto;
+  }
+  @media (max-width: 700px) {
+    .replay-page {
+      padding: 8px;
+    }
+    .replay-heading {
+      align-items: start;
+    }
+    .replay-heading a {
+      font-size: 12px;
+    }
+    .replay-progress {
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .replay-progress input {
+      grid-row: 2;
+      grid-column: 1 / -1;
+    }
+    .replay-buttons button {
+      padding: 8px 10px;
+      min-height: 40px;
+    }
+  }
 
-@media (min-width: 761px) {
-  .desktop-shell .replay-controls { padding-left: 192px; }
+  @media (min-width: 761px) {
+    .desktop-shell .replay-controls {
+      padding-left: 192px;
+    }
+  }
 }

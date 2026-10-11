@@ -1,3 +1,4 @@
+import { MatchService } from '../../apps/api/src/matches.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { installUpdateDrain } from '../../apps/api/src/update-drain.js';
@@ -37,6 +38,57 @@ describe.skipIf(!url)('Color Match formal action flow', () => {
     for (const username of ['alice', 'bob', 'carol', 'dave']) await createAccount(db, {
       username, displayName: username, password: 'correct horse battery', role: 'user',
     });
+  });
+it('reads the match and all controller metadata from one snapshot during a control change', async () => {
+    const { matchId } = await start();
+    const accountId = (
+      await db.query<{ id: string }>("SELECT id FROM accounts WHERE username_canonical='alice'")
+    ).rows[0]!.id;
+    const firstRead = Promise.withResolvers<void>();
+    const resume = Promise.withResolvers<void>();
+    let paused = false;
+    function intercept<T extends object>(target: T): T {
+      return new Proxy(target, {
+        get(object, property) {
+          const value: unknown = Reflect.get(object, property);
+          if (property === 'query' && typeof value === 'function')
+            return async (...args: unknown[]) => {
+              const result: unknown = await Reflect.apply(value, object, args);
+              if (
+                !paused &&
+                typeof args[0] === 'string' &&
+                args[0].includes('SELECT m.*, p.seat_id')
+              ) {
+                paused = true;
+                firstRead.resolve();
+                await resume.promise;
+              }
+              return result;
+            };
+          if (property === 'connect' && typeof value === 'function')
+            return async () => intercept(await Reflect.apply(value, object, []));
+          return typeof value === 'function' ? value.bind(object) : value;
+        },
+      });
+    }
+    const service = new MatchService(intercept(db), createRegistry(false));
+    const pending = service.view(accountId, matchId);
+    await firstRead.promise;
+    try {
+      await db.query(
+        'UPDATE match_participants SET controller_epoch=controller_epoch+1,controller_version=controller_version+1 WHERE match_id=$1 AND account_id=$2',
+        [matchId, accountId],
+      );
+    } finally {
+      resume.resolve();
+    }
+    const snapshot = await pending;
+    const own = snapshot.controllers.find((player) => player.seatIndex === snapshot.seatIndex)!;
+    expect(own.controllerVersion).toBe(snapshot.controller.controllerVersion);
+    expect(own.controllerEpoch).toBe(snapshot.controller.controllerEpoch);
+    expect(snapshot.controller.controllerVersion).toBe(0);
+    const after = await service.view(accountId, matchId);
+    expect(after.controller.controllerVersion).toBe(1);
   });
   async function login(username: string): Promise<Session> {
     const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', headers: { origin },

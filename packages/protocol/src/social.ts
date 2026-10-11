@@ -67,6 +67,17 @@ export const socialOverviewSchema = z.object({
   identity: socialIdentitySchema, friends: friendshipSchema.array(), requests: friendshipSchema.array(),
   invitations: friendInviteSchema.array(),
 });
+export const socialUpdatesQuerySchema = z
+  .object({ version: z.string().regex(/^[a-f0-9]{64}$/).optional() })
+  .strict();
+export const socialUpdatesSchema = z.discriminatedUnion('changed', [
+  z.object({ changed: z.literal(false), version: z.string().regex(/^[a-f0-9]{64}$/) }).strict(),
+  z.object({
+    changed: z.literal(true),
+    version: z.string().regex(/^[a-f0-9]{64}$/),
+    overview: socialOverviewSchema,
+  }).strict(),
+]);
 export const socialDoneSchema = z.object({ done: z.literal(true) });
 export type SocialPerson = z.infer<typeof socialPersonSchema>;
 export type SocialOverview = z.infer<typeof socialOverviewSchema>;
