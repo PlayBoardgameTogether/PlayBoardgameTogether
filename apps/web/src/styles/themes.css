@@ -535,6 +535,47 @@
     margin-bottom: 20px !important;
   }
 
+  /* --------------------------------------------------------------------------
+     11. Game Detail Support & Rules Panel
+     -------------------------------------------------------------------------- */
+  .detail-support-card {
+    background: var(--panel) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius, 16px) !important;
+    box-shadow: var(--shadow-card) !important;
+  }
+  .detail-support-card:hover {
+    border-color: var(--line-strong) !important;
+    box-shadow: var(--shadow-card-hover) !important;
+  }
+  .detail-support-card[open] {
+    border-color: var(--accent) !important;
+    box-shadow: var(--shadow-card-hover) !important;
+  }
+  .detail-support-title {
+    color: var(--text) !important;
+    font-weight: 700 !important;
+  }
+  .detail-support-desc {
+    color: var(--muted) !important;
+  }
+  .detail-support-body {
+    border-top: 1px solid var(--line) !important;
+  }
+  .rules-content-box {
+    background: var(--panel-raised) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: var(--radius-sm, 12px) !important;
+  }
+  .rules-content-box .rules-text {
+    color: var(--text) !important;
+    font-size: 14px !important;
+    line-height: 1.75 !important;
+  }
+  .rules-notice {
+    color: var(--success) !important;
+  }
+
   @media (forced-colors: active) {
     .theme-select select {
       appearance: auto;
