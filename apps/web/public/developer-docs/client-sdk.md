@@ -1,5 +1,11 @@
 # 客户端 SDK
 
+## 超时与取消
+
+通用 HTTP 请求默认 30 秒，二进制上传（含服务端校验）为 120 秒，覆盖响应正文读取。既有对局、回放及消息发送等 10 秒期限保持，以较早的取消/超时为准。`api.me(signal?)`、`api.room(id, signal?)`、`api.matchSnapshot(id, signal?)` 接受页面 AbortSignal；正常完成或失败后会释放默认期限和调用者取消监听。
+
+超时抛出 `TimeoutError`，主动取消抛出 `AbortError`。SDK 不自动重发写请求；动作超时仍可能已经提交，继续使用原 requestId 查询回执或重试，不能换编号。页面离开时可取消读取，防止旧请求继续占用资源。
+
 ## 公共聊天
 
 恢复 session 后通过 `api.publicMessages(before?, signal?, after?)` 读取公共历史；before/after 互斥，nextCursor 非空时按对应方向继续。`api.sendPublicMessage({requestId,text})` 保存公共发言并返回包含公开 sender 的消息。两者使用共享 schema 解析响应，发送也校验输入，沿用同源 cookie/CSRF。确认丢失时保留相同 requestId 和正文重试，不能每次生成新编号。

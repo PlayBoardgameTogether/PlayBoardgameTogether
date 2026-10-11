@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
-import { matchSnapshotMessageSchema, type MatchView } from '@boardgame/protocol';
+import {
+  matchSnapshotMessageSchema,
+  roomSnapshotSchema,
+  type MatchView,
+} from '@boardgame/protocol';
 import { api, command, navigate } from '../platform.js';
 import { clientGame, type GameBoard } from '../game-registry.js';
 import { AssetResolver, verifyManifest } from '../assets/resolver.js';
 import { audioManager, ownAudio } from '../assets/audio-manager.js';
 import { PresentationConsumer } from '../assets/presentation.js';
 import { BoardAudio } from '../assets/board-audio.js';
+import { reconnectBackoff, singleFlight } from '../network/scheduling.js';
 import type { AssetContract } from '@boardgame/game-sdk/assets';
 type Pending = {
   accountId: string;
@@ -78,6 +83,13 @@ export function useMatchSession(id: string) {
   const accountId = useRef<string | undefined>(undefined);
   const connected = useRef(false);
   const generation = useRef(0);
+  const reads = useRef<
+    | {
+        token: number;
+        snapshot: () => Promise<MatchView>;
+      }
+    | undefined
+  >(undefined);
   const seenEvents = useRef(new Set<string>());
   const returnedHome = useRef(false);
   const [resolver, setResolver] = useState<AssetResolver>();
@@ -164,7 +176,9 @@ export function useMatchSession(id: string) {
     if (fresh.length) setEvents((old) => [...old, ...fresh].slice(-20));
   }
   async function refresh(token: number) {
-    const next = await api.matchSnapshot(id);
+    const current = reads.current;
+    if (!current || current.token !== token) throw new DOMException('Page changed', 'AbortError');
+    const next = await current.snapshot();
     if (generation.current === token) merge(next);
     return next;
   }
@@ -238,6 +252,12 @@ export function useMatchSession(id: string) {
   }
   useEffect(() => {
     const token = ++generation.current;
+    const controller = new AbortController();
+    const readSnapshot = singleFlight(() => api.matchSnapshot(id, controller.signal));
+    reads.current = {
+      token,
+      snapshot: readSnapshot,
+    };
     returnedHome.current = false;
     presentation.current = new PresentationConsumer();
     boardAudio.current = new BoardAudio(
@@ -261,25 +281,26 @@ export function useMatchSession(id: string) {
     let socket: WebSocket | undefined;
     let retryTimer: number | undefined;
     let roomId: string | undefined;
-    let delay = 1000;
+    const backoff = reconnectBackoff();
+    let stopped = false;
     let lastPong = Date.now();
     let connectedOnce = false;
     let subscriptionReady = false;
     let roomSubscriptionReady = false;
     let networkOnline = navigator.onLine;
     let releaseAudio: (() => void) | undefined;
-    const sync = async (showStatus = true) => {
-      if (generation.current !== token) return;
+    const sync = singleFlight(async () => {
+      if (generation.current !== token || stopped) return;
       if (!networkOnline) {
         connected.current = false;
         setConnection('offline');
         return;
       }
-      if (showStatus) setConnection('syncing');
       try {
         const view = await refresh(token);
         if (generation.current !== token) return;
         roomId = view.roomId;
+        setError('');
         if (pendingRef.current) await reconcile(token);
         if (generation.current !== token) return;
         if (!networkOnline) {
@@ -298,11 +319,12 @@ export function useMatchSession(id: string) {
               ? 'syncing'
               : 'offline',
         );
-        delay = 1000;
       } catch (cause) {
         if (generation.current !== token) return;
         connected.current = false;
         if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') {
+          stopped = true;
+          socket?.close();
           storePending(undefined);
           latest.current = undefined;
           setData(undefined);
@@ -311,6 +333,8 @@ export function useMatchSession(id: string) {
           cause instanceof ApiError &&
           (cause.code === 'RECOVERY_BLOCKED' || cause.code === 'GAME_VERSION_UNAVAILABLE')
         ) {
+          stopped = true;
+          socket?.close();
           setConnection('recovery-blocked');
           setError(cause.message);
         } else {
@@ -318,9 +342,13 @@ export function useMatchSession(id: string) {
           setError('无法同步对局，请检查连接后重试。');
         }
       }
-    };
+    });
     const connect = () => {
-      if (generation.current !== token || !roomId || !navigator.onLine) return;
+      if (generation.current !== token || stopped || !roomId || !navigator.onLine) return;
+      if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING)
+        return;
+      if (retryTimer !== undefined) clearTimeout(retryTimer);
+      retryTimer = undefined;
       const url = new URL('/api/v1/ws/session', location.href);
       url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       const ws = new WebSocket(url);
@@ -335,7 +363,6 @@ export function useMatchSession(id: string) {
         connectedOnce = true;
         lastPong = Date.now();
         ws.send(JSON.stringify({ protocolVersion: 1, type: 'room.subscribe', roomId }));
-        void sync();
       };
       ws.onmessage = (event) => {
         if (generation.current !== token || socket !== ws) return;
@@ -351,10 +378,19 @@ export function useMatchSession(id: string) {
             'roomId' in message &&
             message.roomId === roomId
           ) {
-            // Finished rounds are retrieved by REST; a waiting room no longer
-            // includes the historical match in its subscription snapshot.
             roomSubscriptionReady = true;
-            void sync(false);
+            // The active match arrives in its own identity-projected WS snapshot.
+            // A finished match is no longer included in the room subscription.
+            const room = roomSnapshotSchema.safeParse(
+              'snapshot' in message ? message.snapshot : undefined,
+            );
+            if (
+              latest.current?.status === 'finished' ||
+              (room.success && room.data.activeMatchId !== id)
+            ) {
+              backoff.reset();
+              void sync();
+            }
           }
           if (message.type === 'match.snapshot') {
             const parsed = matchSnapshotMessageSchema.parse(message);
@@ -396,6 +432,7 @@ export function useMatchSession(id: string) {
               merge(parsed.snapshot);
               if (!subscriptionReady) {
                 subscriptionReady = true;
+                backoff.reset();
                 void sync();
               }
             }
@@ -409,12 +446,15 @@ export function useMatchSession(id: string) {
             'roomId' in message &&
             message.roomId === roomId
           ) {
+            stopped = true;
             connected.current = false;
             setConnection('offline');
             setError('已失去房间访问权限。');
             ws.close();
           }
         } catch {
+          connected.current = false;
+          setConnection('syncing');
           setError('实时消息无法读取，正在重新同步。');
           void sync();
         }
@@ -427,29 +467,34 @@ export function useMatchSession(id: string) {
         presentation.current.reset();
         audioManager.invalidate();
         if (event.code === 4001) {
+          stopped = true;
           storePending(undefined);
           latest.current = undefined;
           setData(undefined);
           setConnection('auth-expired');
           return;
         }
+        if (stopped) return;
         setConnection('offline');
         // An expired session can reject the WS upgrade before the server can
         // send close code 4001. Recheck via authenticated HTTP so a failed
         // handshake cannot leave the previous private View on screen forever.
-        void sync(false).then(() => {
-          if (generation.current !== token || socket !== ws || !latest.current) return;
+        void sync().then(() => {
+          if (generation.current !== token || stopped || socket !== ws || !latest.current) return;
           retryTimer = window.setTimeout(() => {
-            delay = Math.min(delay * 2, 15000);
+            retryTimer = undefined;
             connect();
-          }, delay);
+          }, backoff.next());
         });
       };
     };
     const onOnline = () => {
       networkOnline = true;
       if (generation.current !== token) return;
-      if (!roomId) return;
+      if (!roomId) {
+        void initialize();
+        return;
+      }
       if (retryTimer) clearTimeout(retryTimer);
       if (socket?.readyState !== WebSocket.OPEN) connect();
       else void sync();
@@ -462,14 +507,17 @@ export function useMatchSession(id: string) {
       setConnection('offline');
     };
     const onFocus = () => {
-      if (socket?.readyState === WebSocket.OPEN) void sync(false);
+      if (socket?.readyState === WebSocket.OPEN) void sync();
     };
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     window.addEventListener('focus', onFocus);
-    const initialize = async () => {
+    const initialize = singleFlight(async () => {
+      if (generation.current !== token || stopped) return;
+      if (retryTimer !== undefined) clearTimeout(retryTimer);
+      retryTimer = undefined;
       try {
-        const account = await api.me();
+        const account = await api.me(controller.signal);
         if (generation.current !== token) return;
         accountId.current = account.account.id;
         audioManager.setAccount(account.account.id);
@@ -489,7 +537,7 @@ export function useMatchSession(id: string) {
         }
         releaseAudio = ownAudio(account.account.id, id, async () => {
           presentation.current.reset();
-          const baseline = await api.matchSnapshot(id);
+          const baseline = await readSnapshot();
           if (generation.current === token) presentation.current.baseline(baseline.revision);
         });
         setError('');
@@ -497,6 +545,7 @@ export function useMatchSession(id: string) {
       } catch (cause) {
         if (generation.current !== token) return;
         if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') {
+          stopped = true;
           storePending(undefined);
           setConnection('auth-expired');
           return;
@@ -505,24 +554,25 @@ export function useMatchSession(id: string) {
           cause instanceof ApiError &&
           (cause.code === 'RECOVERY_BLOCKED' || cause.code === 'GAME_VERSION_UNAVAILABLE')
         ) {
+          stopped = true;
           setConnection('recovery-blocked');
           setError(cause.message);
           return;
         }
         if (cause instanceof ApiError && cause.code === 'MATCH_NOT_FOUND') {
+          stopped = true;
           setConnection('offline');
           setError('当前会话无权读取该局。');
           return;
         }
         setConnection('offline');
         setError('服务暂时不可用，正在重新连接。');
-        retryTimer = window.setTimeout(() => void initialize(), delay);
-        delay = Math.min(delay * 2, 15000);
+        retryTimer = window.setTimeout(() => void initialize(), backoff.next());
       }
-    };
+    });
     void initialize();
     const pollTimer = window.setInterval(() => {
-      if (socket?.readyState === WebSocket.OPEN) void sync(false);
+      if (socket?.readyState === WebSocket.OPEN) void sync();
     }, 15000);
     const heartbeat = window.setInterval(() => {
       if (socket?.readyState !== WebSocket.OPEN) return;
@@ -534,6 +584,8 @@ export function useMatchSession(id: string) {
     }, 20000);
     return () => {
       generation.current++;
+      controller.abort();
+      if (reads.current?.token === token) reads.current = undefined;
       connected.current = false;
       releaseAudio?.();
       audioManager.clear();

@@ -86,6 +86,22 @@ export function registerRealtime(
     rooms: Set<string>;
   };
   const connections = new Set<SessionConnection>();
+  const closeForFailure = (socket: WebSocket, error: unknown) => {
+    if (error instanceof AppError && error.code === 'UNAUTHENTICATED')
+      socket.close(4001, 'session revoked');
+    else socket.close(1013, 'service temporarily unavailable');
+  };
+  const revokeOrRecover = (c: SessionConnection, roomId: string, error: unknown) => {
+    if (
+      error instanceof AppError &&
+      ['ROOM_NOT_FOUND', 'MATCH_NOT_FOUND', 'FORBIDDEN'].includes(error.code)
+    ) {
+      c.rooms.delete(roomId);
+      c.socket.send(
+        JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type: 'subscription.revoked', roomId }),
+      );
+    } else closeForFailure(c.socket, error);
+  };
   let presenceSeq = 0;
   const offlineTimers = new Map<string, NodeJS.Timeout>();
   const presence = async (roomId: string) => {
@@ -96,8 +112,8 @@ export function registerRealtime(
         const current = await auth.authenticate(c.request);
         if (current?.sessionId === c.sessionId) eligible.push(c);
         else c.socket.close(4001, 'session revoked');
-      } catch {
-        c.socket.close(4001, 'session revoked');
+      } catch (error) {
+        closeForFailure(c.socket, error);
       }
     }
     const onlineAccountIds = [...new Set(eligible.map((c) => c.accountId))];
@@ -161,15 +177,8 @@ export function registerRealtime(
           );
           c.rooms.delete(roomId);
         }
-      } catch {
-        c.rooms.delete(roomId);
-        c.socket.send(
-          JSON.stringify({
-            protocolVersion: PROTOCOL_VERSION,
-            type: 'subscription.revoked',
-            roomId,
-          }),
-        );
+      } catch (error) {
+        revokeOrRecover(c, roomId, error);
       }
     }
   };
@@ -198,15 +207,8 @@ export function registerRealtime(
             snapshot,
           }),
         );
-      } catch {
-        c.rooms.delete(roomId);
-        c.socket.send(
-          JSON.stringify({
-            protocolVersion: PROTOCOL_VERSION,
-            type: 'subscription.revoked',
-            roomId,
-          }),
-        );
+      } catch (error) {
+        revokeOrRecover(c, roomId, error);
       }
     }
   };
@@ -230,8 +232,12 @@ export function registerRealtime(
         try {
           const current = await auth.authenticate(request);
           if (current) authenticated.set(request, current);
-        } catch {
-          return reply.status(401).send();
+        } catch (error) {
+          const expired = error instanceof AppError && error.code === 'UNAUTHENTICATED';
+          return reply
+            .header('cache-control', 'no-store')
+            .status(expired ? 401 : 503)
+            .send();
         }
       },
     },
@@ -279,7 +285,7 @@ export function registerRealtime(
             for (const roomId of connection.rooms)
               await rooms.recordActivity(roomId, connection.accountId);
           })
-          .catch(() => socket.close(4001, 'session unavailable'));
+          .catch((error: unknown) => closeForFailure(socket, error));
       }, 5000);
       recheck.unref();
       socket.on('message', async (raw: Buffer) => {
@@ -293,7 +299,8 @@ export function registerRealtime(
           if (!latest || latest.sessionId !== connection.sessionId)
             throw new AppError('UNAUTHENTICATED', 'Session expired', 401);
           const msg = JSON.parse(raw.toString());
-          if (msg?.protocolVersion !== PROTOCOL_VERSION) throw new Error();
+          if (msg?.protocolVersion !== PROTOCOL_VERSION)
+            throw new AppError('VALIDATION_ERROR', 'Invalid protocol version', 400);
           if (msg.type === 'ping') {
             socket.send(
               JSON.stringify({
@@ -360,8 +367,19 @@ export function registerRealtime(
             }
             return;
           }
-          throw new Error();
+          throw new AppError('VALIDATION_ERROR', 'Unknown message type', 400);
         } catch (error) {
+          if (
+            (error instanceof AppError && error.status >= 500) ||
+            !(
+              error instanceof AppError ||
+              error instanceof SyntaxError ||
+              error instanceof z.ZodError
+            )
+          ) {
+            closeForFailure(socket, error);
+            return;
+          }
           const code = error instanceof AppError ? error.code : 'VALIDATION_ERROR';
           if (code === 'UNAUTHENTICATED') {
             socket.close(4001, 'session revoked');

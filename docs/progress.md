@@ -1,5 +1,23 @@
 # 开发进度
 
+## 网络恢复第一批（2026-10-11）
+
+完成异常分类、对局在途读取合并、带抖动重连退避和通用 HTTP 期限。认证 WS 心跳、消息、presence 与广播中的临时服务异常使用 1013；明确会话失效仍使用 4001，确实失去成员/参与者访问权仍撤销订阅，握手阶段区分 401/503。保留每次权限检查与原动作事务/回执。新增真实 Fastify/WS 故障注入回归，确认临时数据库异常不再被当作登出。
+
+useMatchSession 按页面世代共享初始化、聚焦、订阅恢复、周期校验与音频基线的在途快照读取，同步协调也合并在途调用；完成后不缓存，卸载取消会话与快照读取。移除 WS 打开和正常 active 房间快照的重复拉取；保留已结束历史局，以及初始 HTTP 到订阅期间对局刚好结束时的立即补读。坏消息期间暂停操作，同步后恢复。房间/对局统一使用 network/scheduling 的指数退避及 50%–100% 抖动，上界 10/15 秒；只在订阅快照成功后重置，HTTP 成功不重置，对局已有 OPEN/CONNECTING 连接不重复创建。确认失效/撤销停止自动重连。
+
+client-sdk 默认 HTTP 与正文期限 30 秒，二进制上传及服务端校验 120 秒；已有正式动作/对局读取等 10 秒期限保留。me/room/matchSnapshot 支持页面 AbortSignal，默认期限与调用者取消监听在请求完成时释放。不自动重发写请求，超时继续保留原动作 requestId 并查询回执。协议、架构、可靠性及公开 SDK/实时指南已同步；无依赖、数据库迁移、规则或页面布局变更。
+
+实际验证：
+
+- `pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，包含 20 个 AST 边界目录、格式门禁、生产 bundle 和 API runtime/隔离 ZIP 检查。最终 Web 订阅竞态及坏消息保护修改后，定向 Web typecheck、受影响文件 ESLint/Prettier、Web build 与 production-bundle 检查再次通过；最后 API 异常分类补充后，API typecheck、受影响文件 ESLint/Prettier、API build 和生产 API runtime 检查再次通过。构建首次遇到沙箱 EPERM，沙箱外同命令通过。
+- `pnpm test tests/unit`：39 文件 / 198 项通过；随后补充上传期限与预取消用例，`pnpm test tests/unit/client-network.test.ts tests/unit/network-scheduling.test.ts` 9/9 通过。真实 WS 故障分类最初四项已包含在上述单元结果内；最后新增类型化 SERVICE_UNAVAILABLE 消息鉴权回归，先复现未关闭连接，修复后 `pnpm test tests/unit/realtime-recovery.test.ts` 5/5 通过。沙箱回环 EACCES 后在沙箱外通过。
+- 通过忽略目录 `.data/network-validation.mjs` 仅设置进程级独立 `boardgame_network_20261011`，执行原 `pnpm test:integration`：24 文件 / 163 项通过，无 skip，覆盖权限、去重、冲突、回滚、持久恢复、WS 和各游戏链路。首次 PostgreSQL 未启动报 ECONNREFUSED，执行原 `pnpm db:up` 后完成测试库准备、迁移、同步及资源校验；未覆盖 `.env` 或清理开发库。
+- 最后 API 分类补充后，独立库定向执行 `pnpm test tests/integration/websocket.test.ts tests/integration/stage2-flow.test.ts`：28/29 通过，管理员 CLI 初始化用例超过原 5 秒期限，单独保持原期限复跑仍超时。仅诊断命令使用 `-t administrator --testTimeout 15000` 后，该用例所有行为断言通过（约 7 秒，26 项被过滤）；未修改源码超时或断言，不将诊断结果算作原门禁通过。最终状态仍有此既有 CLI 用例耗时限制；涉及本批的 WS、会话撤销、房间及权限复验均通过。
+- 同一隔离库串行执行原 `pnpm test:e2e tests/e2e/network-recovery.spec.ts tests/e2e/color-match.spec.ts tests/e2e/room-leave.spec.ts --output .data/network-e2e`：首次 8/10 通过，无 skip；退避用例因冻结时钟后的 performance 资源记录为空而失败。改为观测实际 fetch 正文读取完成，保留延迟和连接次数断言，并补充坏消息暂停保护，最终 `pnpm test:e2e tests/e2e/network-recovery.spec.ts --output .data/network-e2e-final` 6/6 通过，无 skip。原 Color Match 双账户整局、漏消息/未知动作回执/乱序/断线/心跳/会话失效/刷新及房间退出的桌面/手机四项已在首轮通过，未重复不受影响的整局测试。实际查看本轮 1440px/390px 断线截图；新增网络用例使用受控 HTTP/WS，真实传输由本地 WS 单元、数据库集成及原整局 E2E 分别验证。
+
+未执行公网部署、真实公网弱网测试或性能压测，不宣称具体带宽/延迟提升。下一步为第二批社交概要批量/增量读取、心跳续期与广播成本优化；本批保留 15 秒权威校验及原安全边界。
+
 ## 核心结构复杂度整理（2026-10-05）
 
 按本轮结构审查逐项处理：API 的账户/房间/对局 HTTP 路由与 realtime 从 app.ts 分离，统一会话/Origin/CSRF 边界；真人和 AI 动作共用 applyLockedAction，保留各自身份、去重、过期判断及原 room → match 锁序、事务、提交后广播。对局 view 改为只读 REPEATABLE READ。新增真实并发交错测试：在首次 match 查询后更新控制者，修复前重现 controllerEpoch 不一致，修复后本人控制者与控制者列表来自同一快照。

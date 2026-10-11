@@ -392,16 +392,33 @@ export class ApiClient {
       headers.set('content-type', 'application/json');
     if (init?.method && init.method !== 'GET' && this.csrfToken)
       headers.set('x-csrf-token', this.csrfToken);
-    const response = await fetch(`${this.base}${path}`, {
-      credentials: 'same-origin',
-      ...init,
-      headers,
-    });
-    if (response.status === 204) return undefined as T;
-    const body = apiEnvelopeSchema.parse(await response.json());
-    if (!body.ok)
-      throw new ApiError(body.error.code, body.error.message, body.error.retryable, body.traceId);
-    return body.data as T;
+    const controller = new AbortController();
+    const callerSignal = init?.signal;
+    const cancel = () => controller.abort(callerSignal?.reason);
+    if (callerSignal?.aborted) cancel();
+    else callerSignal?.addEventListener('abort', cancel, { once: true });
+    // Binary uploads include server-side media/package validation and get a longer deadline.
+    const timeoutMs = init?.body != null && typeof init.body !== 'string' ? 120000 : 30000;
+    const deadline = setTimeout(
+      () => controller.abort(new DOMException('Request timed out', 'TimeoutError')),
+      timeoutMs,
+    );
+    try {
+      const response = await fetch(`${this.base}${path}`, {
+        credentials: 'same-origin',
+        ...init,
+        headers,
+        signal: controller.signal,
+      });
+      if (response.status === 204) return undefined as T;
+      const body = apiEnvelopeSchema.parse(await response.json());
+      if (!body.ok)
+        throw new ApiError(body.error.code, body.error.message, body.error.retryable, body.traceId);
+      return body.data as T;
+    } finally {
+      clearTimeout(deadline);
+      callerSignal?.removeEventListener('abort', cancel);
+    }
   }
   async login(username: string, password: string) {
     const input = loginInputSchema.parse({ username, password });
@@ -411,8 +428,10 @@ export class ApiClient {
     this.csrfToken = session.csrfToken;
     return session;
   }
-  async me() {
-    const session = sessionPublicSchema.parse(await this.request<unknown>('/auth/me'));
+  async me(signal?: AbortSignal) {
+    const session = sessionPublicSchema.parse(
+      await this.request<unknown>('/auth/me', signal ? { signal } : undefined),
+    );
     this.csrfToken = session.csrfToken;
     return session;
   }
@@ -472,9 +491,12 @@ export class ApiClient {
       ),
     );
   }
-  async room(id: string) {
+  async room(id: string, signal?: AbortSignal) {
     return roomSnapshotSchema.parse(
-      await this.request<unknown>(`/rooms/${encodeURIComponent(id)}`),
+      await this.request<unknown>(
+        `/rooms/${encodeURIComponent(id)}`,
+        signal ? { signal } : undefined,
+      ),
     );
   }
   async createRoom(body: RoomCreateInput) {
@@ -557,10 +579,12 @@ export class ApiClient {
   matchView(id: string) {
     return this.matchSnapshot(id);
   }
-  async matchSnapshot(id: string) {
+  async matchSnapshot(id: string, signal?: AbortSignal) {
     return matchViewSchema.parse(
       await this.request<unknown>(`/matches/${encodeURIComponent(id)}/view`, {
-        signal: AbortSignal.timeout(10000),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(10000)])
+          : AbortSignal.timeout(10000),
       }),
     );
   }

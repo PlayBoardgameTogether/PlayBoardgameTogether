@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import { api, navigate } from '../platform.js';
 import { mergeRoomSnapshot } from '../pages/roomSnapshot.js';
+import { reconnectBackoff } from '../network/scheduling.js';
 import { z } from 'zod';
 import { roomSnapshotSchema, type RoomSnapshot, type SessionPublic } from '@boardgame/protocol';
 const roomMessageSchema = z.discriminatedUnion('type', [
@@ -34,7 +35,9 @@ export function useRoomSession(id: string, onStarted: (id: string) => void, onCl
     let closed = false;
     let socket: WebSocket | undefined;
     let retry: number | undefined;
-    let delay = 1000;
+    const backoff = reconnectBackoff(10000);
+    const controller = new AbortController();
+    let connecting = false;
     let presenceSeq = -1;
     let latest: RoomSnapshot | undefined;
     function update(next: RoomSnapshot) {
@@ -53,9 +56,13 @@ export function useRoomSession(id: string, onStarted: (id: string) => void, onCl
       if (started) callbacks.current.onStarted(started);
     }
     async function connect() {
-      if (disposed || closed) return;
+      if (disposed || closed || connecting) return;
+      connecting = true;
       try {
-        const [account, snapshot] = await Promise.all([api.me(), api.room(id)]);
+        const [account, snapshot] = await Promise.all([
+          api.me(controller.signal),
+          api.room(id, controller.signal),
+        ]);
         if (disposed || closed) return;
         setMe(account);
         update(snapshot);
@@ -70,6 +77,8 @@ export function useRoomSession(id: string, onStarted: (id: string) => void, onCl
         setError(cause instanceof Error ? cause.message : '无法读取该房间。');
         schedule();
         return;
+      } finally {
+        connecting = false;
       }
       const url = new URL('/api/v1/ws/session', location.href);
       url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -90,7 +99,7 @@ export function useRoomSession(id: string, onStarted: (id: string) => void, onCl
               update(message.snapshot);
               setConnected(true);
               setError('');
-              delay = 1000;
+              backoff.reset();
               break;
             case 'room.presence':
               if (message.presenceSeq > presenceSeq) {
@@ -132,14 +141,14 @@ export function useRoomSession(id: string, onStarted: (id: string) => void, onCl
       if (disposed || closed) return;
       if (retry !== undefined) clearTimeout(retry);
       retry = window.setTimeout(() => {
-        delay = Math.min(delay * 2, 10000);
         void connect();
-      }, delay);
+      }, backoff.next());
     }
     void connect();
     return () => {
       active.current = false;
       disposed = true;
+      controller.abort();
       if (retry !== undefined) clearTimeout(retry);
       socket?.close();
     };
