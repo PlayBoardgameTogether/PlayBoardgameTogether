@@ -6,50 +6,53 @@
    ========================================================================== */
 
   :root {
-    /* Surface palette meeting exact macOS Vibrancy and contrast specifications */
-    --bg: #1c1c1e;
-    --panel: #2c2c2e;
-    --panel-raised: #3a3a3c;
-    --panel-hover: #3a3a3c;
+    /* PlayBoard surface palette - Warm wooden tabletop & sunny park base */
+    --bg: #141210;
+    --panel: #201c18;
+    --panel-raised: #2a241e;
+    --panel-hover: #352d26;
 
     /* Text & typography hierarchy */
-    --text: #f2f2f3;
-    --text-secondary: #cbd5e1;
-    --muted: #b8b8bd;
-    --muted-dark: #64748b;
+    --text: #faf5eb;
+    --text-secondary: #d4cbc0;
+    --muted: #9e9385;
+    --muted-dark: #6d6458;
 
     /* Modern borders */
-    --line: rgb(var(--neutral-rgb, 255 255 255) / 0.08);
-    --line-strong: rgb(var(--neutral-rgb, 255 255 255) / 0.16);
-    --control-line: #858589;
-    --control-line-focus: #0a84ff;
+    --line: rgba(255, 235, 210, 0.08);
+    --line-strong: rgba(255, 235, 210, 0.16);
+    --control-line: #52473b;
+    --control-line-focus: #f6c445;
 
-    /* Primary sapphire brand & accents */
-    --accent: #0a84ff;
-    --accent-hover: #60a5fa;
-
-    --accent-soft: rgba(59, 130, 246, 0.15);
-    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    --accent-glow: 0 0 20px -2px rgba(59, 130, 246, 0.45);
+    /* Primary sunny amber brand & accents */
+    --accent: #f6c445;
+    --accent-hover: #f8cd59;
+    --accent-active: #e5ac25;
+    --accent-soft: rgba(246, 196, 69, 0.16);
+    --accent-gradient: linear-gradient(135deg, #f8cd59 0%, #f5b738 100%);
+    --accent-glow: 0 0 16px -2px rgba(246, 196, 69, 0.45);
+    --accent-text: #1e1810;
 
     /* Semantic state colors */
-    --success: #10b981;
-    --success-soft: rgba(16, 185, 129, 0.15);
-    --warning: #f59e0b;
-    --warning-soft: rgba(245, 158, 11, 0.15);
-    --danger: #f43f5e;
-    --danger-soft: rgba(244, 63, 94, 0.15);
+    --color-join: #10b981;
+    --color-join-hover: #059669;
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.16);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
 
     /* Radii & Shadows */
     --radius-sm: 8px;
-    --radius: 14px;
+    --radius: 16px;
     --radius-lg: 20px;
-    --shadow-sm: 0 2px 8px -1px rgba(0, 0, 0, 0.3);
-    --shadow-card:
-      0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgb(var(--neutral-rgb, 255 255 255) / 0.07);
+    --radius-pill: 9999px;
+    --shadow-sm: 0 2px 8px -1px rgba(0, 0, 0, 0.4);
+    --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 235, 210, 0.07);
     --shadow-card-hover:
-      0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(59, 130, 246, 0.35),
-      0 0 24px -4px rgba(59, 130, 246, 0.25);
+      0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(246, 196, 69, 0.35),
+      0 0 24px -4px rgba(246, 196, 69, 0.25);
 
     /* Modern font stack */
     font-family:
@@ -226,15 +229,16 @@
   .brand-symbol {
     width: 38px;
     height: 38px;
-    filter: drop-shadow(0 4px 10px rgba(59, 130, 246, 0.4));
+    filter: drop-shadow(0 3px 8px rgba(246, 196, 69, 0.45));
   }
   .brand-symbol rect {
-    fill: #1e293b;
-    stroke: #3b82f6;
+    fill: #f6c445;
+    stroke: #e5ac25;
     stroke-width: 1.5;
+    rx: 8px;
   }
   .brand-symbol path {
-    fill: #60a5fa;
+    fill: #1e1810;
   }
   .brand .brand-name {
     font-size: 17px;
@@ -290,14 +294,15 @@
     transform: scale(1.1);
   }
   .site-header nav a[aria-current='page'] {
-    background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.06) 100%);
-    color: #ffffff;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    font-weight: 600;
-    box-shadow: 0 2px 12px -2px rgba(59, 130, 246, 0.3);
+    background: var(--accent);
+    color: var(--accent-text, #1e1810);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-pill, 9999px);
+    font-weight: 700;
+    box-shadow: 0 3px 12px -2px rgba(246, 196, 69, 0.45);
   }
   .site-header nav a[aria-current='page'] svg {
-    stroke: var(--accent-hover);
+    stroke: var(--accent-text, #1e1810);
     opacity: 1;
   }
 
@@ -445,17 +450,18 @@
     ):not(.az-table button),
   .button-link:not(.secondary) {
     background: var(--accent-gradient);
-    color: #ffffff;
-    border: 1px solid rgb(var(--neutral-rgb, 255 255 255) / 0.16);
-    box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.45);
+    color: var(--accent-text, #1e1810);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-pill, 9999px);
+    box-shadow: 0 4px 14px -2px rgba(246, 196, 69, 0.45);
   }
   button:not(.secondary):not(.danger):not(.room-row):not(.color-card):not(.garden-cell):not(
       .sp-table button
     ):not(.az-table button):hover:not(:disabled),
   .button-link:not(.secondary):hover {
-    filter: brightness(1.1);
+    filter: brightness(1.06);
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px -2px rgba(37, 99, 235, 0.6);
+    box-shadow: 0 6px 20px -2px rgba(246, 196, 69, 0.6);
   }
   button:not(.secondary):not(.danger):not(.room-row):not(.color-card):not(.garden-cell):not(
       .sp-table button
@@ -716,27 +722,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
+    padding: 16px 20px;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    margin: 8px 0;
-    transition:
-      background-color 200ms ease-out,
-      border-color 200ms ease-out;
-    box-shadow: none;
+    border-radius: 16px;
+    margin: 10px 0;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
     text-decoration: none;
   }
   .room-row:hover:not(:disabled) {
-    background: var(--panel-raised);
-    border-color: rgba(255, 255, 255, 0.16);
-    transform: none;
-    box-shadow: none;
+    background: var(--panel);
+    border-color: rgba(246, 196, 69, 0.45);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1.5px);
   }
   .room-row strong {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     color: var(--text);
   }
   .room-row small {

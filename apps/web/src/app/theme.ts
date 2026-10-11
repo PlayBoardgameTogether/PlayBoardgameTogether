@@ -8,9 +8,10 @@ export function parseThemePreference(value: unknown): ThemePreference {
 
 export function readThemePreference(): ThemePreference {
   try {
-    return parseThemePreference(localStorage.getItem(themeStorageKey));
+    const saved = localStorage.getItem(themeStorageKey);
+    return saved ? parseThemePreference(saved) : 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 
@@ -21,7 +22,7 @@ export function applyTheme(preference: ThemePreference): void {
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
   document.querySelector('meta[name="theme-color"]')?.setAttribute(
-    'content', theme === 'light' ? '#f4f6fa' : '#1c1c1e',
+    'content', theme === 'light' ? '#faf7f2' : '#141210',
   );
 }
 
