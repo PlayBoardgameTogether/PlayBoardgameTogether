@@ -2,12 +2,6 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import type { ModelEndpoint, ModelProfile } from '@boardgame/protocol';
 import { api, navigate } from '../platform.js';
-import {
-  PROVIDER_PRESETS,
-  detectProvider,
-  type PresetModel,
-  type ProviderPreset,
-} from './model-presets.js';
 type Draft = {
   name: string;
   endpointId: string;
@@ -50,8 +44,6 @@ export function useModelSettings() {
   // UI state
   const [showApiKey, setShowApiKey] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>('openai');
-  const [filterType, setFilterType] = useState<'all' | 'real' | 'mock' | 'uncredentialed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const nameInput = useRef<HTMLInputElement>(null);
   const formSectionRef = useRef<HTMLElement>(null);
@@ -94,9 +86,9 @@ export function useModelSettings() {
   function reset() {
     setEditing(null);
     setDraft(emptyDraft());
+    setShowAdvanced(false);
     setError('');
     setShowApiKey(false);
-    setSelectedPresetId('openai');
   }
   function edit(profile: ModelProfile) {
     setEditing(profile);
@@ -119,16 +111,9 @@ export function useModelSettings() {
     setNotice('');
     setDeleteId(null);
     setShowApiKey(false);
-    if (
-      profile.parameters?.temperature !== undefined ||
-      profile.parameters?.maxOutputTokens !== undefined
-    ) {
-      setShowAdvanced(true);
-    }
-    const detected = detectProvider(profile.endpoint_id, profile.base_url);
-    setSelectedPresetId(detected?.id ?? null);
+    setShowAdvanced(false);
     nameInput.current?.focus();
-    formSectionRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    formSectionRef.current?.scrollIntoView({ block: 'nearest' });
   }
   function clone(profile: ModelProfile) {
     setEditing(null);
@@ -151,35 +136,9 @@ export function useModelSettings() {
     setNotice(`已基于「${profile.name}」载入配置，请设置新名称并保存。`);
     setDeleteId(null);
     setShowApiKey(false);
-    if (
-      profile.parameters?.temperature !== undefined ||
-      profile.parameters?.maxOutputTokens !== undefined
-    ) {
-      setShowAdvanced(true);
-    }
-    const detected = detectProvider(profile.endpoint_id, profile.base_url);
-    setSelectedPresetId(detected?.id ?? null);
+    setShowAdvanced(false);
     nameInput.current?.focus();
-    formSectionRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  }
-  function applyPreset(preset: ProviderPreset) {
-    setSelectedPresetId(preset.id);
-    setDraft((current) => {
-      const isDefaultName =
-        !current.name ||
-        PROVIDER_PRESETS.some(
-          (p) => current.name.startsWith(p.shortName) || current.name.startsWith(p.name),
-        );
-      return {
-        ...current,
-        name: isDefaultName ? `${preset.shortName} 推荐配置` : current.name,
-        endpointId: preset.endpointId,
-        baseUrl: preset.baseUrl,
-        modelId: preset.defaultModelId,
-        temperature: preset.defaultTemperature,
-        maxOutputTokens: preset.defaultMaxTokens,
-      };
-    });
+    formSectionRef.current?.scrollIntoView({ block: 'nearest' });
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -209,13 +168,11 @@ export function useModelSettings() {
             expectedVersion: editing.profile_version,
           })
         : await api.createModelProfile(body);
-      const name = draft.name;
       reset();
       setResults((current) => ({
         ...current,
         [saved.id]: { success: '配置已保存，尚未测试连接' },
       }));
-      setNotice(`已保存「${name}」。可在下方测试连接或继续编辑。`);
       try {
         setProfiles(await api.modelProfiles());
       } catch {
@@ -267,15 +224,8 @@ export function useModelSettings() {
       setBusy('');
     }
   }
-  // Filter profiles based on search and pill
+  // Search saved profiles.
   const filteredProfiles = profiles.filter((profile) => {
-    if (filterType === 'real' && profile.endpoint_id === 'mock') return false;
-    if (filterType === 'mock' && profile.endpoint_id !== 'mock') return false;
-    if (
-      filterType === 'uncredentialed' &&
-      (profile.has_credential || profile.endpoint_id === 'mock')
-    )
-      return false;
     if (!searchQuery.trim()) return true;
     const query = searchQuery.trim().toLowerCase();
     return (
@@ -284,15 +234,6 @@ export function useModelSettings() {
       profile.base_url.toLowerCase().includes(query)
     );
   });
-  // Calculate metrics
-  const totalCount = profiles.length;
-  const readyCount = profiles.filter((p) => p.has_credential || p.endpoint_id === 'mock').length;
-  const realCount = profiles.filter((p) => p.endpoint_id !== 'mock').length;
-  const mockCount = profiles.filter((p) => p.endpoint_id === 'mock').length;
-  const currentPreset = selectedPresetId
-    ? PROVIDER_PRESETS.find((p) => p.id === selectedPresetId)
-    : null;
-  const availablePresetModels: PresetModel[] = currentPreset?.models ?? [];
   return {
     profiles,
     endpoints,
@@ -312,10 +253,6 @@ export function useModelSettings() {
     setShowApiKey,
     showAdvanced,
     setShowAdvanced,
-    selectedPresetId,
-    setSelectedPresetId,
-    filterType,
-    setFilterType,
     searchQuery,
     setSearchQuery,
     nameInput,
@@ -327,15 +264,8 @@ export function useModelSettings() {
     reset,
     edit,
     clone,
-    applyPreset,
     save,
     action,
     filteredProfiles,
-    totalCount,
-    readyCount,
-    realCount,
-    mockCount,
-    currentPreset,
-    availablePresetModels,
   };
 }

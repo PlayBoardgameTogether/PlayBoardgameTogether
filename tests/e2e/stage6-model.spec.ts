@@ -10,6 +10,9 @@ test('model settings save and test an explicitly labelled mock profile', async (
   await expect(page.getByRole('heading', { name: '游戏大厅' })).toBeVisible();
   await page.goto('/settings/models');
   await expect(page.getByRole('heading', { name: '模型配置' })).toBeVisible();
+  await expect(page.locator('.provider-presets-section, .model-metrics-grid')).toHaveCount(0);
+  await expect(page.getByText('高级设置', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('采样温度')).toBeHidden();
   await page.getByLabel('配置名称').fill('浏览器模拟配置');
   await page.getByLabel('服务端点').selectOption('mock');
   await page.getByLabel('模型标识').fill('mock-v1');
@@ -29,9 +32,15 @@ test('model settings save and test an explicitly labelled mock profile', async (
   await page.reload();
   const updated = page.locator('article').filter({ has: page.getByRole('heading', { name: '已修改模拟配置', exact: true }) });
   await expect(updated.getByText('mock-v1 · 版本 2')).toBeVisible();
+  if ((await updated.locator('details').getAttribute('open')) === null) {
+    await updated.getByText('更多', { exact: true }).click();
+  }
   await updated.getByRole('button', { name: '删除', exact: true }).click();
   await updated.getByRole('button', { name: '取消删除', exact: true }).click();
   await expect(updated).toBeVisible();
+  if ((await updated.locator('details').getAttribute('open')) === null) {
+    await updated.getByText('更多', { exact: true }).click();
+  }
   await updated.getByRole('button', { name: '删除', exact: true }).click();
   await updated.getByRole('button', { name: '确认删除', exact: true }).click();
   await expect(updated).toHaveCount(0);
@@ -40,7 +49,20 @@ test('model settings save and test an explicitly labelled mock profile', async (
   await page.getByLabel('模型标识').fill('mock-v1');
   await page.getByRole('button', { name: '保存配置', exact: true }).click();
   await expect(page.getByRole('heading', { name: '浏览器模拟配置', exact: true })).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('model-settings.png'), fullPage: true });
+  await page.getByText('高级设置', { exact: true }).focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByLabel('采样温度')).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(page.getByLabel('采样温度')).toBeHidden();
+  for (const width of (test.info().project.name === 'mobile' ? [390, 320] : [1440, 1280])) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(value => document.documentElement.dataset.theme = value, theme);
+      await page.waitForTimeout(250); // Allow theme color transitions to settle before visual inspection.
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+      await page.screenshot({ path: test.info().outputPath(`model-settings-${width}-${theme}.png`), fullPage: true });
+    }
+  }
   await page.getByRole('link', { name: '游戏大厅', exact: true }).click();
   await openRoomCreation(page);
   await page.getByLabel('游戏与版本').selectOption('color-match@1.0.0');
@@ -92,6 +114,7 @@ test('model settings preserve keys on edit, show actionable failures and allow c
   await page.getByRole('button', { name: '保存修改' }).click();
   await expect(card.getByText('updated-model · 版本 3')).toBeVisible();
   await expect(card.getByRole('alert')).toHaveCount(0);
+  await card.getByText('更多', { exact: true }).click();
   await card.getByRole('button', { name: '撤销凭证' }).click();
   await expect(card.getByText('未配置凭证，请编辑并填写 API key')).toBeVisible();
   await expect(card.getByRole('button', { name: '测试连接' })).toBeDisabled();
