@@ -421,29 +421,6 @@
     font-weight: 500;
   }
 
-  /* Hero stats capsules */
-  .hero-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 20px;
-  }
-  .hero-stat-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 16px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill, 9999px);
-    font-size: 13px;
-    box-shadow: var(--shadow-sm);
-    color: var(--text-secondary);
-  }
-  .hero-stat-pill strong {
-    color: var(--text);
-  }
-
   /* Prominent & Crisp Hero Headings */
   .page-heading h1,
   .hero h1,
