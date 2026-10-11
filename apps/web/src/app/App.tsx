@@ -38,7 +38,7 @@ function AppShell({ path }: { path: string }) {
     <a className="skip-link" href="#main-content">跳到主要内容</a>
     <header className="site-header" ref={header}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
-      <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">桌游平台<span>一起坐下来，玩一局</span></span></a>
+      <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">PlayBoard<span>顶尖桌游联盟</span></span></a>
       <nav aria-label="主导航">
         <span className="nav-caption">游戏空间</span>
         <a href="/" aria-current={path === '/' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg>游戏大厅</a>
@@ -58,7 +58,7 @@ function AppShell({ path }: { path: string }) {
           </Suspense>
         </PageBoundary>
       </main>
-      <footer>桌游平台 v{__APP_VERSION__} · 和朋友继续这场对局</footer>
+      <footer>PlayBoard v{__APP_VERSION__} · 顶尖桌游联盟</footer>
     </div>
     <ChatDock />
     <nav className="shell-help" aria-label="辅助导航"><a href="/developers" aria-current={route.developer ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" /></svg>开发者文档</a></nav>

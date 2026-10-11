@@ -9,7 +9,7 @@ export function HomePage() {
             className="eyebrow"
             style={{ color: 'var(--muted)', fontWeight: 700, letterSpacing: '0.04em' }}
           >
-            ⭐ PLAYBOARD · 桌游乐园
+            ⭐ PLAYBOARD · 顶尖桌游联盟
           </span>
           <h1 style={{ color: 'var(--text)', fontWeight: 900 }}>游戏大厅</h1>
           <p style={{ color: 'var(--text-secondary)', maxWidth: '640px' }}>
