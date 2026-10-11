@@ -1,5 +1,9 @@
 # 架构
 
+## 玩家徽章（2026-10-11）
+
+API `badges/BadgeService` 拥有收藏进度、精选展示与身份授予的持久操作；本人路由由 AccountRoutes 装配，管理员授予复用 AdminService 原有授权/回执事务。成长成就由固定参与者与已完成对局查询派生，不进入游戏规则或 matches 动作事务。protocol/badges 定义共享 DTO，client-sdk 提供校验后的五个方法；Web 的 badges 组件供独立徽章墙、本人资料和公共聊天名片复用。030 迁移保存精选、身份授予与本人回执。公开展示接口仅返回玩家主动选择的有效徽章，完整进度只供本人和管理员读取。详见 [玩家徽章](badges.md)。
+
 ## 网络开销第二批（2026-10-11）
 
 social overview 将邀请列表和公开投影合并为一条有界 SQL；条件同步根据当前授权快照计算账户绑定摘要，保持 REPEATABLE READ、no-store 与旧完整读取兼容，不维护服务器概要缓存。SocialProvider 只保留当前会话概要及版本。

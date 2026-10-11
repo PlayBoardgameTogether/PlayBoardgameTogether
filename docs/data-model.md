@@ -1,5 +1,9 @@
 # 数据模型
 
+## 玩家徽章（030，2026-10-11）
+
+`player_badge_settings` 保存每账户精选 JSON 数组（最多三项）及 revision；`player_badge_grants` 以账户/徽章为主键保存身份荣誉、授予时间及授予管理员；`player_badge_receipts` 保存本人展示命令输入/结果，按账户/requestId 唯一。管理员授予/收回继续使用 `admin_command_receipts`；收回同时清除精选。成就进度直接由固定 match participant 的已完成正式对局计算，没有新增胜负统计或修改旧对局。详见 [玩家徽章](badges.md)。
+
 ## 回放帧（2026-10-04）
 
 029 新增 match_replay_frames，(match_id, revision) 主键，保存服务端 State 和内部事件，与对局级联保留/删除。开局和状态更新触发器沿用原事务，真人与自动动作附加行动者和事件，失败整体回滚，重复不增加步骤。历史迁移只保存当前帧。详情和容量边界见 [回放存储](replays.md#存储与扩展)。

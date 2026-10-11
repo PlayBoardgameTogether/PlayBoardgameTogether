@@ -4,6 +4,7 @@ import { formatFriendId, type SocialPerson } from '@boardgame/protocol';
 import { api } from '../platform.js';
 import { DirectChat } from '../social/DirectChat.js';
 import { PersonAvatar } from '../social/PersonAvatar.js';
+import { BadgeShelf } from '../badges/BadgeShelf.js';
 import { useSocialContext } from '../social/SocialProvider.js';
 
 export function PublicChatPage({ compact = false, visible = true }: { compact?: boolean; visible?: boolean }) {
@@ -65,6 +66,7 @@ export function PublicChatPage({ compact = false, visible = true }: { compact?: 
       {selected && <>
         <div className="public-person-heading"><PersonAvatar person={selected} /><div><h2>{selected.displayName}</h2><p className="muted">{formatFriendId(selected.friendId)}</p></div>
           <button type="button" className="secondary" aria-label="关闭名片" onClick={() => setSelected(undefined)}>×</button></div>
+        <BadgeShelf key={selected.id} accountId={selected.id} />
         {notice && <p role="status">{notice}</p>}{error && <p className="error-notice" role="alert">{error}</p>}
         {own ? <a href="/profile">查看我的资料</a> : friend ? <a className="button-link" href={`/friends/chat/${selected.id}`} onClick={() => setSelected(undefined)}>私聊</a> :
           request ? <><p>{request.direction === 'incoming' ? '对方已向你发送好友申请' : '好友申请等待对方确认'}</p><a href="/friends/requests">查看好友申请</a></> :

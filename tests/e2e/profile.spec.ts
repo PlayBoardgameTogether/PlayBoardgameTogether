@@ -24,7 +24,8 @@ test('lobby owns creation and profile changes persist across reloads', async ({ 
   await page.getByText('账户操作', { exact: true }).click();
   await page.getByRole('link', { name: '编辑资料', exact: true }).click();
   await page.getByLabel('昵称', { exact: true }).fill('周末桌友');
-  await page.getByRole('radio', { name: '猫咪', exact: true }).check();
+  await page.locator('label.avatar-item').filter({ hasText: '猫咪' }).click();
+  await expect(page.getByRole('radio', { name: '猫咪', exact: true })).toBeChecked();
   await page.getByLabel('个人简介').fill('喜欢合作游戏，周末约一局。');
   await page.getByRole('button', { name: '保存资料' }).click();
   await expect(page.getByRole('status')).toHaveText('资料已保存');

@@ -5,6 +5,7 @@ import {
   adminAccountCommandSchema,
   adminGameCommandSchema,
   adminUpdateCommandSchema,
+  badgeGrantInputSchema,
 } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { AppError } from '../errors.js';
@@ -45,6 +46,16 @@ export function registerAdminRoutes(
   app.get('/api/v1/admin/overview', async (request) => {
     await administrator(request);
     return ok(request, await service.overview());
+  });
+  app.get('/api/v1/admin/accounts/:id/badges', async request => {
+    await administrator(request);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    return ok(request, await service.badges(id));
+  });
+  app.put('/api/v1/admin/accounts/:id/badges', async request => {
+    const current = await administrator(request, true);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    return ok(request, await service.setBadge(current, id, badgeGrantInputSchema.parse(request.body)));
   });
   app.get('/api/v1/admin/accounts', async (request) => {
     await administrator(request);

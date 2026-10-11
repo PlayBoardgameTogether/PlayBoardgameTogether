@@ -22,6 +22,8 @@ async function fixture(page: Page, loseConfirmation = false) {
     const ok = (data: unknown) => route.fulfill({ json: { ok: true, traceId: 'public-chat-ui', data } });
     if (path === '/auth/me') return ok(sessionFixture({ id: me, displayName: self.displayName }));
     if (path === '/social') return ok(overview);
+    if (path === '/social/updates') return ok({ changed: true, version: 'a'.repeat(64), overview });
+    if (path.startsWith('/profile/badges/')) return ok({ items: [] });
     if (path === '/social/requests') {
       application = route.request().postDataJSON();
       const pending = { person, status: 'pending' as const, direction: 'outgoing' as const, revision: 1, unread: 0 };
