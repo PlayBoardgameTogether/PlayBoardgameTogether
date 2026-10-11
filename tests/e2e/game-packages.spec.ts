@@ -82,5 +82,36 @@ test('administrator installs ZIP and players complete a real iframe game', async
     await expect(iframe.locator('#status')).toContainText('获胜');
     await page.screenshot({ path: info.outputPath('game-package-finished.png'), fullPage: true });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const matchId = new URL(page.url()).pathname.split('/').at(-1)!;
+    await page.goto(`/matches/${matchId}/replay`);
+    await expect(page.getByLabel('回放进度')).toHaveValue('0');
+    await expect(iframe.locator('#scores')).not.toContainText('正在同步');
+    const replayDesktop = page.frames().find(frame => frame.url().includes('/desktop'))!;
+    await replayDesktop.evaluate(() => { document.documentElement.dataset.replayInstance = 'original'; });
+    let desktopReads = 0;
+    let actions = 0;
+    page.on('request', request => {
+      if (request.url().endsWith('/desktop')) desktopReads++;
+      if (request.method() === 'POST' && request.url().includes(`/matches/${matchId}/actions`)) actions++;
+    });
+    const initialScores = (await iframe.locator('#scores').textContent())!;
+    await page.getByRole('button', { name: '下一步', exact: true }).click();
+    await expect(page.getByLabel('回放进度')).toHaveValue('1');
+    await expect(iframe.locator('#scores')).not.toHaveText(initialScores);
+    await expect(iframe.locator('html')).toHaveAttribute('data-replay-instance', 'original');
+    await page.getByRole('button', { name: '末尾', exact: true }).click();
+    await expect(iframe.locator('#status')).toContainText('获胜');
+    await page.getByRole('button', { name: '开头', exact: true }).click();
+    await expect(page.getByLabel('回放进度')).toHaveValue('0');
+    await expect(iframe.locator('#scores')).toHaveText(initialScores);
+    await page.getByLabel('播放速度').selectOption('4');
+    await page.getByRole('button', { name: '播放', exact: true }).click();
+    await expect(iframe.locator('#status')).toContainText('获胜', { timeout: 15000 });
+    await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
+    await expect(iframe.getByRole('button', { name: '抢分', exact: true })).toBeDisabled();
+    await expect(iframe.locator('html')).toHaveAttribute('data-replay-instance', 'original');
+    expect(desktopReads).toBe(0);
+    expect(actions).toBe(0);
+    await page.screenshot({ path: info.outputPath('game-package-replay.png'), fullPage: true });
   } finally { await otherContext.close(); }
 });

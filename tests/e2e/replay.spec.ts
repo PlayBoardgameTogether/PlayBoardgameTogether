@@ -37,7 +37,24 @@ test('original participants can seek and play a saved match without sending acti
     await expect(page.getByLabel('回放进度')).toHaveValue('0');
     await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
     for (const button of await page.getByRole('region', { name: '回放棋桌' }).getByRole('button').all()) await expect(button).toBeDisabled();
+    let releaseManualFrame!: () => void;
+    let manualFrameRequested!: () => void;
+    const heldManualFrame = new Promise<void>(resolve => { releaseManualFrame = resolve; });
+    const requestedManualFrame = new Promise<void>(resolve => { manualFrameRequested = resolve; });
+    await page.route(`**/matches/${id}/replay?revision=1`, async route => {
+      manualFrameRequested();
+      await heldManualFrame;
+      await route.continue();
+    }, { times: 1 });
     await page.getByRole('button', { name: '下一步', exact: true }).click();
+    await requestedManualFrame;
+    try {
+      await expect(page.getByRole('region', { name: '回放棋桌' })).toHaveAttribute('aria-busy', 'true');
+      await expect(page.getByLabel('回放进度')).toHaveValue('0');
+      await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
+      await expect(page.locator('.replay-progress [aria-live]')).toHaveText('初始局面');
+      await expect(page.getByText('正在读取回放…', { exact: true })).toHaveCount(0);
+    } finally { releaseManualFrame(); }
     await expect(page.getByLabel('回放进度')).toHaveValue('1');
     await expect(page.locator('.color-hand-cards button')).toHaveCount(6);
     await page.getByRole('button', { name: '末尾', exact: true }).click();

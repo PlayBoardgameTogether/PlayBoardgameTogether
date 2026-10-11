@@ -60,6 +60,7 @@ export const clientGames = [
 export function clientGame(id: string, version: string) {
   return clientGames.find(game => game.id === id && game.version === version) ?? {
     id, version, name: id, defaultOptions: {}, finishBehavior: 'stay',
+    preserveReplayDesktop: true,
     load: async (): Promise<GameBoard> => (view, busy, events, onAction) =>
       <PackageBoard id={id} version={version} view={view} busy={busy} events={events} onAction={onAction} />,
   };

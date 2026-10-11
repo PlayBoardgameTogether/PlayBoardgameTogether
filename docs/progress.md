@@ -1,5 +1,17 @@
 # 开发进度
 
+## 回放下一步加载闪屏修复（2026-10-11）
+
+代码定位到 ReplayPage 以 revision 作为整个棋桌错误边界的 key，每一步都会卸载在线包 iframe，重新请求桌面 HTML 并短暂展示游戏初始加载界面。registry 为在线包声明 preserveReplayDesktop，回放按对局及精确游戏版本保持该桌面实例，只通过原 sandbox 消息桥更新本人 View；内置桌面仍按步重置动画/选择状态。读取期间保留当前局面和步骤说明，移除控制栏瞬间出现的「读取中…」，aria-busy、只读 busy、空事件、动作丢弃及请求世代保护保持。
+
+扩展现有 replay E2E，以挂起下一步请求验证当前手牌/进度/说明保持；扩展真实在线 ZIP 完局流程，验证下一步、首尾跳转和自动播放保留同一 iframe 文档、更新分数且不重新请求 desktop、不发送动作。平台版本 0.2.3 → 0.2.4（兼容缺陷修复），README 同步。
+
+实际验证：`pnpm --config.verify-deps-before-run=false typecheck`、`pnpm --config.verify-deps-before-run=false lint` 通过，包含 20 个 AST 边界目录和格式检查；该 pnpm 参数避免沙箱缓存链接 EPERM，不关闭项目测试或类型保护。Web 定向 tsc、相关文件 ESLint 和全库 ESLint 也通过。`pnpm --config.verify-deps-before-run=false build` 最初被沙箱 dist 目录写入权限阻止，用户明确授权后在沙箱外完整通过，含生产 bundle、API runtime、隔离 ZIP 规则恢复及 AI worker 检查。
+
+浏览器验证：沙箱数据库连接 EACCES、审批超时后，用户明确授权并最终获准执行。`node .data/badges-validation.mjs test:e2e tests/e2e/game-packages.spec.ts tests/e2e/replay.spec.ts --output .data/replay-flicker-after` 经原准备脚本使用独立 boardgame_badges_20261011，原迁移/同步/资源准备正常；内置回放桌面/手机 2/2 通过，无 skip。在线包两项初次仅因新增分数断言混用 innerText 与 textContent 导致换行不一致失败，统一 textContent 后只重跑失败文件：`node .data/badges-validation.mjs test:e2e tests/e2e/game-packages.spec.ts --output .data/replay-flicker-verified` 桌面/手机 2/2 通过，无 skip。确认 iframe 原文档标记保持、desktop 请求数为零、步进分数变化、首尾恢复与自动播放终局、游戏操作禁用及动作请求数为零。末次测试文件 ESLint 通过。
+
+截图在上述忽略目录，内置回放覆盖 1440×900、1024×768、390×844（CSS 像素），在线包覆盖桌面/手机；实际查看内置手机与在线包桌面、手机最终截图。本轮未改变布局/主题，未额外执行全主题矩阵；真实物理手机与辅助技术未验证。没有服务端/协议/数据库变更，未运行全套集成或全量 E2E，未部署。下一步按原发布分支流程合入。
+
 ## 模型配置页精简（2026-10-11）
 
 移除快捷厂商模板、一键添加、模型推荐按钮、四块统计卡和筛选标签；保留搜索与紧凑配置列表。表单突出名称、端点、模型标识和密钥，高级参数/启用开关默认折叠；复制、撤销凭证与删除收进原生“更多”，保留删除确认。缩小标题，移除重复保存提示及装饰堆叠，沿用暖色 Token 和亮暗主题。认证、密钥保留/替换与调用接口不变。
