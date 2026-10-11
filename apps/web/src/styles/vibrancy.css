@@ -363,40 +363,9 @@
     white-space: pre-wrap;
     line-height: 1.7;
   }
-  .avatar-options {
-    min-width: 0;
-    margin: 0;
-    padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-  }
-  .avatar-options label {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
-    min-height: 44px;
-    cursor: pointer;
-  }
-  .avatar-options label span {
-    font-size: 24px;
-  }
-  .avatar-options input {
-    width: 18px;
-    min-height: 18px;
-    flex-shrink: 0;
-  }
   @media (max-width: 760px) {
     .profile-layout {
       grid-template-columns: 1fr;
-    }
-  }
-  @media (max-width: 400px) {
-    .avatar-options {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   button.secondary {

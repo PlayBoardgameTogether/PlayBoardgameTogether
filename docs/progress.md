@@ -1,5 +1,20 @@
 # 开发进度
 
+## 资料区整体布局与反馈检查（2026-10-11）
+
+接续标题修复，实际检查 `/profile`、`/profile/edit`、`/profile/identity`、`/profile/history`、`/profile/badges` 的亮暗主题。资料区使用局部标题尺寸变量，避免通用主题将其放大到 50px；手机标题和账户操作自然换行，编辑面板减少留白。清理 vibrancy/theme-refresh 中两套历史头像选择规则，统一由 profile.css 的单层网格拥有布局；保留原生 radio，补齐可见键盘焦点。长好友 ID 可换行，浅色 ID 使用正文对比度；名片头、保存区及历史行可换行，移除历史页重复分隔线。
+
+复制按钮、提示关闭与简介入口满足 44px 点击高度；资料复制失败显示错误，重复复制重置计时器且卸载清理。ID 管理区复制失败不再误显示为操作成功，提供重试复制，读取失败不同时显示正在加载。错误提示在 320px 下将重试按钮换到下一行，避免正文被挤成窄列；浅色资料区错误文字使用深红色。复用原接口、认证与保存链路，无服务端、协议和数据库变化。
+
+实际验证与证据：
+
+- 原 `test:e2e` 准备脚本使用独立 `boardgame_badges_20261011`。新增 `tests/e2e/profile-layout.spec.ts`，修复前桌面/手机均复现头像焦点轮廓缺失；修复后与原 `profile.spec.ts` 合跑 4/4 通过，原真实编辑/保存/重载、空历史检查保持。新用例真实保存 32 字昵称、300 字简介、36 字好友 ID，五个页面均检查亮/暗主题和无横向溢出，覆盖桌面 1440×900、笔记本 1280×900、手机宽度 390/320×900（CSS 像素）。检查账户菜单边界、键盘选择、复制被拒绝后的反馈、加载失败与重试恢复。非空历史使用明确标注的渲染响应夹具覆盖三个状态和长房间名，不计为真实对局完成证据。
+- `.data/profile-audit-before` 保存初始页面截图；`.data/profile-audit-repro` 保存缺失焦点的失败证据；`.data/profile-audit-after` 完成 4 项回归。后续反馈与历史夹具补齐后 `.data/profile-audit-final` 新用例 2/2 通过。实际查看最终桌面编辑、手机首页/编辑/ID/徽章、深色非空历史截图，发现错误提示仍挤窄后修正并加入正文宽度断言；最终定向 `node .data/badges-validation.mjs test:e2e tests/e2e/profile-layout.spec.ts --output .data/profile-audit-reviewed` 桌面/手机 2/2 通过，无 skip；已实际查看 320px 提示换行修复后的截图。所有产物均在忽略目录，未提交测试账户或截图。
+- `pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，包含 20 个 AST 边界目录、生产 bundle 与 API runtime 检查。末次交互调整后的 Web typecheck、指定 TS 文件 ESLint、`pnpm format:check` 通过；末次局部 CSS 修复后 Web build、production bundle、相关 Prettier/ESLint 检查通过。
+- `pnpm test:ui tests/e2e/platform-shell.spec.ts tests/e2e/navigation-menu.spec.ts --output .data/profile-audit-shell`：9 项通过，1 项按原条件跳过（窄屏用例在手机项目执行通过）。没有把该 skip 计为通过。
+
+未运行完整集成与全量 E2E；没有更改认证或持久化行为，没有部署线上。下一步按原发布流程合入发布分支；真实物理手机、软键盘和辅助技术仍未验证。
+
 ## 资料页标题灰条与竖排修复（2026-10-11）
 
 截图问题来自 `base.css` 的通用 `header` 规则：页面标题继承网站导航的固定高度、视口级左右留白及半透明白底。将桌面和手机两处规则限定为 `.site-header`，保留导航外观，避免影响资料标题、名片与编辑区标题。扩展已有真实资料 E2E，检查标题单行、位于标题区内、不遮挡名片、无横向溢出及透明背景。

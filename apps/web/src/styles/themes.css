@@ -476,11 +476,11 @@
     color: var(--text) !important;
     -webkit-text-fill-color: var(--text) !important;
     background: none !important;
-    font-size: clamp(34px, 4.5vw, 50px);
+    font-size: var(--page-heading-size, clamp(34px, 4.5vw, 50px));
     font-weight: 900;
     letter-spacing: -0.025em;
     line-height: 1.15;
-    margin-block: 8px 14px;
+    margin-block: var(--page-heading-margin, 8px 14px);
     text-shadow: none;
   }
 

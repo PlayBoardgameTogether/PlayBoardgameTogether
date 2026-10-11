@@ -32,6 +32,7 @@ export function ProfilePage({
   const active = useRef(false);
   const saveLock = useRef(false);
   const moreLock = useRef(false);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     let disposed = false;
@@ -60,6 +61,7 @@ export function ProfilePage({
     return () => {
       disposed = true;
       active.current = false;
+      clearTimeout(copyTimer.current);
     };
   }, [attempt, section]);
 
@@ -125,13 +127,18 @@ export function ProfilePage({
     }
   }
 
-  function handleCopyFriendId(id: string) {
-    void navigator.clipboard.writeText(id).then(() => {
+  async function handleCopyFriendId(id: string) {
+    try {
+      await navigator.clipboard.writeText(id);
+      if (!active.current) return;
+      clearTimeout(copyTimer.current);
       setCopiedId(true);
-      setTimeout(() => {
+      copyTimer.current = setTimeout(() => {
         if (active.current) setCopiedId(false);
       }, 2200);
-    });
+    } catch {
+      if (active.current) setError('复制失败，请选中好友 ID 手动复制。');
+    }
   }
 
   if (!profile || !draft || (section === 'history' && !history))
@@ -242,7 +249,7 @@ export function ProfilePage({
           </div>
           <button
             type="button"
-            className="toast-close"
+            className="secondary toast-close"
             onClick={() => setError('')}
             aria-label="关闭提示"
           >
@@ -275,7 +282,7 @@ export function ProfilePage({
           </div>
           <button
             type="button"
-            className="toast-close"
+            className="secondary toast-close"
             onClick={() => {
               setNotice('');
               setDismissedNotice(true);
@@ -323,8 +330,9 @@ export function ProfilePage({
                       <p className="muted friend-id">{friendId}</p>
                       <button
                         type="button"
-                        className="copy-id-chip-btn"
-                        onClick={() => handleCopyFriendId(friendId)}
+                        className="secondary copy-id-chip-btn"
+                        onClick={() => void handleCopyFriendId(friendId)}
+                        aria-label="复制好友 ID"
                         title="复制好友 ID"
                       >
                         {copiedId ? (
