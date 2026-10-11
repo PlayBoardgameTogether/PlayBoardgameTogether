@@ -105,6 +105,43 @@ export class RoomService {
     );
   }
 
+  async recordSubscriptionActivity(
+    subscriptions: Array<{ roomId: string; accountId: string; sessionId: string }>,
+  ) {
+    if (!subscriptions.length) return;
+    // One renewal per room, regardless of players or tabs. Recheck membership and
+    // active sessions inside SQL so a revocation during heartbeat cannot renew it.
+    await this.db.query(
+      `WITH eligible AS (
+        SELECT r.id FROM rooms r
+        WHERE r.status<>'closed'
+          AND r.last_activity_at < clock_timestamp() - interval '30 seconds'
+          AND EXISTS (
+            SELECT 1 FROM jsonb_to_recordset($1::jsonb)
+              AS v("roomId" uuid,"accountId" uuid,"sessionId" uuid)
+            JOIN room_members m ON m.room_id=v."roomId" AND m.account_id=v."accountId"
+            JOIN sessions s ON s.id=v."sessionId" AND s.account_id=v."accountId"
+            JOIN accounts a ON a.id=s.account_id
+            WHERE v."roomId"=r.id AND s.revoked_at IS NULL
+              AND s.expires_at>now() AND a.status='active'
+          )
+        ORDER BY r.id FOR UPDATE OF r SKIP LOCKED
+      )
+      UPDATE rooms r SET last_activity_at=clock_timestamp()
+      FROM eligible e WHERE r.id=e.id`,
+      [JSON.stringify(subscriptions)],
+    );
+  }
+
+  async assertAccess(roomId: string, accountId: string) {
+    const result = await this.db.query(
+      `SELECT 1 FROM rooms r JOIN room_members m ON m.room_id=r.id
+       WHERE r.id=$1 AND m.account_id=$2`,
+      [roomId, accountId],
+    );
+    if (!result.rowCount) throw new AppError('ROOM_NOT_FOUND', 'Room not found', 404);
+  }
+
   async closeIdleRooms() {
     const closed = await this.transaction(async (client) => {
       // The predicate is checked under the room lock, including concurrent renewals.

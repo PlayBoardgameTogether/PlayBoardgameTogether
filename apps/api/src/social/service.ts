@@ -3,7 +3,7 @@ import type pg from 'pg';
 import {
   socialPersonSchema, socialIdentitySchema, socialOverviewSchema, friendshipSchema,
   socialMessageSchema, messagePageSchema, friendInviteSchema, socialDoneSchema,
-  socialSettingsSchema, publicMessageSchema, publicMessagePageSchema, type SocialSettingsInput,
+  socialSettingsSchema, socialUpdatesSchema, publicMessageSchema, publicMessagePageSchema, type SocialSettingsInput,
   type FriendshipCommand, type FriendInviteCommand, type FriendRequestInput,
 } from '@boardgame/protocol';
 import type { AuthContext } from '../auth.js';
@@ -168,14 +168,20 @@ export class SocialService {
          WHERE (f.account_low=$1 OR f.account_high=$1) AND f.status IN ('pending','accepted') AND a.status='active'
          ORDER BY a.display_name,a.id`, [accountId],
       );
-      const invitations = await client.query<{ id: string }>(
-        'SELECT id FROM friend_room_invitations WHERE recipient_id=$1 OR sender_id=$1 ORDER BY created_at DESC,id DESC LIMIT 50', [accountId],
-      );
+      const invites = await this.invitations(client, accountId);
       const items = relations.rows.map(row => ({ person: socialPersonSchema.parse(row), status: row.status, revision: row.revision, direction: row.requested_by === accountId ? 'outgoing' : 'incoming', unread: row.unread }));
-      const invites = [];
-      for (const item of invitations.rows) invites.push(await this.invitation(client, item.id, accountId));
       return socialOverviewSchema.parse({ identity, friends: items.filter(item => item.status === 'accepted'), requests: items.filter(item => item.status === 'pending'), invitations: invites });
     });
+  }
+
+  async updates(current: AuthContext, previousVersion?: string) {
+    // Recompute from an authorized consistent snapshot, including time-based eligibility.
+    // This is a response validator, never an authorization token or a stored server cache.
+    const overview = await this.overview(current);
+    const version = fingerprint({ accountId: current.account.id, overview });
+    return socialUpdatesSchema.parse(version === previousVersion
+      ? { changed: false, version }
+      : { changed: true, version, overview });
   }
 
   lookup(current: AuthContext, friendId: string) {
@@ -319,7 +325,7 @@ export class SocialService {
     }));
   }
 
-  private async invitation(client: Client, id: string, accountId: string) {
+  private async invitations(client: Client, accountId: string, id?: string) {
     const result = await client.query<{
       id: string; roomId: string; roomName: string; hasPassword: boolean; status: string; expiresAt: Date;
       sender: PersonRow; recipient: PersonRow; available: boolean;
@@ -330,10 +336,15 @@ export class SocialService {
         AND EXISTS(SELECT 1 FROM room_members WHERE room_id=r.id AND account_id=s.id)
         AND EXISTS(SELECT 1 FROM friendships WHERE account_low=LEAST(s.id,t.id) AND account_high=GREATEST(s.id,t.id) AND status='accepted')) AS available
       FROM friend_room_invitations i JOIN rooms r ON r.id=i.room_id JOIN accounts s ON s.id=i.sender_id JOIN accounts t ON t.id=i.recipient_id
-      WHERE i.id=$1 AND (i.sender_id=$2 OR i.recipient_id=$2)`, [id, accountId]);
-    if (!result.rowCount) throw new AppError('INVITE_UNAVAILABLE', '邀请不可用', 404);
-    const row = result.rows[0]!;
-    return friendInviteSchema.parse({ ...row, expiresAt: row.expiresAt.toISOString() });
+      WHERE (i.sender_id=$1 OR i.recipient_id=$1) AND ($2::uuid IS NULL OR i.id=$2)
+      ORDER BY i.created_at DESC,i.id DESC LIMIT 50`, [accountId, id ?? null]);
+    return result.rows.map(row => friendInviteSchema.parse({ ...row, expiresAt: row.expiresAt.toISOString() }));
+  }
+
+  private async invitation(client: Client, id: string, accountId: string) {
+    const items = await this.invitations(client, accountId, id);
+    if (!items[0]) throw new AppError('INVITE_UNAVAILABLE', '邀请不可用', 404);
+    return items[0];
   }
 
   async invite(current: AuthContext, roomId: string, input: { requestId: string; friendAccountId: string; expectedRoomRevision: number }) {

@@ -31,11 +31,13 @@ export function SocialProvider({ children, enabled }: { children: ReactNode; ena
   const signedOut = useRef(false);
   const sequence = useRef(0);
   const request = useRef<AbortController | undefined>(undefined);
+  const overviewVersion = useRef<string | undefined>(undefined);
   const clearSession = useCallback(() => {
     sequence.current++;
     request.current?.abort();
     request.current = undefined;
     authenticated.current = false;
+    overviewVersion.current = undefined;
     signedOut.current = true;
     setData(undefined);
     setChatId(undefined);
@@ -50,15 +52,19 @@ export function SocialProvider({ children, enabled }: { children: ReactNode; ena
     const controller = new AbortController();
     request.current = controller;
     try {
-      if (!authenticated.current) await api.me();
+      if (!authenticated.current) await api.me(controller.signal);
       if (!active.current || sequence.current !== version) return;
-      const next = await api.social(controller.signal);
+      const update = await api.socialUpdates(overviewVersion.current, controller.signal);
       if (!active.current || sequence.current !== version) return;
       authenticated.current = true;
       setGuest(false);
-      setData(next);
       setError('');
-      setChatId(current => next.friends.some(item => item.person.id === current) ? current : undefined);
+      overviewVersion.current = update.version;
+      if (update.changed) {
+        const next = update.overview;
+        setData(next);
+        setChatId(current => next.friends.some(item => item.person.id === current) ? current : undefined);
+      }
     } catch (cause) {
       if (!active.current || sequence.current !== version || controller.signal.aborted) return;
       if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') clearSession();

@@ -82,3 +82,20 @@ it('preserves a signal already cancelled before reading a room', async () => {
   });
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it('validates compact social updates and passes the validator on the next poll', async () => {
+  const version = 'a'.repeat(64);
+  const fetch = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ ok: true, data: { changed: false, version }, traceId: 'test' }),
+    );
+  vi.stubGlobal('fetch', fetch);
+  const client = new ApiClient();
+  await expect(client.socialUpdates(version)).resolves.toEqual({ changed: false, version });
+  expect(fetch.mock.calls[0]![0]).toBe(`/api/v1/social/updates?version=${version}`);
+  fetch.mockResolvedValueOnce(
+    Response.json({ ok: true, data: { changed: true, version }, traceId: 'test' }),
+  );
+  await expect(client.socialUpdates(version)).rejects.toThrow();
+});

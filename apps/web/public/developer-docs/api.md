@@ -1,5 +1,7 @@
 # HTTP API
 
+认证 GET `/api/v1/social/updates?version=<64位小写十六进制摘要>` 支持概要条件同步，首次省略 version。变化返回 `{changed:true,version,overview}`，未变返回 `{changed:false,version}`；均通过标准 envelope 包装且 no-store。每次重新核验会话并计算当前账户概要，version 不授予权限。旧 GET `/api/v1/social` 始终完整返回。
+
 ## 对局回放（2026-10-04）
 
 GET `/matches/:id/replay?revision=N`：活跃 session 的原固定参与者只读已结束/中止对局的本人历史视角。省略 revision 取最早可用帧；严格拒绝 seatId 等额外 query，非负整数最大 2147483647。返回 matchId/gameId/gameVersion、finished/aborted status、firstRevision/lastRevision/revision、seatIndex、actorSeatId、recordedAt、公开 players、assetBinding、本人 view 及已投影 events。无 State/RNG/原动作/内部事件；no-store。非参与者 404，进行中 422，无对应步骤 400，精确版本/存档不可恢复 503。client-sdk `matchReplay` 解析共享 schema。

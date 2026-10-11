@@ -325,7 +325,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     clearInterval(idleTimer);
     await idleSweep;
     await scheduler.close();
-    closeRealtime();
+    await closeRealtime();
     auth.close();
     runner.close();
     await deps.db.end();

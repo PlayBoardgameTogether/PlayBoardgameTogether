@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   friendIdInputValueSchema, friendIdInputSchema, friendRequestInputSchema, friendshipCommandSchema,
   messageInputSchema, socialPageQuerySchema, readMessagesInputSchema,
-  friendInviteInputSchema, friendInviteCommandSchema, socialSettingsInputSchema,
+  friendInviteInputSchema, friendInviteCommandSchema, socialSettingsInputSchema, socialUpdatesQuerySchema,
 } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { AppError } from '../errors.js';
@@ -28,6 +28,11 @@ export function registerSocialRoutes(app: FastifyInstance, auth: AuthService, se
   app.get('/api/v1/admin/social-settings', async request => ok(request, await service.settings(await administrator(request))));
   app.put('/api/v1/admin/social-settings', async request => ok(request, await service.setSettings(await administrator(request, true), socialSettingsInputSchema.parse(request.body))));
   app.get('/api/v1/social', async request => ok(request, await service.overview(await current(request))));
+  app.get('/api/v1/social/updates', async request => {
+    const context = await current(request);
+    const { version } = socialUpdatesQuerySchema.parse(request.query);
+    return ok(request, await service.updates(context, version));
+  });
   app.get('/api/v1/social/public/messages', async request => {
     const context = await current(request);
     const query = socialPageQuerySchema.parse(request.query);

@@ -1,5 +1,9 @@
 # 客户端 SDK
 
+## 社交概要条件同步
+
+`api.socialUpdates(version?, signal?)` 首次省略 version，收到 `{changed:true,version,overview}` 后保留概要和版本；后续带入该版本，`changed:false` 时保留现有概要。每次仍认证并从数据库读取，响应 no-store；退出或更换身份应清除本地版本。不要把未变化结果当作认证缓存。旧 `api.social(signal?)` 继续返回完整概要。正文分页、发送与已读仍使用原接口。
+
 ## 超时与取消
 
 通用 HTTP 请求默认 30 秒，二进制上传（含服务端校验）为 120 秒，覆盖响应正文读取。既有对局、回放及消息发送等 10 秒期限保持，以较早的取消/超时为准。`api.me(signal?)`、`api.room(id, signal?)`、`api.matchSnapshot(id, signal?)` 接受页面 AbortSignal；正常完成或失败后会释放默认期限和调用者取消监听。

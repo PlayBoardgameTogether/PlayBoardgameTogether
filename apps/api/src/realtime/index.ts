@@ -84,6 +84,7 @@ export function registerRealtime(
     accountId: string;
     sessionId: string;
     rooms: Set<string>;
+    lastPong: number;
   };
   const connections = new Set<SessionConnection>();
   const closeForFailure = (socket: WebSocket, error: unknown) => {
@@ -148,6 +149,7 @@ export function registerRealtime(
     offlineTimers.set(key, timer);
   };
   const broadcast = async (roomId: string) => {
+    const snapshots = new Map<string, ReturnType<RoomService['snapshot']>>();
     for (const c of connections) {
       if (!c.rooms.has(roomId) || c.socket.readyState !== 1) continue;
       try {
@@ -156,7 +158,14 @@ export function registerRealtime(
           c.socket.close(4001, 'session revoked');
           continue;
         }
-        const snapshot = await rooms.snapshot(roomId, c.accountId);
+        await rooms.assertAccess(roomId, c.accountId);
+        let pending = snapshots.get(c.accountId);
+        if (!pending) {
+          pending = rooms.snapshot(roomId, c.accountId);
+          snapshots.set(c.accountId, pending);
+        }
+        const snapshot = await pending;
+        if (!c.rooms.has(roomId) || c.socket.readyState !== 1) continue;
         c.socket.send(
           JSON.stringify({
             protocolVersion: PROTOCOL_VERSION,
@@ -188,6 +197,7 @@ export function registerRealtime(
     revision: number,
     events: unknown[],
   ) => {
+    const snapshots = new Map<string, ReturnType<MatchService['liveView']>>();
     for (const c of connections) {
       if (!c.rooms.has(roomId) || c.socket.readyState !== 1) continue;
       try {
@@ -196,8 +206,14 @@ export function registerRealtime(
           c.socket.close(4001, 'session revoked');
           continue;
         }
-        await rooms.snapshot(roomId, c.accountId);
-        const snapshot = await matches.liveView(c.accountId, matchId, revision, events);
+        await rooms.assertAccess(roomId, c.accountId);
+        let pending = snapshots.get(c.accountId);
+        if (!pending) {
+          pending = matches.liveView(c.accountId, matchId, revision, events);
+          snapshots.set(c.accountId, pending);
+        }
+        const snapshot = await pending;
+        if (!c.rooms.has(roomId) || c.socket.readyState !== 1) continue;
         c.socket.send(
           JSON.stringify({
             protocolVersion: PROTOCOL_VERSION,
@@ -223,6 +239,58 @@ export function registerRealtime(
       if (c.accountId === accountId && (!sessionId || c.sessionId === sessionId))
         c.socket.close(4001, 'session revoked');
   });
+  let disposed = false;
+  let heartbeatJob: Promise<void> | undefined;
+  const heartbeat = setInterval(() => {
+    for (const c of connections) {
+      if (Date.now() - c.lastPong > 45000) c.socket.terminate();
+      else if (c.socket.readyState === 1) c.socket.ping();
+    }
+    if (disposed || heartbeatJob) return;
+    heartbeatJob = (async () => {
+      const eligible = await Promise.all(
+        [...connections]
+          .filter((c) => c.socket.readyState === 1)
+          .map(async (c) => {
+            try {
+              const latest = await auth.authenticate(c.request);
+              if (latest?.sessionId !== c.sessionId) {
+                c.socket.close(4001, 'session revoked');
+                return undefined;
+              }
+              return c;
+            } catch (error) {
+              closeForFailure(c.socket, error);
+              return undefined;
+            }
+          }),
+      );
+      if (disposed) return;
+      const live = eligible.filter(
+        (c): c is SessionConnection =>
+          c !== undefined &&
+          connections.has(c) &&
+          c.socket.readyState === 1 &&
+          Date.now() - c.lastPong <= 45000,
+      );
+      try {
+        await rooms.recordSubscriptionActivity(
+          live.flatMap((c) =>
+            [...c.rooms].map((roomId) => ({
+              roomId,
+              accountId: c.accountId,
+              sessionId: c.sessionId,
+            })),
+          ),
+        );
+      } catch (error) {
+        for (const c of live) closeForFailure(c.socket, error);
+      }
+    })().finally(() => {
+      heartbeatJob = undefined;
+    });
+  }, 5000);
+  heartbeat.unref();
   app.get(
     '/api/v1/ws/session',
     {
@@ -253,6 +321,7 @@ export function registerRealtime(
         accountId: current.account.id,
         sessionId: current.sessionId,
         rooms: new Set(),
+        lastPong: Date.now(),
       };
       connections.add(connection);
       socket.send(JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type: 'session.ready' }));
@@ -263,31 +332,9 @@ export function registerRealtime(
         Math.max(0, current.expiresAt.getTime() - Date.now()),
       );
       expiry.unref();
-      let lastPong = Date.now();
       socket.on('pong', () => {
-        lastPong = Date.now();
+        connection.lastPong = Date.now();
       });
-      const recheck = setInterval(() => {
-        if (Date.now() - lastPong > 45000) {
-          socket.terminate();
-          return;
-        }
-        if (socket.readyState !== 1) return;
-        socket.ping();
-        void auth
-          .authenticate(request)
-          .then(async (latest) => {
-            if (latest?.sessionId !== connection.sessionId) {
-              socket.close(4001, 'session revoked');
-              return;
-            }
-            if (socket.readyState !== 1) return;
-            for (const roomId of connection.rooms)
-              await rooms.recordActivity(roomId, connection.accountId);
-          })
-          .catch((error: unknown) => closeForFailure(socket, error));
-      }, 5000);
-      recheck.unref();
       socket.on('message', async (raw: Buffer) => {
         try {
           if (Date.now() - windowStarted >= 1000) {
@@ -390,17 +437,19 @@ export function registerRealtime(
       });
       socket.on('close', () => {
         clearTimeout(expiry);
-        clearInterval(recheck);
         connections.delete(connection);
         for (const roomId of connection.rooms) markOffline(roomId, connection.accountId);
       });
     },
   );
-  return () => {
+  return async () => {
+    disposed = true;
+    clearInterval(heartbeat);
     unsubscribeRoom();
     unsubscribeMatch();
     unsubscribeRevoked();
     for (const timer of offlineTimers.values()) clearTimeout(timer);
     for (const c of connections) c.socket.terminate();
+    await heartbeatJob;
   };
 }

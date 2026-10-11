@@ -58,7 +58,7 @@ async function mockSession(page: Page) {
   await page.route('**/api/v1/auth/me', (route) =>
     route.fulfill({ json: envelope(sessionFixture()) }),
   );
-  await page.route('**/api/v1/social', (route) =>
+  await page.route('**/api/v1/social/updates*', (route) =>
     route.fulfill({
       status: 503,
       json: {

@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import { createDatabase, type Database } from '../../apps/api/src/db/index.js';
 import { createRegistry } from '../../apps/api/src/registry/index.js';
-import { createAccount } from '../../apps/api/src/auth.js';
+import { createAccount, type AuthContext } from '../../apps/api/src/auth.js';
 import { socialOverviewSchema, friendshipSchema, friendInviteSchema, messagePageSchema, socialMessageSchema,
-  publicMessageSchema, publicMessagePageSchema } from '../../packages/protocol/src/index.js';
+  publicMessageSchema, publicMessagePageSchema, socialUpdatesSchema } from '../../packages/protocol/src/index.js';
+import { SocialService } from '../../apps/api/src/social/service.js';
+import { RoomService } from '../../apps/api/src/rooms.js';
+import { normalizeConfig } from '../../apps/api/src/config.js';
 
 process.loadEnvFile('.env');
 const url = process.env.TEST_DATABASE_URL;
@@ -163,6 +166,122 @@ describe('friends, private messages and room invitations', () => {
     expect(response.statusCode).toBe(200);
     return { input, value: friendInviteSchema.parse(response.json().data) };
   }
+  it('returns compact unchanged overviews but detects unread, profile, expiry and permission changes', async () => {
+    await friend();
+    const table = await room();
+    const invitation = await invite(table.id, table.revision);
+    const updates = async (version?: string, headers = b) => {
+      const response = await read(`/api/v1/social/updates${version ? `?version=${version}` : ''}`, headers);
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['cache-control']).toBe('no-store');
+      return socialUpdatesSchema.parse(response.json().data);
+    };
+    const first = await updates();
+    expect(first).toMatchObject({ changed: true, overview: await overview(b) });
+    expect(await updates(first.version)).toEqual({ changed: false, version: first.version });
+    expect((await updates(first.version, c)).changed).toBe(true);
+    await post(`/api/v1/social/friends/${bid}/messages`, { requestId: randomUUID(), text: '新的未读' });
+    const unread = await updates(first.version);
+    expect(unread).toMatchObject({ changed: true, overview: { friends: [{ unread: 1 }] } });
+    await db.query("UPDATE accounts SET display_name='新昵称',avatar='cat' WHERE id=$1", [aid]);
+    const profile = await updates(unread.version);
+    expect(profile).toMatchObject({ changed: true, overview: { friends: [{ person: { displayName: '新昵称', avatar: 'cat' } }] } });
+    await db.query("UPDATE friend_room_invitations SET expires_at=now()-interval '1 second' WHERE id=$1", [invitation.value.id]);
+    const expired = await updates(profile.version);
+    expect(expired).toMatchObject({ changed: true, overview: { invitations: [{ available: false }] } });
+    await db.query("UPDATE friend_room_invitations SET expires_at=now()+interval '1 second' WHERE id=$1", [invitation.value.id]);
+    const available = await updates(expired.version);
+    expect(available).toMatchObject({ changed: true, overview: { invitations: [{ available: true }] } });
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    const timeOnly = await updates(available.version);
+    expect(timeOnly).toMatchObject({ changed: true, overview: { invitations: [{ available: false }] } });
+    await db.query("UPDATE friendships SET status='removed'");
+    expect(await updates(expired.version)).toMatchObject({ changed: true, overview: { friends: [] } });
+    expect((await read('/api/v1/social/updates?version=invalid')).statusCode).toBe(400);
+    expect((await read('/api/v1/social/updates?unexpected=1')).statusCode).toBe(400);
+    await db.query('UPDATE sessions SET revoked_at=now() WHERE account_id=$1', [bid]);
+    expect((await read(`/api/v1/social/updates?version=${expired.version}`, b)).statusCode).toBe(401);
+  });
+
+  it('reads fifty invitations with a fixed query budget and preserves order, visibility and availability', async () => {
+    await friend();
+    const table = await room();
+    const ids = Array.from({ length: 51 }, () => randomUUID());
+    for (const [index, id] of ids.entries()) {
+      await db.query(`INSERT INTO friend_room_invitations(id,room_id,sender_id,recipient_id,created_at)
+        VALUES($1,$2,$3,$4,now()-$5*interval '1 second')`, [id, table.id, aid, bid, index]);
+    }
+    const session = (await db.query('SELECT * FROM sessions WHERE account_id=$1', [bid])).rows[0];
+    const context: AuthContext = {
+      account: { id: bid, username: 'social_b', displayName: '桌友 B', status: 'active', role: 'user' },
+      sessionId: session.id,
+      tokenHash: session.token_hash,
+      csrfHash: session.csrf_token_hash,
+      expiresAt: session.expires_at,
+    };
+    // Use the real transaction/client and observe SQL work, not a mocked result.
+    const client = await db.connect();
+    const query = vi.spyOn(client, 'query');
+    const connect = vi.spyOn(db, 'connect').mockResolvedValue(client);
+    const config = normalizeConfig({ NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: url!, WEB_ORIGIN: origin, ENABLE_DEV_LAB: false, LOG_LEVEL: 'silent' });
+    const service = new SocialService(db, new RoomService(db, createRegistry(false), config));
+    try {
+      const result = await service.overview(context);
+      expect(result.invitations.map(item => item.id)).toEqual(ids.slice(0, 50));
+      expect(result.invitations.every(item => item.available && item.sender.id === aid && item.recipient.id === bid)).toBe(true);
+      expect(query.mock.calls.length).toBeLessThanOrEqual(8);
+    } finally {
+      query.mockRestore();
+      connect.mockRestore();
+    }
+    expect((await overview(c)).invitations).toEqual([]);
+  });
+
+  it('batch-renews only rooms with current members and active unrevoked subscriptions', async () => {
+    const table = await room();
+    const service = new RoomService(db, createRegistry(false), normalizeConfig({
+      NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: url!, WEB_ORIGIN: origin, ENABLE_DEV_LAB: false, LOG_LEVEL: 'silent',
+    }));
+    const sessionId = (await db.query('SELECT id FROM sessions WHERE account_id=$1', [aid])).rows[0].id;
+    const subscription = { roomId: table.id, accountId: aid, sessionId };
+    const expire = () => db.query("UPDATE rooms SET last_activity_at=now()-interval '31 minutes' WHERE id=$1", [table.id]);
+    const renewed = async () => (await db.query("SELECT last_activity_at>now()-interval '1 minute' AS renewed FROM rooms WHERE id=$1", [table.id])).rows[0].renewed;
+    await expire();
+    await service.recordSubscriptionActivity([{ ...subscription, accountId: cid }]);
+    expect(await renewed()).toBe(false);
+    await expect(service.assertAccess(table.id, aid)).resolves.toBeUndefined();
+    const locked = await db.connect();
+    try {
+      await locked.query('BEGIN');
+      await locked.query('SELECT id FROM rooms WHERE id=$1 FOR UPDATE', [table.id]);
+      await service.recordSubscriptionActivity([subscription]);
+      expect(await renewed()).toBe(false);
+    } finally {
+      await locked.query('ROLLBACK');
+      locked.release();
+    }
+    const before = (await db.query('SELECT room_revision FROM rooms WHERE id=$1', [table.id])).rows[0].room_revision;
+    await service.recordSubscriptionActivity([subscription, subscription]);
+    expect(await renewed()).toBe(true);
+    expect((await db.query('SELECT room_revision FROM rooms WHERE id=$1', [table.id])).rows[0].room_revision).toBe(before);
+    await expire();
+    await db.query('UPDATE sessions SET revoked_at=now() WHERE id=$1', [sessionId]);
+    await service.recordSubscriptionActivity([subscription]);
+    expect(await renewed()).toBe(false);
+    await db.query("UPDATE sessions SET revoked_at=NULL,expires_at=now()-interval '1 second' WHERE id=$1", [sessionId]);
+    await service.recordSubscriptionActivity([subscription]);
+    expect(await renewed()).toBe(false);
+    await db.query("UPDATE sessions SET expires_at=now()+interval '1 day' WHERE id=$1", [sessionId]);
+    await db.query("UPDATE accounts SET status='disabled' WHERE id=$1", [aid]);
+    await service.recordSubscriptionActivity([subscription]);
+    expect(await renewed()).toBe(false);
+    await db.query("UPDATE accounts SET status='active' WHERE id=$1", [aid]);
+    await db.query('UPDATE seats SET owner_account_id=NULL,ready=false WHERE room_id=$1', [table.id]);
+    await db.query('DELETE FROM room_members WHERE room_id=$1 AND account_id=$2', [table.id, aid]);
+    await expect(service.assertAccess(table.id, aid)).rejects.toMatchObject({ code: 'ROOM_NOT_FOUND' });
+    await service.recordSubscriptionActivity([subscription]);
+    expect(await renewed()).toBe(false);
+  });
   it('requires session, exact Origin, CSRF and strict inputs; exact search excludes secrets', async () => {
     expect((await app.inject({ url: '/api/v1/social' })).statusCode).toBe(401);
     const payload = { requestId: randomUUID(), friendId: 'social_b' };

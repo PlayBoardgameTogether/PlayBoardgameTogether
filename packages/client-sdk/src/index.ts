@@ -76,6 +76,8 @@ import {
 } from '@boardgame/protocol';
 import {
   socialOverviewSchema,
+  socialUpdatesSchema,
+  socialUpdatesQuerySchema,
   socialPersonSchema,
   socialIdentitySchema,
   friendIdInputSchema,
@@ -182,6 +184,15 @@ export class ApiClient {
   async social(signal?: AbortSignal) {
     return socialOverviewSchema.parse(
       await this.request<unknown>('/social', signal ? { signal } : undefined),
+    );
+  }
+  async socialUpdates(version?: string, signal?: AbortSignal) {
+    const query = socialUpdatesQuerySchema.parse({ version });
+    return socialUpdatesSchema.parse(
+      await this.request<unknown>(
+        `/social/updates${query.version ? `?version=${query.version}` : ''}`,
+        signal ? { signal } : undefined,
+      ),
     );
   }
   async searchFriend(friendId: string) {

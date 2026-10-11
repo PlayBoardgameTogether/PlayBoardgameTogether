@@ -1,5 +1,9 @@
 # 协议
 
+## 社交条件同步（2026-10-11）
+
+新增认证 GET `/api/v1/social/updates`，严格 query 可选 `version` 为 64 位小写十六进制摘要。返回判别式 `socialUpdatesSchema`：变化时 `{changed:true,version,overview:SocialOverview}`，未变时 `{changed:false,version}`。每次认证并读取当前账户一致性快照，摘要包含账户身份及所有概要字段和时间相关资格；不同账户的摘要不能抑制首次完整返回。继续 no-store，不采用 HTTP 304 或浏览器缓存。旧 `/social` 返回保持。SDK 新增 `socialUpdates(version?,signal?)`；客户端登出清除版本，仅在收到 changed=true 时替换概要。
+
 ## 网络恢复与请求期限（2026-10-11）
 
 认证 WS 仅在确认 session 过期、撤销或账户失效时使用关闭码 4001。鉴权、订阅和广播中的临时服务异常使用 1013，客户端重新鉴权、订阅及读取本人快照；不发送 subscription.revoked，也不因此清除待确认动作。订阅权限确实丢失仍发送 subscription.revoked。握手阶段明确未认证返回 401，临时服务异常返回 503，两者均 no-store。Origin 和各次投递权限检查保留。
