@@ -312,20 +312,37 @@
     width: 100px;
   }
   .color-card small {
-    font-size: 11px;
-    background: var(--bg);
-    color: #fff;
-    padding: 3px 6px;
-    border-radius: 4px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
   }
   .color-hand-cards .color-card--legal {
     outline-width: 2px;
   }
+  .color-hand-cards .color-card--legal small {
+    background: #dcfce7;
+    color: #14532d;
+    border-color: #22c55e;
+  }
   .color-hand-cards .color-card--selected {
     outline-color: var(--warning);
   }
+  .color-hand-cards .color-card--selected small {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+  }
   .color-hand-cards .color-card:disabled {
-    opacity: 0.8;
+    opacity: 0.65;
+  }
+  .color-hand-cards .color-card:disabled small {
+    background: #e2e8f0;
+    color: #475569;
+    border-color: #cbd5e1;
   }
   .game-action-bar {
     display: flex;

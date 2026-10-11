@@ -148,8 +148,8 @@
     border: 1px solid var(--line);
   }
   .developer-toc a:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
+    background: var(--accent-soft);
+    color: var(--text);
   }
   .developer-code {
     margin: 24px 0;
@@ -203,7 +203,7 @@
   .developer-table th {
     background: rgba(255, 255, 255, 0.05);
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text);
   }
 
   @media (max-width: 900px) {

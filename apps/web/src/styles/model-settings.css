@@ -192,7 +192,8 @@
   .model-filter-pill.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--accent-text, #1e1810);
+    font-weight: 700;
   }
 
   /* Profile Card Styling */
@@ -601,7 +602,8 @@
   .model-suggest-chip.is-active {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--accent-text, #1e1810);
+    font-weight: 700;
   }
 
   /* API Key Input Container */

@@ -88,7 +88,7 @@
     white-space: normal !important;
     z-index: 9999 !important;
     background: var(--accent) !important;
-    color: #ffffff !important;
+    color: var(--accent-text, #1e1810) !important;
     border-radius: 8px !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
     outline: 2px solid #ffffff !important;
@@ -287,7 +287,7 @@
   }
   .site-header nav > a:hover {
     background: rgb(var(--neutral-rgb, 255 255 255) / 0.06);
-    color: #ffffff;
+    color: var(--text);
     transform: translateX(2px);
   }
   .site-header nav > a:hover svg {
@@ -484,7 +484,7 @@
   .button-link.secondary:hover {
     background: rgb(var(--neutral-rgb, 255 255 255) / 0.12);
     border-color: rgb(var(--neutral-rgb, 255 255 255) / 0.22);
-    color: #ffffff;
+    color: var(--text);
     transform: translateY(-1px);
   }
   button.secondary:active:not(:disabled),
@@ -495,14 +495,16 @@
   /* Danger buttons */
   button.danger {
     background: rgba(244, 63, 94, 0.14);
-    color: #fda4af;
+    color: var(--danger, #dc2626);
     border: 1px solid rgba(244, 63, 94, 0.3);
     box-shadow: none;
+    font-weight: 700;
   }
   button.danger:hover:not(:disabled) {
-    background: rgba(244, 63, 94, 0.24);
-    border-color: rgba(244, 63, 94, 0.5);
+    background: #dc2626;
+    border-color: #b91c1c;
     color: #ffffff;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
     transform: translateY(-1px);
   }
 
@@ -1457,10 +1459,10 @@
   }
   .guest-welcome-banner .login-link {
     background: var(--accent-gradient);
-    color: #ffffff;
+    color: var(--accent-text, #1e1810);
     padding: 12px 24px;
     border-radius: 12px;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
     transition:

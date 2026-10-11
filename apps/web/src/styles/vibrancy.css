@@ -316,7 +316,7 @@
     border: 1px solid var(--accent);
     border-radius: 8px;
     background: var(--accent);
-    color: white;
+    color: var(--accent-text, #1e1810);
     text-decoration: none;
     text-align: center;
     line-height: 1.4;

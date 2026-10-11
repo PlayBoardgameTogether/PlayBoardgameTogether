@@ -63,15 +63,15 @@
   .tutorial-guide h2 {
     font-size: 22px;
     margin-bottom: 8px;
-    color: #ffffff;
+    color: var(--text);
   }
   .tutorial-feedback {
     min-height: 1.5em;
     padding: 10px 14px;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    background: var(--accent-soft);
+    border: 1px solid var(--line-strong);
     border-radius: 8px;
-    color: #93c5fd;
+    color: var(--text);
     font-size: 13.5px;
     margin-block: 14px 18px;
   }
