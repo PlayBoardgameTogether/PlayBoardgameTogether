@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Badge } from '@boardgame/protocol';
 import { api } from '../platform.js';
+import { BadgeArtwork } from './BadgeArtwork.js';
 import '../styles/badges.css';
 
 export function BadgeShelf({ accountId, own = false }: { accountId: string; own?: boolean }) {
@@ -28,7 +29,7 @@ export function BadgeShelf({ accountId, own = false }: { accountId: string; own?
           <ul className="badge-pins">
             {items.map((item) => (
               <li key={item.id} title={item.description}>
-                <span aria-hidden="true">{item.symbol}</span> {item.name}
+                <BadgeArtwork badge={item} compact />
               </li>
             ))}
           </ul>

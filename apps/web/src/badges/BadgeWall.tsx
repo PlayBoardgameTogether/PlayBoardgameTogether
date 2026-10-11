@@ -9,6 +9,7 @@ import type {
 } from '@boardgame/protocol';
 import { PageFeedback } from '@boardgame/ui';
 import { api } from '../platform.js';
+import { BadgeArtwork } from './BadgeArtwork.js';
 import '../styles/badges.css';
 
 export function BadgeWall({ accountId }: { accountId?: string }) {
@@ -165,9 +166,7 @@ export function BadgeWall({ accountId }: { accountId?: string }) {
             aria-label={item.name}
             data-kind={item.kind}
           >
-            <div className="badge-medal" aria-hidden="true">
-              <span>{item.symbol}</span>
-            </div>
+            <BadgeArtwork badge={item} />
             <div className="badge-card-body">
               <small>
                 {item.kind === 'honor' ? '身份荣誉' : '成长成就'} ·{' '}

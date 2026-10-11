@@ -1,5 +1,15 @@
 # 开发进度
 
+## 徽章可选 3D 预览（2026-10-11）
+
+Web 使用 `public/badges/manifest.json` 按徽章 ID 独立配置封面与 GLB 模型。清单默认为空，不用示例素材冒充正式徽章；未配置的徽章沿用原符号。徽章墙仅对有模型的徽章显示「查看 3D」，资料/聊天名片对应徽章可打开同一原生模态预览。封面可单独配置，错误回退符号；清单有界 ID/同源静态路径校验，错误回退空清单。`@google/model-viewer@4.2.0` 只在打开后动态加载，GLB 支持拖动、方向键与缩放，不自动旋转/播放；有 30 秒超时、错误提示和重试，关闭清理监听/超时并恢复触发焦点。修复本轮回归发现的 StrictMode close 事件与焦点恢复问题，以及依赖缓存失败 URL 导致重试无效的问题。完整配置与 Blockbench 交付格式见 [徽章](badges.md)。没有 API、数据库、身份/授予/展示资格变更，没有上传入口。平台版本 0.2.4 → 0.3.0（向后兼容的可选交互功能），README 同步。
+
+实际验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；最终 Web 定向 typecheck 与 ESLint 通过。`pnpm --config.verify-deps-before-run=false exec vitest run tests/unit/badge-media.test.ts` 6/6 通过（可选配置与路径/格式限制）。`pnpm --config.verify-deps-before-run=false lint` 最初仅因 38 个既有工作区文件 CRLF 不符合 Prettier 默认 LF 而失败；按原 format:check 范围仅规范化工作区换行，确认这些文件没有产生 Git 内容差异，随后完整 lint 通过（20 个 AST 边界目录、全库 ESLint、格式检查），未修改 lint 配置或跳过检查。
+
+`node .data/badges-validation.mjs --config.verify-deps-before-run=false test:e2e tests/e2e/badges.spec.ts --output .data/badge-3d-pass` 经原准备脚本确认独立 `boardgame_badges_20261011` 测试库，桌面/手机 2/2 通过，无 skip。扩展原真实登录/保存/授予/公共名片流程：仅 welcome 通过路由提供最小自包含测试 GLB，验证未点击不请求模型、无配置无入口、网络失败后重试真实渲染、Escape/关闭返回触发焦点、移除预览及本人名片再次打开。测试模型只存在于测试响应，不随产品交付。亮色模型弹窗截图覆盖 1440×900、1280×900、390×844 CSS 像素，实际查看笔记本和手机模型渲染截图；原徽章亮暗主题/减少动态效果、管理员及公共名片流程同时通过。暗色名片模型由自动流程打开并渲染，未额外保存暗色模型弹窗截图；未验证真实物理手机、辅助技术及用户尚未提供的 Blockbench 模型。生产构建包含独立约 292 KB gzip 模型查看器 chunk，仅按需下载。
+
+最终 `pnpm --config.verify-deps-before-run=false build` 在沙箱 dist 目录 EPERM 后提权完成原完整构建及生产 bundle/API runtime/隔离 ZIP 与 AI worker 检查。未运行不受本轮影响的全量单元、集成及全量 E2E，未部署。下一步将真实自包含 GLB 与透明封面按清单逐枚接入，再通过既有发布流程上线。
+
 ## 回放下一步加载闪屏修复（2026-10-11）
 
 代码定位到 ReplayPage 以 revision 作为整个棋桌错误边界的 key，每一步都会卸载在线包 iframe，重新请求桌面 HTML 并短暂展示游戏初始加载界面。registry 为在线包声明 preserveReplayDesktop，回放按对局及精确游戏版本保持该桌面实例，只通过原 sandbox 消息桥更新本人 View；内置桌面仍按步重置动画/选择状态。读取期间保留当前局面和步骤说明，移除控制栏瞬间出现的「读取中…」，aria-busy、只读 busy、空事件、动作丢弃及请求世代保护保持。

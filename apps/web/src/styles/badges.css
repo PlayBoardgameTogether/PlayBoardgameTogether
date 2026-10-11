@@ -1,4 +1,73 @@
 @layer components.profile {
+  .badge-medal.has-artwork {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+  .badge-medal img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .badge-pins img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+  .badge-pin-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    border: 0;
+    box-shadow: none;
+    font: inherit;
+  }
+  .badge-preview-trigger {
+    min-height: 44px;
+    margin-bottom: 1rem;
+  }
+  .badge-preview-dialog {
+    width: min(480px, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    box-sizing: border-box;
+    overflow: auto;
+    padding: 1.25rem;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .badge-preview-dialog::backdrop {
+    background: rgb(0 0 0 / 55%);
+  }
+  .badge-preview-dialog header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .badge-preview-dialog h2 {
+    margin: 0;
+  }
+  .badge-preview-dialog header button {
+    min-height: 44px;
+  }
+  .badge-model-stage {
+    height: clamp(180px, 42dvh, 340px);
+    margin-top: 1rem;
+    border-radius: 16px;
+    background: var(--panel-raised);
+  }
+  .badge-model-stage model-viewer {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
   .badge-shelf {
     margin-block: 1rem;
   }
