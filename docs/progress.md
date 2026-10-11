@@ -1,5 +1,17 @@
 # 开发进度
 
+## 在线更新失败诊断与构建依赖修复（2026-10-11）
+
+针对服务更新页反复只显示“更新未完成”的反馈，监督进程保留失败步骤、固定原因分类、时间和退出码，经原管理员 IPC/共享 schema 返回；页面提供对应建议，重试时清除旧详情，旧监督进程缺少详情时提示升级重启。子进程 stdout/stderr 只保留有界内存尾部用于分类，禁止输出原始错误、命令参数、环境或凭据。覆盖网络/认证、分支、版本历史分叉、磁盘/权限、锁文件、缺少工具、编译、迁移校验、排空、就绪和恢复失败。旧服务恢复也失败时明确报告，继续保持成功就绪并保存版本后才激活、原事务和迁移校验保护。
+
+抽取 `scripts/update-command.mjs` 复用原有有界命令/进程树终止；在线安装增加 `--prod=false`，与 deploy.sh 一致。隔离本地包测试在 production-only 配置下先复现旧安装后构建失败，再验证完整依赖安装后构建成功；仅 NODE_ENV=production 在本机 pnpm 11 下未复现，不能将此假设直接归因为线上故障。Git 禁用终端凭据询问，避免无人值守等待。未连接生产服务器，未部署、未合并发布分支；本轮不能确定旧通用提示对应的线上根因。生效需在启动目录安装新版监督脚本和 helper，并同时加载新版 API/Web、重启托管进程和刷新后台。
+
+验证记录：`pnpm exec vitest run tests/unit/update-command.test.ts tests/unit/online-update.test.ts tests/unit/admin-update-control.test.ts` 24/24 通过，覆盖真实 pnpm 本地依赖安装、命令 stderr 分类/不泄密、超时终止、恢复失败和关联 IPC/重试清理。`pnpm exec playwright test --config .data/update-ui.config.mts` 4/4 通过，继承现有无数据库生产预览配置，只测试更新页面模拟响应，实际查看 1440×900、390×844 和 320×568 截图，无横向溢出；不能替代生产联机更新验收。本轮文件定向 ESLint 通过。共享工作区期间新增另一批徽章改动，曾导致全量检查失败，未改动该批文件；其类型/格式错误被原开发修复后，最终 `pnpm typecheck`、`pnpm lint` 和 `pnpm build` 均通过（含生产 bundle 与 API runtime 检查；构建目录的沙箱 EPERM 经批准在沙箱外执行解决）。
+
+数据库验证保留原 boardgame_test（迁移 015 checksum 不匹配），通过忽略目录 wrapper 只覆盖进程 TEST_DATABASE_URL，使用独立 boardgame_update_20261011，经原 `pnpm test:integration` 完成准备、迁移和资源同步。整套 167 通过、6 失败，无环境 skip；管理员管理 7/7 通过，包含更新触发的 session/角色/Origin/CSRF/严格输入保护，Color Match 的 active match 更新恢复用例通过。失败为 stage2 管理员初始化超时、stage7 三项资源用例超时，以及本轮期间并行新增徽章测试两项 HTTP 状态断言失败；未改动或弱化这些无关用例。未重置开发库、原测试库或关闭隔离/迁移保护。下一步：核对生产日志并在维护安排下加载新版更新器；并行徽章失败由对应开发继续处理。
+
+全套结束后在相同已准备的独立库执行 `node .data/validate-update.mjs exec vitest run tests/integration/stage2-flow.test.ts tests/integration/stage7-assets.test.ts -t "runs administrator initialization|retries physical GC|reserves file and byte quotas|keeps written bytes"`，仅复查四个超时项：stage7 三项通过，stage2 管理员 CLI 初始化仍超过原 5 秒上限，未调高超时或削弱断言；35 个非目标用例为名称过滤跳过，不计作通过。整套集成不能报告全绿，不再对无变化的失败项重复重试。
+
 ## 全平台文字可读性与手牌对比度增强（2026-10-11）
 
 修复用户反馈的 Color Match 手牌字迹看不清及全平台低对比度文本问题。定位根本原因为手牌状态文字（`.color-card small`）此前在浅色主题下错误使用了 `color: #fff; background: var(--bg);`，导致在米白象牙色背景上渲染纯白文字（对比度仅 ~1.1:1）；同时通用 `button` 的样式覆盖了手牌背景渐变，导致红/蓝/黄/绿卡牌褪色为纯米色块。

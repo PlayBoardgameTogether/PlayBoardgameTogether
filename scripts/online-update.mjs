@@ -1,4 +1,4 @@
-import { spawn, fork } from 'node:child_process';
+import { fork } from 'node:child_process';
 import { createServer, request as httpRequest } from 'node:http';
 import { readFile, mkdir, writeFile, stat, open, unlink, realpath, rename, readdir } from 'node:fs/promises';
 import { resolve, dirname, extname, sep } from 'node:path';
@@ -7,6 +7,7 @@ import { setTimeout, clearTimeout, setInterval, clearInterval } from 'node:timer
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 import { createUpdateControl } from './update-control.mjs';
+import { buildRelease, runUpdateCommand } from './update-command.mjs';
 const { fetch, AbortSignal } = globalThis;
 
 export function githubRemote(value) {
@@ -41,8 +42,12 @@ export async function applyPrepared(deps, candidate) {
     deps.activate(candidate);
     return true;
   } catch (error) {
-    await deps.stop();
-    await deps.start(previous);
+    try {
+      await deps.stop();
+      await deps.start(previous);
+    } catch {
+      throw Object.assign(new Error('Previous API could not be restored'), { reason: 'recovery_failed' });
+    }
     throw error;
   } finally { deps.resume(); }
 }
@@ -72,39 +77,8 @@ async function main() {
     await lock.close(); await unlink(lockPath); throw new Error('Invalid update port/interval configuration');
   }
   const log = (event, sha) => console.log(`[online-update] ${event}${sha ? ` ${sha.slice(0, 12)}` : ''}`);
-  async function command(executable, args, cwd = root, timeout = 600000) {
-    return new Promise((accept, reject) => {
-      // Resolve pnpm's JS entry rather than using cmd.exe shell interpolation.
-      if (executable === 'pnpm') {
-        const entry = process.env.UPDATE_PNPM_CLI || process.env.npm_execpath;
-        if (entry && /pnpm/i.test(entry)) {
-          args = [entry, ...args]; executable = process.execPath;
-        } else if (process.platform === 'win32') {
-          reject(new Error('Launch using pnpm start:online or configure UPDATE_PNPM_CLI')); return;
-        }
-        // Linux systemd can execute the installed pnpm shebang directly.
-      }
-      const task = spawn(executable, args, { cwd, env, windowsHide: true,
-        detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'ignore'] });
-      let output = '';
-      task.stdout.on('data', data => { output = (output + data.toString()).slice(-65536); });
-      const timeoutId = setTimeout(() => {
-        if (!task.pid) return;
-        if (process.platform === 'win32') {
-          // Kill only this owned command tree, including pnpm's build children.
-          const terminator = spawn('taskkill', ['/PID', String(task.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
-          terminator.on('error', () => task.kill());
-        } else {
-          try { process.kill(-task.pid, 'SIGKILL'); } catch { task.kill(); }
-        }
-      }, timeout);
-      task.once('error', error => { clearTimeout(timeoutId); reject(error); });
-      task.once('exit', code => {
-        clearTimeout(timeoutId);
-        if (code === 0) accept(output.trim());
-        else reject(new Error(`${executable === 'git' ? 'git' : 'build/maintenance'} command failed (${code})`));
-      });
-    });
+  function command(executable, args, cwd = root, timeout = 600000) {
+    return runUpdateCommand(executable, args, { cwd, env, timeout });
   }
   async function stop() {
     const target = child;
@@ -137,14 +111,14 @@ async function main() {
     });
     target.on('error', () => { log('API process error'); });
     for (let attempt = 0; attempt < 100; attempt++) {
-      if (target.exitCode !== null || target.signalCode !== null) throw new Error('API exited during startup');
+      if (target.exitCode !== null || target.signalCode !== null) throw Object.assign(new Error('API exited during startup'), { reason: 'readiness' });
       try {
         const result = await fetch(`http://127.0.0.1:${apiPort}/health/ready`, { signal: AbortSignal.timeout(1000) });
         if (listening && result.ok) return;
       } catch { /* Wait for this child to bind and report database readiness. */ }
       await delay(300);
     }
-    throw new Error('API readiness timeout');
+    throw Object.assign(new Error('API readiness timeout'), { reason: 'readiness' });
   }
   async function drain() {
     if (!child?.connected) throw new Error('API update channel unavailable');
@@ -162,7 +136,7 @@ async function main() {
     if (!idle) {
       switching = false;
       if (target.connected) target.send('update.resume');
-      throw new Error('In-flight requests did not drain within the update deadline');
+      throw Object.assign(new Error('In-flight requests did not drain within the update deadline'), { reason: 'drain_timeout' });
     }
     return idle;
   }
@@ -249,25 +223,35 @@ async function main() {
     async function cycle() {
       if (closed || busy) return;
       busy = true;
+      let stage = 'fetch';
       try {
         if (!child || child.exitCode !== null || child.signalCode !== null) {
+          stage = 'restart';
           await start(current); log('restarted current release', current.sha);
         }
         if (!pending) {
+          stage = 'fetch';
           try { await stat(cache); } catch { await command('git', ['clone', '--bare', remote, cache]); }
           await command('git', ['--git-dir', cache, 'fetch', remote, `+refs/heads/${branch}:refs/remotes/update/current`], root, 120000);
           const sha = await command('git', ['--git-dir', cache, 'rev-parse', 'refs/remotes/update/current']);
           updates.patch({ candidateSha: sha });
           if (sha === current.sha) { updates.patch({ phase: 'current', candidateSha: null }); return; }
           if (sha === blockedSha) { updates.patch({ phase: 'maintenance' }); return; }
-          await command('git', ['--git-dir', cache, 'merge-base', '--is-ancestor', current.sha, sha]);
+          stage = 'history';
+          try {
+            await command('git', ['--git-dir', cache, 'merge-base', '--is-ancestor', current.sha, sha]);
+          } catch (error) {
+            if (error.exitCode === 1) error.reason = 'history_diverged';
+            throw error;
+          }
+          stage = 'checkout';
           const release = resolve(stateRoot, 'releases', sha);
           try { await stat(release); } catch { await command('git', ['--git-dir', cache, 'worktree', 'add', '--detach', release, sha]); }
           await ensureReleaseEnvironment(release);
           log('preparing', sha);
           updates.patch({ phase: 'building' });
-          await command('pnpm', ['install', '--frozen-lockfile'], release);
-          await command('pnpm', ['build'], release);
+          await buildRelease(command, release, value => { stage = value; });
+          stage = 'history';
           // Applied migrations must never change. New migrations need deliberate rollout:
           // database rollback cannot be promised merely by restarting an old binary.
           const changed = await command('git', ['--git-dir', cache, 'diff', '--name-only', current.sha, sha, '--', 'apps/api/src/db/migrations']);
@@ -278,15 +262,21 @@ async function main() {
           }
           pending = { sha, path: release };
         }
+        stage = 'drain';
         updates.patch({ phase: 'waiting' });
         const applied = await applyPrepared({
-          drain, current: () => current, stop, start,
+          drain, current: () => current,
+          stop: async () => { if (stage === 'drain') stage = 'stop'; await stop(); },
+          start: async release => { if (release === pending) stage = 'start'; await start(release); },
           prepareDatabase: async release => {
             updates.patch({ phase: 'applying' });
+            stage = 'migrate';
             await command('pnpm', ['db:migrate'], release);
+            stage = 'sync';
             await command('pnpm', ['games:sync'], release);
           },
           persist: async release => {
+            stage = 'persist';
             await writeFile(`${statePath}.tmp`, JSON.stringify(release));
             await rename(`${statePath}.tmp`, statePath);
           },
@@ -297,9 +287,18 @@ async function main() {
           log('updated', pending.sha); pending = undefined;
           updates.patch({ phase: 'updated', currentSha: current.sha, candidateSha: null });
         }
-      } catch {
-        updates.patch({ phase: 'failed' });
-        log('update failed; previous files retained; verify /health/ready for recovery');
+      } catch (error) {
+        const reasons = new Set(['disk_full', 'permission', 'authentication', 'network', 'lockfile',
+          'branch_missing', 'command_failed', 'command_missing', 'pnpm_unavailable', 'timeout',
+          'history_diverged', 'drain_timeout', 'readiness', 'recovery_failed',
+          'migration_changed', 'build_tool_missing', 'compilation']);
+        const failure = {
+          stage, reason: reasons.has(error?.reason) ? error.reason : 'unknown',
+          exitCode: Number.isInteger(error?.exitCode) ? error.exitCode : null,
+          occurredAt: new Date().toISOString(),
+        };
+        updates.patch({ phase: 'failed', failure });
+        log(`failed stage=${failure.stage} reason=${failure.reason} exit=${failure.exitCode ?? 'none'} at=${failure.occurredAt}`, pending?.sha);
       }
       finally { busy = false; }
     }

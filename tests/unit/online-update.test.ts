@@ -61,4 +61,11 @@ describe('production online updates', () => {
     expect(deps.start).toHaveBeenLastCalledWith(old);
     expect(deps.activate).not.toHaveBeenCalled(); expect(deps.resume).toHaveBeenCalledOnce();
   });
+  it('reports recovery failure explicitly when both candidate and previous API fail', async () => {
+    const { deps, next } = fixture();
+    deps.start.mockRejectedValue(new Error('private startup details'));
+    await expect(applyPrepared(deps, next)).rejects.toMatchObject({ reason: 'recovery_failed' });
+    expect(deps.activate).not.toHaveBeenCalled();
+    expect(deps.resume).toHaveBeenCalledOnce();
+  });
 });

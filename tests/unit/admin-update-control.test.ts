@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UpdateControl } from '../../apps/api/src/admin/update-control.js';
 import { createUpdateControl } from '../../scripts/update-control.mjs';
-import { adminUpdateCommandSchema } from '../../packages/protocol/src/admin.js';
+import { adminUpdateCommandSchema, adminUpdateStatusSchema } from '../../packages/protocol/src/admin.js';
 
 afterEach(() => vi.useRealTimers());
 describe('administrator update controls', () => {
@@ -68,5 +68,19 @@ describe('administrator update controls', () => {
     await new Promise(done => setImmediate(done));
     expect(enabled.snapshot().phase).toBe('failed');
     expect(JSON.stringify(enabled.snapshot())).not.toContain('secret');
+  });
+  it('passes validated failure details over IPC and clears stale failure on retry', async () => {
+    const failure = { stage: 'install', reason: 'network', exitCode: 1, occurredAt: new Date().toISOString() };
+    const failed = { ...initial, phase: 'failed', failure };
+    const ipc = Object.assign(new EventEmitter(), { connected: true,
+      send: vi.fn((message: { id: string }) => {
+        ipc.emit('message', { type: 'update.control.result', id: message.id, status: failed });
+      }),
+    });
+    expect(await new UpdateControl(ipc, true).request('status')).toEqual(failed);
+    expect(adminUpdateStatusSchema.safeParse({ ...failed, failure: { ...failure, output: 'secret' } }).success).toBe(false);
+    const control = createUpdateControl({ enabled: true, branch: 'main', currentSha: initial.currentSha, run: async () => {} });
+    control.patch(failed);
+    expect(control.check('retry')).toMatchObject({ phase: 'checking', failure: null });
   });
 });
