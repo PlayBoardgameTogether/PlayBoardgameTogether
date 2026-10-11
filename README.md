@@ -1,139 +1,172 @@
-# 桌游平台
+# PlayBoard · 一起玩桌游
 
-## 拉密 ZIP（2026-10-04）
+一个支持多人实时对局、脚本与模型 AI、在线游戏扩展的桌游平台。先选游戏，再开一桌，让朋友在浏览器里一起玩。
 
-新增 2–4 人拉密，支持 30 分首次出牌、百搭、桌面拆分重组、完整计分和基础脚本 AI。灰青绒面棋桌、象牙牌和牌架提供点选草稿、撤销、克制的移动动画及手机布局。执行 `node scripts/package-rummikub.mjs` 生成 `dist/game-packages/rummikub-1.0.3.zip`，管理员在游戏管理上传、检查、审核后上架；无需迁移或重启。1.0.1 使用适配大厅的 16:9 封面和独立方形图标。1.0.3 实时展示已有公共牌的重组、撤销与还原，新手牌确认前保持私密。未上传环境不会自动新增大厅入口。采用经典标准规则的无计时单局，详情见 [拉密](docs/games/rummikub.md)。
+**平台版本 `0.2.1`** · TypeScript · React / Vite · Fastify · PostgreSQL
 
-## 全游戏对局回放（2026-10-04）
+[快速开始](#快速开始) · [游戏列表](#游戏列表) · [部署与更新](#部署与更新) · [开发者文档](#开发者文档) · [开发进度](docs/progress.md)
 
-「我的资料 → 对局记录 → 查看回放」支持逐步、进度拖动、播放/暂停及倍速，内置游戏和在线 ZIP 共用自己的棋桌。仅原参与者读取本人历史视角，对手秘密继续隐藏。升级需应用迁移 029 并加载新版 API/Web；新局完整保存，旧局仅从迁移时当前局面起保存。回放静音且只读，当前不重放移动/计分动画。详见 [回放](docs/replays.md)。
+## 平台特色
 
-## 无人房间自动回收（2026-10-04）
+- **从大厅到棋桌**：浏览游戏、查看公开房间，或通过邀请码加入私人房间；支持密码、座位、准备与再次开局。
+- **和朋友一起玩**：账号注册、个人资料、好友 ID、好友申请、私聊、公共聊天、表情及房间邀请。
+- **真人与 AI 同桌**：空座位可添加脚本 AI；个人模型配置支持 OpenAI-compatible 服务，模型只能读取自身视角并通过统一规则校验行动。
+- **恢复与回放**：刷新和重连后恢复权威局面；原参与者可按本人历史视角逐步回放，隐藏信息继续保密。
+- **可扩展的游戏与资源**：管理员可审核安装游戏 ZIP，管理图包与短音效；旧对局锁定精确版本。
+- **暖阳大厅与沉浸棋桌**：象牙米白、琥珀暖金与圆润控件构成 PlayBoard 视觉体系，支持亮暗主题和手机布局。
 
-房间/对局无有效玩家访问约 30 分钟后自动关闭，每分钟扫描一次。正常房间访问、进行中对局读取和健康认证 WS 订阅会续期，大厅列表及 AI 行动不会续期。关闭释放建房名额，未结束对局记为中止，历史记录保留。更新需执行 `pnpm db:migrate` 应用 028 并重启新版 API；详见 [房间](docs/rooms.md)。
+> 当前能力、验收结果和未验证项以 [开发进度](docs/progress.md) 为准；历史更新与阶段记录不再在首页逐条展开。
 
-当前平台版本：**0.2.1**。页脚显示构建版本，开发与生产均从根目录 `package.json` 读取；游戏包及工作区 SDK 的独立版本保持原值。0.2.1 在 0.2.0 的五子棋、公共聊天、头像加好友和聊天表情基础上修复无人房间长期存在的问题。升级需应用截至 028 的迁移并加载新版 API/Web，详见下方说明。
+## 游戏列表
 
-## 公共聊天与表情（2026-10-04）
+### 内置游戏
 
-电脑左下角常驻聊天栏，展开后切换公共聊天和好友聊天；手机通过主导航进入 `/chat`，登录玩家可以公开发言、读取历史，点击发言者头像打开名片并发送好友申请，已有好友可直接私聊。公共聊天、私聊页与桌面聊天浮窗都支持 Emoji 和 12 个原创经典表情（如 `[微笑]`、`[捂脸]`），输入框旁按需选择，也可直接输入文字快捷码。表情采用 QQ 常见的文字快捷码习惯，不包含腾讯官方素材或 QQ 账号互通。执行 `pnpm db:migrate` 应用新增 `026_public_chat.sql` 后重启新版 API；详见 [社交功能](docs/social.md)。
+执行 `pnpm games:sync` 同步游戏清单，执行 `pnpm assets:seed` 准备内置资源。
 
-## 五子棋 ZIP（2026-10-04）
+| 游戏        | 玩法概览                                                     | 指南                                  |
+| ----------- | ------------------------------------------------------------ | ------------------------------------- |
+| Color Match | 颜色与数字配对、特殊牌与目标选择，支持交互上手教程           | [游戏 SDK 与教程](docs/game-sdk.md)   |
+| Grid Garden | 2–4 人同时秘密选择，在各自花园放置骨牌并计分                 | [游戏指南](docs/games/grid-garden.md) |
+| 璀璨宝石    | 2–4 人拿取宝石、购买发展卡、私密预留与贵族结算，支持交互教程 | [游戏指南](docs/games/splendor.md)    |
+| 花砖物语    | 2–4 人选砖、铺墙与连线计分，支持交互教程和计分音效           | [游戏指南](docs/games/azul.md)        |
 
-新增双人 15×15 自由五子棋上传包，黑棋先手，连续五子或更多获胜，无禁手，支持基础脚本 AI。运行 node scripts/package-gomoku.mjs 生成 dist/game-packages/gomoku-1.0.2.zip，管理员在游戏管理上传、检查并审核上架，再从大厅创建双人房间。1.0.2 按窗口剩余高度展示完整棋盘与确认按钮，不需要滚动棋盘；旧固定 560px 平台容器也可完整显示。更新平台 Web 后可利用屏幕剩余空间，旧局继续使用原版本。手机与桌面先选点再确认，带坐标、最后落子和获胜连线。源码、玩法及验证边界见 [五子棋上传包](game-packages/gomoku/README.md)。
+### 在线 ZIP 游戏
 
-## Linux 一键公网部署（2026-10-03）
+这些游戏需先打包，再由管理员在「游戏管理」上传、检查并审核上架；新环境不会自动出现大厅入口。安装和更新无需重启，已开始的对局继续使用原版本。
 
-准备 Node.js 22、pnpm 11.15.1、Docker Compose v2 和 systemd 用户服务，域名解析并开放 80/443 后，在仓库根目录执行 `bash deploy.sh`。首次询问域名，自动生成独立生产密钥、构建、迁移、同步游戏/资源并启动 HTTPS 网站；后续运行同一命令更新，迁移前停服备份。执行 `bash deploy.sh admin` 设置首位管理员，`status` / `logs` / `backup` / `stop` 管理运行。开发 `.env` 和数据库保留，API 不挂载 Docker socket。前提、恢复边界和实际未验证项见 [部署指南](docs/deployment.md)。
+| 游戏         | 人数 | 打包命令                            | 规则与说明                                   |
+| ------------ | ---- | ----------------------------------- | -------------------------------------------- |
+| UNO · 休闲版 | 2–4  | `node scripts/package-uno.mjs`      | [上传包说明](game-packages/uno/README.md)    |
+| 五子棋       | 2    | `node scripts/package-gomoku.mjs`   | [上传包说明](game-packages/gomoku/README.md) |
+| 拉密         | 2–4  | `node scripts/package-rummikub.mjs` | [游戏指南](docs/games/rummikub.md)           |
+| 卡坦岛       | 3–4  | `node scripts/package-catan.mjs`    | [游戏指南](docs/games/catan.md)              |
 
-## 生产服务自动更新（2026-10-03）
+输出位于 `dist/game-packages/`。包格式、运行限制及 AI 接口见 [在线游戏 ZIP 规范](apps/web/public/developer-docs/game-packages.md)；普通源码仓库 ZIP 不能直接安装。
 
-首次构建与数据库/资源准备后，用 `pnpm start:online` 托管生产 Web/API，默认每五分钟检测 GitHub origin 的 main 发布分支，后台独立安装构建，随后暂停新请求、等待在途请求最多 30 秒再切换。常驻连接、社交轮询和未结束对局不阻塞更新；连接短暂重连，对局进度保留，不刷新玩家页面。超时恢复接收请求并报告失败，候选启动失败尝试恢复旧版。管理员从「后台 → 服务更新」可立即检测并触发同一更新流程。监听 8080，反向代理指向该端口；含数据库迁移的更新默认等待维护。更新器自身不会热替换，本次策略首次生效需在部署目录安装新版并重启托管进程。配置与边界见 [在线更新](docs/online-update.md)。
+## 快速开始
 
-## 账号注册（2026-10-03）
+### 1. 准备环境
 
-登录页和未登录大厅提供「注册账号」，也可直接访问 `/register`。填写用户名（显示昵称，1–32 字，支持中文）、唯一用户 ID（例如 `@rst307`，名字部分 3–32 位 ASCII 字母/数字/下划线，大小写不敏感）及密码、确认密码。密码 6–128 位，至少包含一个 ASCII 字母和一个数字，允许符号且不 trim。注册后返回登录页，使用该 ID 和密码登录，无需邮箱或手机号。ID 同时作为初始好友 ID；后续好友 ID 修改不改变登录 ID。旧账户继续使用原用户名和密码，管理员仍通过维护命令创建。
+| 依赖       | 要求                                                           |
+| ---------- | -------------------------------------------------------------- |
+| Node.js    | 22（已有实测版本：22.17.0）                                    |
+| pnpm       | 11.15.1，与根目录 `packageManager` 一致                        |
+| PostgreSQL | 17；可通过 Docker Desktop 启动开发数据库                       |
+| Docker     | 构建和运行媒体校验容器时需要，即使使用外部 PostgreSQL 也需准备 |
 
-## 管理员在线安装游戏 ZIP（2026-10-03）
-
-「更多 → 管理员后台 → 游戏管理 → 上传游戏 ZIP」支持上传后检查识别新游戏或已有游戏更新，管理员审核确认后上架或替换大厅旧版本，再创建房间和完整对局，无需重启。声明决策接口的包支持脚本/模型 AI，内嵌 PNG 图标/封面/背景自动显示；UNO 新版打包见 [UNO 上传包](game-packages/uno/README.md)。窗口提供可玩示例。包采用固定 `game.json/server.js/client.html` 格式，规则在有界 QuickJS WASM 运行、桌面在隔离 iframe 运行；普通源码仓库 ZIP 需先打包。执行 `pnpm db:migrate` 应用 023/024/025，包持久在数据库，同版本不可覆盖，旧局使用原精确版本。格式与限制见 [在线游戏 ZIP](apps/web/public/developer-docs/game-packages.md)。
-
-## 好友、私聊与好友 ID（2026-10-03）
-
-管理员在「更多 → 管理员后台 → 好友 ID 修改规则」设置改名间隔，默认 30 天，0 不限，首次自定义不受限；用户端显示下次可修改时间。运行 `pnpm db:migrate` 应用新增 022。「更多」精简为后台和个人模型设置，资源/展示管理及系统状态统一从后台进入；后台切页保留展开状态。
-
-好友 ID 展示为可自定义的 `@rst307`，设置和搜索均支持带 `@` 输入。默认使用短用户名，021 迁移替换未自定义的长 ID 并保留已自定义名字；运行 `pnpm db:migrate` 更新。
-
-主导航「好友」支持精确 ID 搜索、好友申请/接受/拒绝/撤回/删除、文字私聊与未读、房间邀请；等待房间里直接邀请好友，对方在好友页确认加入，有密码仍需输入、不自动入座。好友功能拆成好友列表、添加、申请、房间邀请与独立私聊页，入口显示未读/待处理数量；好友 ID 在添加页和「我的资料」中修改、复制。界面结构与后续规划见 [页面职责改进](docs/ui-navigation-plan-2026-10-03.md)。登录用户名、内部账户 UUID 和旧对局不变。社交页面每 5 秒认证同步，消息持久保存。更新后执行 `pnpm db:migrate` 应用 020，详见 [社交功能](docs/social.md)。
-
-## 花砖物语（2026-10-03）
-
-新增 2–4 人经典彩墙花砖物语，包含选砖、图案行、铺墙连线计分、地板扣分、终局奖励和并列判定，支持真人、脚本 AI 与刷新恢复。计分提供逐砖落位、光晕、碎光、分数弹跳和终局奖励；声音设置启用后播放原创短音与和弦，刷新不补播。运行 `pnpm games:sync`、`pnpm assets:seed` 并重载应用，在大厅选择「花砖物语」。操作与维护见 [游戏指南](docs/games/azul.md)。
-
-## 管理员后台（2026-10-03）
-
-管理员登录后从「更多 → 管理员后台」进入 `/admin`，查看真实平台统计、搜索并启停普通账户、按安装版本即时上架/下架游戏、审核接入申请，并进入既有展示图片及资源管理。停用撤销所有会话；游戏下架阻止新建/开局但不影响进行中的旧局。更新后执行 `pnpm db:migrate` 应用 019。新游戏源码仍经可信审查、部署与同步，不提供任意代码热加载。操作与限制见 [管理员后台](docs/admin.md)。
-
-## 交互上手教程（2026-10-03）
-
-游戏开发者可以选择编写交互教程；只有注册了精确版本教程的游戏详情才显示「进入教程」。Color Match 已提供五个练习，复用真实桌面，通过出牌、摸牌、指定目标和获胜学习规则。未登录也可练习，不创建房间、不计入对局记录；刷新从头开始，支持重试、上一步和重新开始。开发契约与接入方式见 [游戏 SDK](docs/game-sdk.md#可选交互教程2026-10-03)。璀璨宝石已提供十一个练习，涵盖三色/同色拿取、购买、永久折扣、公开/盲抽预留、黄金支付、退币、贵族和最终轮。花砖物语提供八个练习，涵盖整组选砖、图案行、溢出、先手标记、铺墙、交叉连线、地板扣分与终局奖励，并实际播放计分动画。其他未注册教程的游戏继续提供纸面规则。
-
-## 先选游戏，再开桌（2026-10-02）
-
-游戏大厅以紧凑封面墙为主，点击后进入 `/games/:id/:version`，立即显示该游戏的公开房间，列表标题旁提供「创建房间」。创建进入独立建房页并带入所选版本，仍可调整游戏、人数、公开/私人和密码；邀请码加入与规则位于列表下方的折叠区域。邀请码以邀请对应的房间为准。首页保留「继续游戏」，未登录可浏览游戏并看到公开房间的登录提示。旧 `/rooms/new` 地址继续兼容。
-
-管理员在「更多 → 管理员后台 → 游戏展示」(`/admin/games`) 设置图标、大厅封面、详情背景图片地址并实时预览；保存后刷新生效，留空使用各款游戏的内置原创插画。支持公开 HTTPS 地址（不含凭据/查询/片段）及 `/game-art/` 图片路径，目前不提供此页面的本地文件上传。更新后执行 `pnpm db:migrate` 应用 015 展示配置迁移；图片配置不改变规则清单、对局状态或已绑定的游戏图包。
-
-## 项目优化（2026-10-02）
-
-平台入口按页面加载并统一路由与浏览器标题，页面加载失败保留导航；登录支持显示/隐藏密码、请求锁和分类反馈，404 提供返回入口。依赖检查改用 TypeScript AST 并覆盖共享 UI 与两个 SDK，维护六项界面原则及后续结构债务见 [项目优化审查](docs/project-optimization-2026-10-02.md)。`pnpm build` 后可执行 `pnpm test:ui`，独立检查生产页面与公开文档，不清理数据库。
-
-## 公开开发者文档（2026-10-02）
-
-网站 `/developers` 无需登录，主导航提供「开发者文档」。覆盖快速开始、游戏 SDK、客户端 SDK、HTTP API、WebSocket/恢复、添加游戏与 AI 指南；规范源文件在 [公开指南](apps/web/public/developer-docs/index.md)。提供 `/llms.txt`、构建生成的 `/llms-full.txt` 与 `/developer-sdk/sdk-sources.json`，后者按白名单发布当前 game-sdk/client-sdk/protocol 源码及 SHA-256，不含 API/游戏 server 或秘密数据。SDK 当前通过 workspace 使用，不声明已发布 npm 包。2026-10-03 新增登录用户游戏接入申请及管理员资料审核 API，执行 `pnpm db:migrate` 应用 018；只保存资料，不接收/下载/执行代码，尚无自动安装或热加载。接口与当前可信接入方式见 [添加游戏](apps/web/public/developer-docs/add-game.md)。
-
-`pnpm build` 生成全部静态文档和 SDK 文件；生产托管需保留页面回退及这些静态路径。`pnpm test:developers` 在生产静态预览上验证未登录阅读、桌面/手机导航、刷新和下载，不启动 API、不清理数据库。运行该检查前先构建。
-
-2026-10-02 璀璨宝石支持「原创几何 SVG」与「TTS 经典卡面」两套图包，房主开局前在房间「资源包」选择，旧局保持原绑定。TTS 素材由用户本地模组提取，已安装到本机资源存储，不随 Git 仓库分发；新环境安装/恢复见 [游戏图包](docs/games/splendor.md)。
-
-2026-10-01 新增 [璀璨宝石](docs/games/splendor.md)：2–4 人宝石拿取、发展卡购买与私密预留、黄金替代、退币、贵族与最终轮结算，支持专用脚本 AI 和刷新恢复。创建房间时选择「璀璨宝石」。原创 SVG 美术随客户端加载。
-
-2026-10-01 全站视觉切换为 macOS Vibrancy：三级中性深灰、模糊侧栏、衬线标题、细分隔和系统蓝焦点；手机使用顶部导航。登录、大厅、房间、设置、资源管理与各款游戏共用视觉体系，游戏语义颜色和自定义图包继续保留。样式入口见 [界面系统](docs/ui-system.md)。
-
-第九阶段统一深蓝灰界面、手机导航与反馈：Color Match 支持选牌/取消、选目标/确认；Grid Garden 先选择收获或建造再确认，保存后锁定，放置保留横竖预览和非法原因。自己的棋盘优先展示，等待者、公开轮次及并列得分持续可查。开发固定场景在双开发开关下的 `/dev/ui`，只使用匿名公开 View，不调用正式动作或模型；生产构建排除场景数据。维护入口见 [UI 开发](docs/ui-development.md)、[界面系统](docs/ui-system.md)、[阶段 9 验收](docs/acceptance-stage-9.md)。
-
-第八阶段新增可完整游玩的 Grid Garden：2–4 人在三轮中同时秘密选择收获或建造，统一公开后在各自 4×4 花园放置骨牌，按占格和剩余能量计分并允许并列。它复用正式动作、恢复、AI、资源和音频链路，用可选多行动者契约验证平台不依赖卡牌或单一当前玩家。规则与操作见 [Grid Garden](docs/games/grid-garden.md)，验收边界见 [阶段 8 验收](docs/acceptance-stage-8.md)。
-
-第七阶段新增图片与短音效资源：管理员在 `/admin/assets` 上传、映射、校验、固定预览并发布；房主开局前选择精确图包，图片和声音可整体替换。旧局保留原绑定，资源失败不阻断语义桌面。安装与恢复见 [资源管理](docs/assets.md)，声音见 [音频](docs/audio.md)，验收与未测项见 [阶段 7 验收](docs/acceptance-stage-7.md)。
-
-阶段 6 已加入个人模型配置和受控模型适配边界：用户可在 `/settings/models` 保存版本化模型配置，凭证以 AES-256-GCM 密文保存并可撤销；固定端点提供真实 OpenAI-compatible 与明确标识的 mock 适配器。模型动作必须经过严格 choiceId 校验，最终继续沿用阶段 5 的任务、epoch、冻结提案和统一命令事务。没有 `MODEL_CREDENTIALS_KEY` 时模型功能保持不可用，脚本 AI 不受影响。
-
-主导航提供游戏大厅、我的资料和开发者文档：大厅先选择游戏，详情页创建或加入房间，首页继续参与房间；`/profile` 保存昵称、内置头像和简介，显示账户 ID 与本人真实对局记录（含已中止历史）。
-
-## 前提与启动
-
-- Node.js 22（实测 22.17.0）
-- pnpm 11（实测 11.15.1）
-- Docker Desktop 或 PostgreSQL 17
+在仓库根目录使用 PowerShell。首次创建 `.env`；已有文件时保留原配置，不要覆盖。
 
 ```powershell
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) {
+  Copy-Item .env.example .env
+}
 pnpm install --frozen-lockfile
 pnpm db:up
 pnpm db:migrate
 pnpm games:sync
 docker build -t boardgame-media:1 scripts/media
 pnpm assets:seed
-```
-
-首次创建管理员和两个演示账户。密码从 stdin 读取；交互终端不回显读取，避免把明文留在命令历史：
-
-```powershell
-$secret = Read-Host 'Password (12–128 characters)' -AsSecureString
-$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
-try {
-  [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) | pnpm account -- admin:init admin 管理员
-  [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) | pnpm account -- account:create player_a 玩家A
-  [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) | pnpm account -- account:create player_b 玩家B
-} finally {
-  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
-}
 pnpm dev
 ```
 
-生产启动前先执行 `pnpm build`，然后运行 `pnpm --filter @boardgame/api start`；该入口只加载编译后的工作区包，不依赖 TypeScript 运行时。
+使用已有 PostgreSQL 时，先在 `.env` 中配置 `DATABASE_URL`，并跳过 `pnpm db:up`。
 
-打开 `http://127.0.0.1:5173`。登录 A，在 `/rooms/new` 选择 Color Match 和 2–4 人，创建房间并复制一次性显示的邀请码。其他玩家在独立浏览器配置文件登录、加入、入座、准备；房主准备后开局。轮到自己时点击可出的牌，再点“出牌”；也可摸牌并结束回合。打出数字 5 后指定另一位玩家。每个浏览器只收到自己的手牌和对手手牌数量。
+### 2. 注册并开桌
 
-也可以由房主在空座位点击“添加脚本 AI”。真人准备后即可开局；真人座位禁止脚本托管，专用 AI 没有登录账户，房主不能读取它的手牌或替它指定动作。既有个人模型托管仍可显式启用并收回，不因断线自动开启。
+打开 [本地大厅](http://127.0.0.1:5173)，点击「注册账号」，完成注册后登录。
 
-游戏详情提供创建入口，跳转带入所选游戏的独立建房页；建房支持游戏、人数、公开/私人类型、可选密码和规则说明；创建后直接进入房间，点击邀请码即可复制。每个账户最多创建一个未关闭房间，转让房主不释放创建名额。详情页公开房间按当前游戏筛选，并支持密码类型和状态筛选，仅公开房可见；私人房仍通过邀请码加入，有密码的房间两条加入路径均需校验。对局进行中普通成员不能退出；房主可确认后强制关闭房间并终止未结束对局，房内玩家收到关闭通知后回首页，创建名额随关闭释放。
+1. 在大厅选择游戏，进入详情页并创建房间。
+2. 复制创建后一次性显示的邀请码，邀请朋友在独立浏览器配置文件中登录并加入；也可在等待房间邀请已有好友。
+3. 玩家入座、准备后，由房主开始对局。空座位可添加脚本 AI。
+4. 对局正常结束后返回房间，重新准备即可再开一局；上一局结果保留在原对局地址。
 
-Color Match 正常结算后房间自动恢复 waiting，真人取消准备，返回房间即可重新准备并开始下一局；上一局结果保留在原对局地址。已有卡在 in_game 的已结束房间由 `pnpm db:migrate` 的 010 迁移修复，迁移不重置开发数据。更新后需确保 API 已加载新代码。
+私人房间通过邀请码加入；有密码的房间仍需校验密码。断线不会自动退出、释放座位或开启 AI 托管。
 
-生产 HTTPS 必须设置 `COOKIE_SECURE=true`，并让反向代理保持同源 Origin 与 WebSocket upgrade。不要把 session、CSRF 或邀请码写入 URL/日志。
+### 3. 创建管理员（可选）
 
-## 检查
+普通玩家可自行注册。需要使用后台时，通过维护命令创建首位管理员；密码从标准输入传入，避免明文出现在命令历史中。
+
+```powershell
+$secret = Read-Host 'Administrator password (12–128 characters)' -AsSecureString
+$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret)
+try {
+  [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) | pnpm account -- admin:init admin 管理员
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
+}
+```
+
+管理员登录后，从「更多 → 管理员后台」进入账户、游戏、资源、接入申请和服务更新管理。操作边界见 [管理员后台](docs/admin.md)。
+
+## 部署与更新
+
+### Linux 一键部署
+
+准备域名、Node.js 22、pnpm 11.15.1、Docker Compose v2 和 systemd 用户服务，并按部署指南配置 DNS、权限和端口后，在仓库根目录运行：
+
+```bash
+bash deploy.sh
+bash deploy.sh admin
+```
+
+脚本负责独立生产配置、构建、迁移、资源准备和 HTTPS 服务；后续可用同一命令更新，也提供 `status`、`logs`、`backup`、`stop`。前提、备份与恢复边界见 [部署指南](docs/deployment.md)。
+
+### 生产启动与在线更新
+
+手动运行 API 前先构建；Web 静态文件需另行托管，并配置同源反向代理：
+
+```powershell
+pnpm build
+pnpm --filter @boardgame/api start
+```
+
+需要托管生产 Web/API 并定期检测发布分支时，在完成数据库、游戏和资源准备后运行：
+
+```powershell
+pnpm start:online
+```
+
+在线更新默认跟踪 GitHub `origin/main`，每五分钟检测一次，默认监听 `8080`。管理员也可在后台触发检测；含迁移的更新默认等待维护。`deploy.sh` 不会自动启用该托管入口，配合使用需要额外配置，详见 [在线更新](docs/online-update.md)。
+
+生产 HTTPS 必须设置 `COOKIE_SECURE=true`，反向代理需保留同源 Origin 和 WebSocket Upgrade。升级时执行当前版本所需迁移；备份应同时覆盖数据库、资源目录及锁定游戏源码。
+
+## 开发者文档
+
+运行平台后，访问 `/developers` 即可无需登录阅读公开指南。项目提供游戏 SDK、客户端 SDK、HTTP / WebSocket 协议与游戏扩展规范；SDK 当前通过 workspace 使用，不声明已发布 npm 包。
+
+| 想做什么                 | 文档入口                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 了解项目状态与模块职责   | [开发进度](docs/progress.md) · [当前架构](docs/architecture.md)                                                                             |
+| 开发一个游戏             | [公开指南](apps/web/public/developer-docs/index.md) · [游戏 SDK](docs/game-sdk.md) · [添加游戏](apps/web/public/developer-docs/add-game.md) |
+| 制作在线游戏 ZIP         | [包格式](apps/web/public/developer-docs/game-packages.md) · [运行时设计 ADR](docs/adr/005-runtime-game-packages.md)                         |
+| 对接认证、房间与实时通信 | [认证](docs/auth.md) · [房间](docs/rooms.md) · [协议](docs/protocol.md) · [数据模型](docs/data-model.md)                                    |
+| 配置 AI、图包与声音      | [AI 契约](docs/ai-contract.md) · [资源管理](docs/assets.md) · [音频](docs/audio.md)                                                         |
+| 维护社交、回放和后台     | [社交](docs/social.md) · [回放](docs/replays.md) · [管理员后台](docs/admin.md)                                                              |
+| 修改页面与游戏桌面       | [UI/UX 规范](docs/ui-ux-guidelines.md) · [界面系统](docs/ui-system.md) · [UI 开发与回归](docs/ui-development.md)                            |
+| 排查恢复或部署问题       | [可靠性](docs/reliability.md) · [故障恢复](docs/recovery.md) · [部署](docs/deployment.md)                                                   |
+
+构建会生成 `/llms-full.txt` 和白名单 SDK 源码 `/developer-sdk/sdk-sources.json`，并提供 `/llms.txt`。生产托管需保留这些静态路径及页面回退。
+
+### 仓库结构
+
+```text
+apps/
+  web/                 平台页面、会话交互与游戏容器
+  api/                 认证、业务事务、持久化与实时通信
+packages/
+  protocol/            网络 DTO、消息与 schema
+  client-sdk/          类型化请求与客户端传输
+  game-sdk/            游戏扩展契约与确定性 RNG
+  ui/                  可复用视觉组件
+games/                 内置游戏，分离 shared / server / client 入口
+game-packages/         在线 ZIP 游戏源码与打包入口
+docs/                  设计、协议、运维与验收记录
+scripts/               开发、打包与维护工具
+```
+
+## 检查与验证
+
+按改动范围选择检查，在项目根目录运行：
 
 ```powershell
 pnpm typecheck
@@ -144,23 +177,15 @@ pnpm test:e2e
 pnpm build
 ```
 
-E2E 使用独立 `boardgame_test` 数据库和三个 fixture 账户，不写入开发数据库。
-2026-09-24 的阶段 2 历史验收结果见 [阶段 2 验收记录](docs/acceptance-stage-2.md)；第三阶段本轮结果见 [开发进度](docs/progress.md)。
+集成与 E2E 会准备并清理测试数据：必须使用独立 `TEST_DATABASE_URL`，不能指向开发或生产库；不要同时运行共享测试库的两套测试命令。跳过用例不等于验证通过。
 
-第四阶段的命令重试语义与恢复见 [可靠性](docs/reliability.md)、[恢复步骤](docs/recovery.md)。第五阶段见 [控制权](docs/ai-controllers.md)、[调度器](docs/ai-scheduler.md) 与 [阶段 5 验收](docs/acceptance-stage-5.md)。
+构建后还可执行 `pnpm test:developers` 或 `pnpm test:ui`，检查生产静态页面与公开文档；这两项不清理数据库。历史验收与本轮实际结果见 [开发进度](docs/progress.md)。
 
-## 当前边界
+## 运行边界
 
-第七阶段资源字节默认持久化至 `.data/assets`，生产通过绝对路径 `ASSET_STORAGE_DIR` 挂载独立持久卷，仅授予 API 账户权限；测试用 `.data/test-assets`，与开发分离。备份须同时包含 PostgreSQL、资源目录与锁定游戏源码。`pnpm assets:check` 只读报告缺失/hash 错误/孤儿；显式 `--gc` 才执行有引用保护的延迟清理。媒体校验需要本机 Docker 和 `boardgame-media:1` 镜像，容器无网络、无宿主挂载、低权限及有界 CPU/内存/时间。下方阶段 6 边界为历史描述，其中资源上传/事件音效已由本阶段实现。
-
-阶段 1 `/dev/lab` 仍为双开发开关下的内存实验台。正式完整玩法与脚本策略由 `color-match@1.0.0` 和 `grid-garden@1.0.0` 提供。模型 AI 已具备适配与个人配置，真实供应商验收及预算/租约缺口见开发进度；资源上传和事件音效已接入两款游戏。尚无自动断线托管、观战或公网发布。presence 与广播仍是单 API 进程内状态；持久任务有数据库 fencing，但不宣称多副本生产高可用。生产部署须保留 registry 摘要与 worker 所需的可信源码。
-
-## 房间模型 AI（2026-10-03）
-
-房主可在空座位展开「选择模型 AI」，选择本人已启用且有凭证的配置并添加；mock 明确标为模拟。已有 AI 的「AI 设置」支持修改配置或切回基础脚本。没有可用配置时通过「管理模型配置」创建，再返回房间或刷新模型列表。修改 AI 设置取消真人准备；开局后配置锁定到本局结束，模型使用授权房主的额度及 AI 自己的 View。房主不能查看 AI 的私密手牌或指定动作。
-
-更新代码后执行 `pnpm db:migrate` 应用 016/017 迁移。转让房主后，新房主须选择自己的模型配置或切回脚本后再开局；已经开局的授权不会随房主转让而改变。真人自己的模型托管入口继续保留。
-
-## 卡坦岛 ZIP（2026-10-04）
-
-新增 3–4 人经典基础版卡坦岛，包含起始摆放、资源生产、玩家交易/还价、银行/港口、强盗、全部发展卡、最长道路与最大骑士军、自己回合 10 分获胜及基础脚本 AI。海蓝岛屿棋桌支持点选确认、放大/拖动与手机位置列表。运行 `node scripts/package-catan.mjs` 生成 `dist/game-packages/catan-1.0.1.zip`，管理员上传、检查并审核后上架，无需新迁移或重启。未上传环境不自动新增大厅入口；规则与边界见 [卡坦岛](docs/games/catan.md)。
+- **身份与隐私**：正式身份来自 session；客户端和 AI 只获得本人 View，房主权限不包含读取他人秘密。session、CSRF、邀请码和模型密钥不得写入 URL 或日志。
+- **游戏隔离**：在线包规则在有界 QuickJS WASM 中运行，桌面使用隔离 iframe；不把上传 JavaScript 直接载入 Node.js。同版本不可覆盖，旧局绑定精确版本。
+- **模型服务**：凭证加密保存；缺少 `MODEL_CREDENTIALS_KEY` 时模型功能不可用，脚本 AI 不受影响。mock 明确标识为模拟，真实供应商验收及剩余限制见开发进度。
+- **资源与备份**：资源默认位于 `.data/assets`；生产使用绝对路径 `ASSET_STORAGE_DIR` 指向独立持久目录。本机提取的 TTS 图包不随仓库分发，新环境需自行安装或恢复。
+- **部署规模**：presence 与广播仍是单 API 进程内状态，不宣称多副本生产高可用或更新零中断；当前不提供自动断线托管和观战。
+- **开发实验台**：`/dev/lab` 保持双开发开关限制，与正式身份和对局链路分离。
