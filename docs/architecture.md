@@ -2,7 +2,7 @@
 
 ## 回放表现通道（2026-10-11）
 
-ReplayPage 连续前进时保留桌面并将历史本人投影事件交给 GameBoard，跳转重置内置桌面，在线包继续保留 iframe。game-sdk/presentation 的可选 ReplayPresentation 只管理本次呈现 id、animate 和有界 hold 时长；自动播放等待开发者完整序列，过期回调忽略。PackageBoard 将可序列化的 replay 提示和原本人 View 送入 sandbox，并仅接受当前 iframe/当前 id 的动画时长报告；回放动作始终丢弃。花砖复用原计分队列，拉密 1.0.4 在只读回放中复用原移动动画。没有新增规则执行、HTTP/WS/数据库契约或实时音效授权，旧包及旧局保持精确版本。
+ReplayPage 连续前进保留桌面，将本人历史 View/事件和 busy=false 交给原 GameBoard；平台通过 replay-motion 观察有限 CSS/Web Animations/DOM 变化，拦截输入、禁用控件并丢弃动作。在线包 desktop?replay=1 在原 opaque sandbox/CSP 内加入 catalog/replay-desktop 包装，自动观察动画并报告当前呈现 id 的时长；不改数据库中的源码/hash/规则版本，普通 desktop 响应不变。旧拉密 1.0.3、花砖等原桌面直接兼容，不要求新游戏包。可选 ReplayPresentation.hold 补充不可自动推断的自定义时长，观察上限60秒，过期回调忽略，跳转/卸载清理。未执行规则、未新增数据库或 WS 契约、未授予实时音效权限。
 
 ## 玩家徽章（2026-10-11）
 

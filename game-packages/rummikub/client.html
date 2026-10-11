@@ -549,7 +549,6 @@ const marks = ['●', '◆', '▲', '■'];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 let view = null, busy = true, pending = false, draft = [], selected = [], history = [], order = 'color';
 let localDraft = false;
-let replaying = false;
 const animations = new Set();
 const copy = value => JSON.parse(JSON.stringify(value));
 function editable() { return view && view.canAct && !busy && !pending; }
@@ -649,7 +648,6 @@ function render() {
   const current = view.players.findIndex(p => p.seatId === view.currentSeat) + 1;
   $('status').textContent = view.finished ? (view.winners.includes(view.you) ? '你赢了 · ' : '本局结束 · ')
     + (view.blocked ? '牌堆耗尽，按余牌计分' : '有人出完了全部手牌')
-    : replaying ? '回放 · 玩家 ' + current + (view.publicLayout !== null ? ' 正在整理公共牌 · 尚未确认' : ' 的回合')
     : pending || busy ? '正在同步棋桌…' : view.canAct ? '轮到你 · 整理组合后确认'
     : view.publicLayout !== null ? '玩家 ' + current + ' 正在整理公共牌 · 尚未确认' : '等待玩家 ' + current + ' 出牌';
   $('opening').textContent = view.finished || !view.you ? '' : view.opened ? '可自由重组桌面' : '首次出牌 ≥ 30 分';
@@ -684,8 +682,7 @@ function render() {
   ids.forEach(id => $('rack').append(tileButton(id, 'rack')));
   $('rack-title').textContent = view.you ? '我的牌架 · ' + ids.length + ' 张' : '观战视角';
   const error = problem();
-  $('feedback').textContent = replaying ? (view.publicLayout !== null ? '公共牌正在重组，正式组合以确认后的桌面为准。' : '只读回放 · 按下一步查看变化。')
-    : !view.canAct ? (view.publicLayout !== null ? '公共牌正在重组，正式组合以确认后的桌面为准。' : '等待对方完成本回合。')
+  $('feedback').textContent = !view.canAct ? (view.publicLayout !== null ? '公共牌正在重组，正式组合以确认后的桌面为准。' : '等待对方完成本回合。')
     : selected.length ? '已选 ' + selected.length + ' 张 · 点箭头追加到已有组，或组成新组' : error || '组合有效 · 确认后结束本回合';
   $('feedback').className = 'feedback' + (view.canAct && changed() && error ? ' error' : '');
   $('play').disabled = !editable() || Boolean(error);
@@ -721,19 +718,15 @@ $('close-rules').onclick = () => $('rule-dialog').close();
 function receive(event) {
   if (event.source !== parent || event.data?.type !== 'boardgame:view' || !event.data.view) return;
   const next = event.data.view, old = positions();
-  const replayStep = event.data.replay?.animate === true;
   const same = view && next.move === view.move && next.you === view.you;
-  const live = view && next.move === view.move + 1 && (!event.data.busy || replayStep) && event.data.events?.length;
+  const live = view && next.move === view.move + 1 && !event.data.busy && event.data.events?.length;
   const layoutChanged = view && next.layoutSeq !== view.layoutSeq;
-  const liveLayout = layoutChanged && (!event.data.busy || replayStep) && event.data.events?.some(item =>
+  const liveLayout = layoutChanged && !event.data.busy && event.data.events?.some(item =>
     item.type === 'table.arranged' && item.layoutSeq === next.layoutSeq);
   if (!same) { localDraft = false; selected = []; history = []; pending = false; }
   if (!same || !next.canAct || !localDraft) draft = copy(next.publicLayout ?? next.table);
   if (!event.data.busy) pending = false;
-  view = next; busy = Boolean(event.data.busy); replaying = Boolean(event.data.replay); render();
-  if (replayStep && (live || liveLayout) && !reduced.matches) {
-    parent.postMessage({ type: 'boardgame:replay-animation', id: event.data.replay.id, durationMs: 360 }, '*');
-  }
+  view = next; busy = Boolean(event.data.busy); render();
   if (live) animate(old, true);
   else if (liveLayout) animate(old);
   else if (!same || layoutChanged) stopAnimations();

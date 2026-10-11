@@ -2,7 +2,7 @@
 
 ## 统一回放（2026-10-04）
 
-内置和在线 ZIP 扩展自动接入回放，无需额外规则接口；平台通过原精确版本 deserialize/getView/projectEvents 保持本人历史视角。客户端继续遵守 busy=true 禁止动作，宿主丢弃 onAction 且不提供 live 音效。连续前进支持开发者已有的计分/移动动画，接入方式见下方“回放动画”。详见 [回放](replays.md)。
+内置和在线 ZIP 扩展自动接入回放，无需额外规则接口；平台通过原精确版本 deserialize/getView/projectEvents 保持本人历史视角。宿主负责禁用交互、丢弃 onAction 且不提供 live 音效授权。连续前进支持原有计分/移动动画，平台处理兼容和播放等待，见下方“回放动画”。详见 [回放](replays.md)。
 
 ## 可选玩家名称（2026-10-04）
 
@@ -22,9 +22,9 @@ Web `clientGames` 注册项可选 `finishBehavior: 'stay'`。声明后 MatchPage
 
 ## 回放动画（2026-10-11）
 
-客户端 GameBoard 第八个可选参数是 `@boardgame/game-sdk/presentation` 的 `ReplayPresentation`：`{id, animate, hold(durationMs)}`。连续前进一步时收到该帧本人投影 events，桌面实例保持；初始化、倒退和跳转不传表现事件。开发者复用原有事件动画，并用 `hold` 为整个序列预留 1–60000ms，自动播放不会因为 4× 速度提前切掉该序列。id 标识本次呈现，过期回调无效；同一步不应重复启动动画。手动跳转允许中断，扩展需清理计时器和动画。
+平台连续前进时保留桌面、传递本人投影 events 和 busy=false，让旧游戏的原有动画代码执行；平台观察 CSS/Web Animations 和 DOM 变化来等待结束，无需升级游戏。初始化、倒退和跳转不传表现事件并保留 busy=true。宿主拦截输入、禁用控件并丢弃动作，busy=false 不授予动作权限。
 
-回放始终 `busy=true` 且不提供 audio 端口；只读状态禁止交互，不应同时禁止 `replay.animate=true` 的视觉表现。保持本人 View/投影事件边界，不执行规则或提交动作。可选接口不改变规则 SDK/HTTP/WS/存档契约。在线 ZIP 接入见 [包格式](../apps/web/public/developer-docs/game-packages.md)。
+第八个可选参数 `@boardgame/game-sdk/presentation` 的 `ReplayPresentation`：`{id,animate,hold(durationMs)}`，仅供 Canvas/WebGL 或较长自定义空白延迟等无法自动观察的序列补充 1–60000ms 时长。id 标识当前呈现，过期回调无效；手动跳转允许中断，扩展清理自己的计时器和动画。不提供 audio 端口、不执行规则或提交动作、不传完整 State。在线 ZIP 接入见 [包格式](../apps/web/public/developer-docs/game-packages.md)。
 
 ## 可选交互教程（2026-10-03）
 

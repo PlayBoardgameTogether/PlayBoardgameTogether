@@ -16,7 +16,7 @@ export const clientGames = [
     boardAudio: true,
     load: async (): Promise<GameBoard> => {
       const { AzulBoard } = await import('@boardgame/azul/client');
-      return (view, busy, events, onAction, _assets, audio, playerNames, replay) => <AzulBoard view={azulViewSchema.parse(view)} busy={busy} events={events} onAction={onAction} audio={audio} playerNames={playerNames} replay={replay} />;
+      return (view, busy, events, onAction, _assets, audio, playerNames) => <AzulBoard view={azulViewSchema.parse(view)} busy={busy} events={events} onAction={onAction} audio={audio} playerNames={playerNames} />;
     },
   },
   {

@@ -67,9 +67,9 @@ parent.postMessage({type:'boardgame:resize', height:560, fit:'viewport'}, '*');
 
 ## 可选回放动画
 
-连续前进时，`boardgame:view` 额外提供 `replay: {id, animate:true}`，events 是该步已投影事件；首次加载、倒退和任意进度跳转为 `animate:false` 且不传表现事件。回放始终 `busy:true`，仅阻止操作；开发者可在 `replay.animate` 时复用已有视觉动画，不能据此启用动作或实时音效。保留减少动态效果处理，并在跳转和卸载时取消动画。
+平台在回放时加载同一精确版本的 `desktop?replay=1`，在原 sandbox/CSP 内添加输入拦截和动画观察包装，不修改已安装 HTML、hash 或规则版本。连续前进传 busy=false 和该步本人投影事件，让旧包原有动画执行；初始化、倒退和进度跳转传 busy=true 且不传表现事件。平台禁用控件、拦截交互、丢弃动作，busy=false 不代表授予操作权限；没有实时音效授权。CSS/Web Animations 和连续 DOM 变化由平台自动观察，最长 60 秒，无需发布新包。
 
-动画开始时可发送 `parent.postMessage({type:'boardgame:replay-animation', id: replay.id, durationMs: 1200}, '*')`，为完整序列预留时间。宿主仅接收当前 iframe、当前呈现 id 和有限 1–60000ms；自动播放在步间隔和动画时间都结束后再前进，手动跳转仍可中断。不传此消息的旧包沿用默认步间隔。旧包若以 busy 关闭所有动画，需提升版本并重新上传，不能覆盖旧局精确版本。
+可选 `boardgame:view.replay={id,animate}` 和 `parent.postMessage({type:'boardgame:replay-animation',id:replay.id,durationMs:1200},'*')` 可补充 Canvas/WebGL、长空白延迟等无法自动推断的时长。宿主仅接受当前 iframe/当前 id 和有限 1–60000ms；自动播放等待步间隔和动画，手动跳转允许中断。平台只执行原桌面的 View/事件表现代码，不重跑规则，也无法从局面猜出仅在原点击处理器中的动画。
 
 ## 安装 API 与版本
 

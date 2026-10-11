@@ -1,5 +1,21 @@
 # 开发进度
 
+## 回放动画改由平台兼容旧桌面（2026-10-11）
+
+按用户纠正，撤回上一批仅为回放而新增的拉密 1.0.4 及花砖专用时长回调。拉密 client/server/README、打包入口及花砖客户端与 `aae4fec` 的源码一致；恢复使用原拉密 1.0.3，不重写数据库里已安装的包，不要求用户重新上传，不把本地旧的 1.0.4 产物作为交付包。上一条记录保留为先前方案事实，本条为当前实现。
+
+平台连续回放以历史本人 View/事件驱动原桌面的表现代码，传 busy=false 以兼容旧客户端原有动画；只读保护由宿主拦截输入、禁用原生控件和丢弃动作提供，不以 busy 授权。内置桌面由 replay-motion 自动观察有限 CSS/Web Animations 与 DOM 变化；在线包通过原 desktop 路径的可选 replay=1 在原不透明 sandbox/CSP 内加入平台观察/输入拦截脚本，数据库 HTML/包 hash/规则和内容版本保持不变，普通桌面响应不变。自动播放等待原动画和最后一次变化后的 500ms 稳定窗口；观察最长60秒、无限装饰动画不阻塞，跳转/卸载清理。只执行原客户端表现代码，不重跑规则、不读取完整 State、无 live 音效授权。Canvas/WebGL、较长自定义空白延迟或仅在原点击处理器中的动画不能从历史局面可靠推断，可选 hold/消息时长提示仍可补充，但不是普通游戏动画的接入要求。
+
+平台版本 0.4.0 → 0.4.1，为上一批回放兼容性修正；README 同步。游戏、内容、资源与 workspace 包版本不递增，无数据库迁移。
+
+验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；全库 ESLint、20 目录 AST 边界通过，完整 lint 仍因38个未修改文件的既有 CRLF 换行在 format:check 失败，未批量格式化。最后所有受影响 TS/TSX 定向 ESLint、git diff --check 通过。`pnpm --config.verify-deps-before-run=false build` 提权完整通过，含 production bundle/API runtime、隔离 ZIP/序列化和 AI worker 检查。
+
+所有数据库测试经原准备脚本使用独立 `boardgame_motion_20261011`，集成和 E2E 顺序执行，没有清理开发库。`node .data/motion-validation.mjs --config.verify-deps-before-run=false test:integration` 中24文件172项通过，新增在线包断言因局部变量 replay 与原用例重名导致该文件编译失败；更名 replayDocument 后用原准备脚本加 `--testNamePattern=administrator.*installation` 仅重跑失败范围，在线包2项通过，其他172项按过滤跳过，未把跳过算作新通过。新断言验证回放包装与原 CSP 一致、去除平台脚本后等于原 HTML、数据库源码不变，以及非法 replay 参数拒绝。
+
+`node .data/motion-validation.mjs --config.verify-deps-before-run=false test:e2e tests/e2e/rummikub-package-ui.spec.ts tests/e2e/replay.spec.ts tests/e2e/game-packages.spec.ts tests/e2e/azul-scoring-ui.spec.ts --output .data/platform-replay-motion` 桌面/手机22/22通过，无 skip。覆盖未修改1.0.3包在只读宿主中播放原动画、无需作者回调即可自动等待原生1200ms动画、未修改花砖在4×仍完整播放逐砖/奖励计分、旧包精确版本/iframe文档保持、跳转/减少动态效果、控件禁用与直接伪造动作不提交。原真实登录/完局/历史回放流程同时通过；动画专项使用真实规则生成的本人 View/事件夹具，不记作真实联机整局。
+
+截图在上述忽略输出目录，覆盖1440×900、390×844 CSS像素，原真人回放另覆盖1024×768。实际查看花砖手机及拉密桌面动画截图；测试挂载页不等于新增产品页面。未更改全局主题/布局，未扩大到全主题矩阵或物理手机/辅助技术。已完成必要验证，下一步按原发布分支流程合入并更新平台；本轮不合并、不部署，也不上传游戏包。
+
 ## 开发者动画的回放呈现（2026-10-11）
 
 按用户澄清，本轮修复回放动画展示，不扩展普通实时同步。定位到 ReplayPage 固定传空事件并按 revision 重建内置桌面，拉密又以 busy 禁止所有移动动画。现在「下一步」/自动播放保留桌面实例，传递该步本人历史投影事件；初始化、倒退、首尾和进度跳转直接展示目标局面，内置桌面重置，在线包保持同一 iframe。新增可选 ReplayPresentation 和 sandbox 回放提示，开发者可为完整动画序列声明 1–60000ms 时长，自动播放取步间隔和动画时间较长者；过期回调无效，手动跳转允许中断。保持 busy=true、动作丢弃和无 live 音效授权。

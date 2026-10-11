@@ -35,7 +35,7 @@ export function PackageBoard({ id, version, view, busy, events, onAction, replay
   latest.current = { view, busy, events, onAction, replay };
   const publish = () => {
     const { view, busy, events, replay } = latest.current;
-    frame.current?.contentWindow?.postMessage({ type: 'boardgame:view', view, busy, events,
+    frame.current?.contentWindow?.postMessage({ type: 'boardgame:view', view, busy: replay ? !replay.animate : busy, events,
       ...(replay ? { replay: { id: replay.id, animate: replay.animate } } : {}) }, '*');
   };
   useEffect(() => {
@@ -71,5 +71,5 @@ export function PackageBoard({ id, version, view, busy, events, onAction, replay
   return <iframe key={`${id}@${version}`} ref={frame} title="在线游戏桌面" className="package-desktop"
     style={height === undefined ? undefined : { height, minHeight: 0 }}
     sandbox="allow-scripts" referrerPolicy="no-referrer" onLoad={publish}
-    src={`/api/v1/game-packages/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/desktop`} />;
+    src={`/api/v1/game-packages/${encodeURIComponent(id)}/versions/${encodeURIComponent(version)}/desktop${replay ? '?replay=1' : ''}`} />;
 }

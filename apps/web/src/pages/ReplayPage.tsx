@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReplayPresentation } from '@boardgame/game-sdk/presentation';
 import type { MatchReplay } from '@boardgame/protocol';
 import { GameErrorBoundary, PageFeedback } from '@boardgame/ui';
 import { api } from '../platform.js';
 import { clientGame, type GameBoard } from '../game-registry.js';
 import { AssetResolver, verifyManifest } from '../assets/resolver.js';
+import { observeReplayMotion } from '../games/replay-motion.js';
 import '../styles/replay.css';
 
 const noEvents: unknown[] = [];
@@ -19,19 +20,41 @@ function ReplayTable({
   assets: AssetResolver | undefined;
   presentation: ReplayPresentation;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (root.current) return observeReplayMotion(root.current, presentation);
+  }, [presentation]);
   const names = Object.fromEntries(
     frame.players.map((player) => [player.seatId, player.displayName]),
   );
   // Historical projected events can animate, but never authorize actions or live audio.
-  return board(
+  const desktop = board(
     frame.view,
-    true,
+    !presentation.animate,
     presentation.animate ? frame.events : noEvents,
     () => undefined,
     assets,
     undefined,
     names,
     presentation,
+  );
+  return (
+    <div
+      ref={root}
+      onClickCapture={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onPointerDownCapture={(event) => event.stopPropagation()}
+      onKeyDownCapture={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
+    >
+      {desktop}
+    </div>
   );
 }
 
@@ -184,7 +207,7 @@ export function ReplayPage({ id }: { id: string }) {
           <h1>{frame ? clientGame(frame.gameId, frame.gameVersion).name : '回放'}</h1>
           {frame && (
             <p className="muted">
-              你的视角 · 座位 {frame.seatIndex + 1} ·{' '}
+              只读回放 · 你的视角 · 座位 {frame.seatIndex + 1} ·{' '}
               {frame.status === 'aborted' ? '已中止' : '已结束'}
             </p>
           )}

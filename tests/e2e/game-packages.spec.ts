@@ -91,7 +91,7 @@ test('administrator installs ZIP and players complete a real iframe game', async
     let desktopReads = 0;
     let actions = 0;
     page.on('request', request => {
-      if (request.url().endsWith('/desktop')) desktopReads++;
+      if (new URL(request.url()).pathname.endsWith('/desktop')) desktopReads++;
       if (request.method() === 'POST' && request.url().includes(`/matches/${matchId}/actions`)) actions++;
     });
     const initialScores = (await iframe.locator('#scores').textContent())!;

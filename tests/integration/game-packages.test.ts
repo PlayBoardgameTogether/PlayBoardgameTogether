@@ -83,6 +83,13 @@ describe('administrator instant game installation', () => {
     expect(desktop.statusCode).toBe(200);
     expect(desktop.headers['content-security-policy']).toContain("sandbox allow-scripts");
     expect(desktop.headers['content-security-policy']).toContain("connect-src 'none'");
+    const replayDocument = await app.inject({ url: '/api/v1/game-packages/online.score-race/versions/1.0.0/desktop?replay=1' });
+    expect(replayDocument.statusCode).toBe(200);
+    expect(replayDocument.headers['content-security-policy']).toBe(desktop.headers['content-security-policy']);
+    expect(replayDocument.body).toContain('<script data-platform-replay>');
+    expect(replayDocument.body.replace(/<script data-platform-replay>[\s\S]*?<\/script>/, '')).toBe(desktop.body);
+    expect((await db.query("SELECT client_html FROM game_packages WHERE game_id='online.score-race' AND game_version='1.0.0'")).rows[0].client_html).toBe(desktop.body);
+    expect((await app.inject({ url: '/api/v1/game-packages/online.score-race/versions/1.0.0/desktop?replay=2' })).statusCode).toBe(400);
     const catalog = await app.inject({ url: '/api/v1/games' });
     expect(catalog.json().data.some((game: { id: string }) => game.id === 'online.score-race')).toBe(true);
     const created = await write('/api/v1/rooms', alice, { requestId: randomUUID(), name: '在线安装验收', gameId: 'online.score-race', version: '1.0.0', options: {}, seatCount: 2 });
