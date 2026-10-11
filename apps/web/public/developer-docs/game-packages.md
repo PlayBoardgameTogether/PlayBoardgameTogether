@@ -63,6 +63,14 @@ parent.postMessage({type:'boardgame:resize', height:560, fit:'viewport'}, '*');
 
 2026-10-04 新增可选 `fit:'viewport'`：通过同一来源/height 检查后，由宿主根据 iframe 页面位置、窗口高度及 16px 底部留白计算高度（180–4096px），之后忽略该桌面的内容高度请求。宿主观察页面尺寸与窗口 resize，卸载时清理；切换版本重置模式。桌面须使用自己的 iframe 视口高度限制棋盘，并预留状态与操作区，不能把 `overflow:hidden` 当作完整展示。旧宿主忽略 fit 时仍按 height 提示设为 560px；旧包未声明 fit 保持内容高度模式。该可选字段不改变 HTTP/WS、正式动作或权限。
 
+
+
+## 可选回放动画
+
+平台在回放时加载同一精确版本的 `desktop?replay=1`，在原 sandbox/CSP 内添加输入拦截和动画观察包装，不修改已安装 HTML、hash 或规则版本。连续前进传 busy=false 和该步本人投影事件，让旧包原有动画执行；初始化、倒退和进度跳转传 busy=true 且不传表现事件。平台禁用控件、拦截交互、丢弃动作，busy=false 不代表授予操作权限；没有实时音效授权。CSS/Web Animations 和连续 DOM 变化由平台自动观察，最长 60 秒，无需发布新包。
+
+可选 `boardgame:view.replay={id,animate}` 和 `parent.postMessage({type:'boardgame:replay-animation',id:replay.id,durationMs:1200},'*')` 可补充 Canvas/WebGL、长空白延迟等无法自动推断的时长。宿主仅接受当前 iframe/当前 id 和有限 1–60000ms；自动播放等待步间隔和动画，手动跳转允许中断。平台只执行原桌面的 View/事件表现代码，不重跑规则，也无法从局面猜出仅在原点击处理器中的动画。
+
 ## 安装 API 与版本
 
 先 POST `/api/v1/admin/game-packages/review`（相同 ZIP 正文和身份保护）执行格式及规则生命周期检查，不持久化或改变上架状态。返回 gameId/version/name/hash、kind（new/update/installed）、installedVersions 和 catalogHash。按 manifest.id 判断同一游戏，名称不参与身份判断。管理员人工审核来源、规则及私密投影后发布。更新必须在安装请求 query 传 expectedCatalogHash；审核后的安装版本或上架状态变化返回 STATE_CONFLICT，需重新检查。同 ID 新版本原子下架所有旧版本并上架上传版本，大厅只显示新版；等待中的旧版本房间无法开局，进行中/历史对局继续使用旧规则。旧源码与桌面不删除，同版本不同内容仍须提升版本号。相同包重传不改变目录状态，也不重复覆盖。

@@ -44,6 +44,42 @@ test.beforeEach(async ({ page }) => {
   await mount(page);
 });
 
+test('platform watches unchanged scoring animations through the entire read-only replay sequence', async ({ page }, info) => {
+  const data = settlement(7);
+  const matchId = '33333333-3333-4333-8333-333333333333';
+  const seats = ['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222'];
+  await page.route(`**/matches/${matchId}/replay*`, async route => {
+    const revision = Number(new URL(route.request().url()).searchParams.get('revision') ?? 0);
+    await route.fulfill({ json: { ok: true, traceId: matchId, data: {
+      matchId, gameId: 'azul.base', gameVersion: '1.0.0', status: 'finished',
+      firstRevision: 0, lastRevision: 2, revision, seatIndex: 0,
+      actorSeatId: revision ? seats[0] : null, recordedAt: '2026-10-11T00:00:00Z',
+      players: seats.map((seatId, seatIndex) => ({ seatId, seatIndex, occupantKind: 'human', displayName: '玩家' })),
+      assetBinding: null, view: revision ? data.after : data.before, events: revision === 1 ? data.events : [],
+    } } });
+  });
+  await page.evaluate(async ({ path, matchId }) => {
+    const load = (url: string) => import(/* @vite-ignore */ url);
+    const [{ default: React }, { default: ReactDOM }, { ReplayPage }] = await Promise.all([
+      load('/node_modules/.vite/deps/react.js'), load('/node_modules/.vite/deps/react-dom_client.js'), load(path),
+    ]);
+    document.body.innerHTML = '<div id="replay-test"></div>';
+    ReactDOM.createRoot(document.getElementById('replay-test')).render(React.createElement(ReplayPage, { id: matchId }));
+  }, { path: `/@fs/${resolve('apps/web/src/pages/ReplayPage.tsx').replaceAll('\\', '/')}`, matchId });
+  await expect(page.getByLabel('回放进度')).toHaveValue('0');
+  await expect(page.getByLabel('你得分', { exact: true })).toHaveText('10分');
+  await page.getByLabel('播放速度').selectOption('4');
+  await page.getByRole('button', { name: '播放', exact: true }).click();
+  await expect(page.getByLabel('回放进度')).toHaveValue('1');
+  await page.waitForTimeout(700);
+  await expect(page.getByLabel('回放进度')).toHaveValue('1');
+  await expect(page.locator('.az-score-float')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('platform-replay-scoring.png'), fullPage: true });
+  await expect(page.getByLabel('回放进度')).toHaveValue('2', { timeout: 15000 });
+  await expect(page.getByLabel('你得分', { exact: true })).toHaveText('53分');
+  await expect(page.locator('.az-flying-tile, .az-score-float')).toHaveCount(0);
+});
+
 test('HTTP finished View cannot flash final scores or wall before delayed live settlement', async ({ page }) => {
   const data = settlement(7);
   await render(page, data.before);

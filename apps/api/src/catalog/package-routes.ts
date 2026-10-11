@@ -6,6 +6,7 @@ import { gamePackageRequestSchema } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { AppError } from '../errors.js';
 import { GamePackageService, packageVersionParams } from './package-service.js';
+import { replayDesktop } from './replay-desktop.js';
 
 export function registerGamePackageRoutes(app: FastifyInstance, auth: AuthService, packages: GamePackageService) {
   const path = '/api/v1/admin/game-packages';
@@ -62,9 +63,11 @@ export function registerGamePackageRoutes(app: FastifyInstance, auth: AuthServic
   });
   app.get('/api/v1/game-packages/:id/versions/:version/desktop', async (request, reply) => {
     const { id, version } = packageVersionParams.parse(request.params);
+    const query = z.object({ replay: z.literal('1').optional() }).parse(request.query);
     // Safe even outside the platform iframe: response CSP also forces an opaque sandbox origin.
     reply.type('text/html; charset=utf-8').header('cache-control', 'no-store').header('x-content-type-options', 'nosniff')
       .header('content-security-policy', "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; frame-src 'none'; object-src 'none'");
-    return reply.send(await packages.desktop(id, version));
+    const html = await packages.desktop(id, version);
+    return reply.send(query.replay ? replayDesktop(html) : html);
   });
 }

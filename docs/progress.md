@@ -1,5 +1,43 @@
 # 开发进度
 
+## 回放动画改由平台兼容旧桌面（2026-10-11）
+
+按用户纠正，撤回上一批仅为回放而新增的拉密 1.0.4 及花砖专用时长回调。拉密 client/server/README、打包入口及花砖客户端与 `aae4fec` 的源码一致；恢复使用原拉密 1.0.3，不重写数据库里已安装的包，不要求用户重新上传，不把本地旧的 1.0.4 产物作为交付包。上一条记录保留为先前方案事实，本条为当前实现。
+
+平台连续回放以历史本人 View/事件驱动原桌面的表现代码，传 busy=false 以兼容旧客户端原有动画；只读保护由宿主拦截输入、禁用原生控件和丢弃动作提供，不以 busy 授权。内置桌面由 replay-motion 自动观察有限 CSS/Web Animations 与 DOM 变化；在线包通过原 desktop 路径的可选 replay=1 在原不透明 sandbox/CSP 内加入平台观察/输入拦截脚本，数据库 HTML/包 hash/规则和内容版本保持不变，普通桌面响应不变。自动播放等待原动画和最后一次变化后的 500ms 稳定窗口；观察最长60秒、无限装饰动画不阻塞，跳转/卸载清理。只执行原客户端表现代码，不重跑规则、不读取完整 State、无 live 音效授权。Canvas/WebGL、较长自定义空白延迟或仅在原点击处理器中的动画不能从历史局面可靠推断，可选 hold/消息时长提示仍可补充，但不是普通游戏动画的接入要求。
+
+平台版本 0.4.0 → 0.4.1，为上一批回放兼容性修正；README 同步。游戏、内容、资源与 workspace 包版本不递增，无数据库迁移。
+
+验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；全库 ESLint、20 目录 AST 边界通过，完整 lint 仍因38个未修改文件的既有 CRLF 换行在 format:check 失败，未批量格式化。最后所有受影响 TS/TSX 定向 ESLint、git diff --check 通过。`pnpm --config.verify-deps-before-run=false build` 提权完整通过，含 production bundle/API runtime、隔离 ZIP/序列化和 AI worker 检查。
+
+所有数据库测试经原准备脚本使用独立 `boardgame_motion_20261011`，集成和 E2E 顺序执行，没有清理开发库。`node .data/motion-validation.mjs --config.verify-deps-before-run=false test:integration` 中24文件172项通过，新增在线包断言因局部变量 replay 与原用例重名导致该文件编译失败；更名 replayDocument 后用原准备脚本加 `--testNamePattern=administrator.*installation` 仅重跑失败范围，在线包2项通过，其他172项按过滤跳过，未把跳过算作新通过。新断言验证回放包装与原 CSP 一致、去除平台脚本后等于原 HTML、数据库源码不变，以及非法 replay 参数拒绝。
+
+`node .data/motion-validation.mjs --config.verify-deps-before-run=false test:e2e tests/e2e/rummikub-package-ui.spec.ts tests/e2e/replay.spec.ts tests/e2e/game-packages.spec.ts tests/e2e/azul-scoring-ui.spec.ts --output .data/platform-replay-motion` 桌面/手机22/22通过，无 skip。覆盖未修改1.0.3包在只读宿主中播放原动画、无需作者回调即可自动等待原生1200ms动画、未修改花砖在4×仍完整播放逐砖/奖励计分、旧包精确版本/iframe文档保持、跳转/减少动态效果、控件禁用与直接伪造动作不提交。原真实登录/完局/历史回放流程同时通过；动画专项使用真实规则生成的本人 View/事件夹具，不记作真实联机整局。
+
+截图在上述忽略输出目录，覆盖1440×900、390×844 CSS像素，原真人回放另覆盖1024×768。实际查看花砖手机及拉密桌面动画截图；测试挂载页不等于新增产品页面。未更改全局主题/布局，未扩大到全主题矩阵或物理手机/辅助技术。已完成必要验证，下一步按原发布分支流程合入并更新平台；本轮不合并、不部署，也不上传游戏包。
+
+## 开发者动画的回放呈现（2026-10-11）
+
+按用户澄清，本轮修复回放动画展示，不扩展普通实时同步。定位到 ReplayPage 固定传空事件并按 revision 重建内置桌面，拉密又以 busy 禁止所有移动动画。现在「下一步」/自动播放保留桌面实例，传递该步本人历史投影事件；初始化、倒退、首尾和进度跳转直接展示目标局面，内置桌面重置，在线包保持同一 iframe。新增可选 ReplayPresentation 和 sandbox 回放提示，开发者可为完整动画序列声明 1–60000ms 时长，自动播放取步间隔和动画时间较长者；过期回调无效，手动跳转允许中断。保持 busy=true、动作丢弃和无 live 音效授权。
+
+花砖复用逐砖飞行、连线、奖励完整计分队列；拉密 1.0.4 复用现有 360ms 摸牌/公共牌移位动画，回放明确显示只读状态，并保留减少动态效果。已生成忽略目录 `dist/game-packages/rummikub-1.0.4.zip`，需管理员按原审核流程上传后供新局使用；旧局保持其锁定版本，未覆盖旧包或生产上架。没有为未实现动画的游戏合成动画。平台版本 0.3.0 → 0.4.0，为向后兼容的回放交互增强，README 同步；拉密内容/图包版本不变。
+
+验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；`pnpm --config.verify-deps-before-run=false test tests/unit/rummikub-package.test.ts tests/unit/azul-scoring.test.ts` 实际匹配拉密 1 文件/11 项通过（第二个路径无匹配，未计为测试）。完整 build 在沙箱 dist 写入 EPERM 后提权通过，含生产 bundle、API runtime、隔离 ZIP/序列化及 AI worker 检查。全库 ESLint 和 20 目录 AST 边界检查通过；完整 lint 的 format:check 因 38 个未修改文件的 CRLF 换行失败。逐一核对其与 HEAD 在归一换行后相同，归一后全部满足 Prettier；证据 `.data/replay-format-baseline.json`。未将此项记作完整 lint 通过，未批量改写无关文件。最终受影响 TS/TSX 文件定向 ESLint 通过。
+
+通过原 `test:e2e` 准备脚本使用独立 `boardgame_motion_20261011`，不清理开发库。`node .data/motion-validation.mjs --config.verify-deps-before-run=false test:e2e tests/e2e/rummikub-package-ui.spec.ts tests/e2e/replay.spec.ts tests/e2e/game-packages.spec.ts tests/e2e/azul-scoring-ui.spec.ts --output .data/replay-motion-after` 桌面/手机 20 项通过、2 项因新增夹具缺失 seatIndex/occupantKind 失败；修正夹具后仅重跑拉密回放专项，2/2 通过，无 skip。覆盖真实登录/完局/历史身份化回放、原 iframe 文档保持、内置连续步骤不重建、原移动和计分动画、4× 速度仍等待 1200ms 开发者序列、跳转不播放、减少动态效果与回放不提交动作。花砖/拉密动画专项使用真实规则生成的本人 View/事件夹具，不把它们计作真实联机整局。
+
+截图位于上述忽略输出目录，桌面 1440×900、手机 390×844 CSS 像素；实际查看拉密手机和花砖桌面截图，另有原真人回放笔记本 1024×768 截图。看图后修正拉密回放误显示同步中，再重新打包并执行 `.data/replay-motion-final` 专项，桌面/手机 2/2 通过，无 skip。未修改全局布局/主题，未额外运行全主题矩阵、物理手机或辅助技术检查；未改 API/数据库/身份契约，未运行全量集成或全量 E2E。下一步按原分支流程合入、部署，并由管理员审核新 ZIP；本轮未合并或部署。
+
+## 徽章可选 3D 预览（2026-10-11）
+
+Web 使用 `public/badges/manifest.json` 按徽章 ID 独立配置封面与 GLB 模型。清单默认为空，不用示例素材冒充正式徽章；未配置的徽章沿用原符号。徽章墙仅对有模型的徽章显示「查看 3D」，资料/聊天名片对应徽章可打开同一原生模态预览。封面可单独配置，错误回退符号；清单有界 ID/同源静态路径校验，错误回退空清单。`@google/model-viewer@4.2.0` 只在打开后动态加载，GLB 支持拖动、方向键与缩放，不自动旋转/播放；有 30 秒超时、错误提示和重试，关闭清理监听/超时并恢复触发焦点。修复本轮回归发现的 StrictMode close 事件与焦点恢复问题，以及依赖缓存失败 URL 导致重试无效的问题。完整配置与 Blockbench 交付格式见 [徽章](badges.md)。没有 API、数据库、身份/授予/展示资格变更，没有上传入口。平台版本 0.2.4 → 0.3.0（向后兼容的可选交互功能），README 同步。
+
+实际验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；最终 Web 定向 typecheck 与 ESLint 通过。`pnpm --config.verify-deps-before-run=false exec vitest run tests/unit/badge-media.test.ts` 6/6 通过（可选配置与路径/格式限制）。`pnpm --config.verify-deps-before-run=false lint` 最初仅因 38 个既有工作区文件 CRLF 不符合 Prettier 默认 LF 而失败；按原 format:check 范围仅规范化工作区换行，确认这些文件没有产生 Git 内容差异，随后完整 lint 通过（20 个 AST 边界目录、全库 ESLint、格式检查），未修改 lint 配置或跳过检查。
+
+`node .data/badges-validation.mjs --config.verify-deps-before-run=false test:e2e tests/e2e/badges.spec.ts --output .data/badge-3d-pass` 经原准备脚本确认独立 `boardgame_badges_20261011` 测试库，桌面/手机 2/2 通过，无 skip。扩展原真实登录/保存/授予/公共名片流程：仅 welcome 通过路由提供最小自包含测试 GLB，验证未点击不请求模型、无配置无入口、网络失败后重试真实渲染、Escape/关闭返回触发焦点、移除预览及本人名片再次打开。测试模型只存在于测试响应，不随产品交付。亮色模型弹窗截图覆盖 1440×900、1280×900、390×844 CSS 像素，实际查看笔记本和手机模型渲染截图；原徽章亮暗主题/减少动态效果、管理员及公共名片流程同时通过。暗色名片模型由自动流程打开并渲染，未额外保存暗色模型弹窗截图；未验证真实物理手机、辅助技术及用户尚未提供的 Blockbench 模型。生产构建包含独立约 292 KB gzip 模型查看器 chunk，仅按需下载。
+
+最终 `pnpm --config.verify-deps-before-run=false build` 在沙箱 dist 目录 EPERM 后提权完成原完整构建及生产 bundle/API runtime/隔离 ZIP 与 AI worker 检查。未运行不受本轮影响的全量单元、集成及全量 E2E，未部署。下一步将真实自包含 GLB 与透明封面按清单逐枚接入，再通过既有发布流程上线。
+
 ## 回放下一步加载闪屏修复（2026-10-11）
 
 代码定位到 ReplayPage 以 revision 作为整个棋桌错误边界的 key，每一步都会卸载在线包 iframe，重新请求桌面 HTML 并短暂展示游戏初始加载界面。registry 为在线包声明 preserveReplayDesktop，回放按对局及精确游戏版本保持该桌面实例，只通过原 sandbox 消息桥更新本人 View；内置桌面仍按步重置动画/选择状态。读取期间保留当前局面和步骤说明，移除控制栏瞬间出现的「读取中…」，aria-busy、只读 busy、空事件、动作丢弃及请求世代保护保持。

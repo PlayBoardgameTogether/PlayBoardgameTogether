@@ -26,6 +26,8 @@ client-sdk 的账户/房间方法不再允许调用者指定返回泛型，所�
 
 ## 对局回放（2026-10-04）
 
+2026-10-11 回放表现兼容：公开桌面 HTML 路径支持可选 `?replay=1`，仅给原 sandbox/CSP 响应添加平台输入拦截和动画观察包装，普通响应及数据库保存的包字节/hash 不变。非法 replay 值返回校验错误。本人历史 View/events 仍经原认证回放接口读取；此开关不授予身份、动作或网络权限，不改变 WS/规则/存档 DTO。
+
 新增认证 GET `/api/v1/matches/:id/replay?revision=N`，严格 query 和本人投影响应由 matchReplayQuerySchema/matchReplaySchema 定义。仅固定参与者读取 finished/aborted 对局，no-store；未指定 revision 从可用起点开始。完整 DTO、错误与隐私约束见 [回放协议](replays.md#协议)。
 
 ## 无人房间关闭（2026-10-04）

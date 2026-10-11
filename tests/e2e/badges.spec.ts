@@ -1,4 +1,5 @@
 import { test, expect, type Page } from './fixtures.js';
+import { badgeModelFixture } from './badge-model.js';
 
 async function login(page: Page, username: string) {
   await page.goto('/login');
@@ -15,6 +16,17 @@ test('badge collection, lost confirmation, administrator honors and public pins 
   test.setTimeout(90_000);
   const adminContext = await browser.newContext({ viewport: page.viewportSize() });
   const friendContext = await browser.newContext({ viewport: page.viewportSize() });
+  let modelRequests = 0;
+  await page.route('**/badges/manifest.json', (route) =>
+    route.fulfill({
+      json: { welcome: { model: '/badges/test.glb' } },
+    }),
+  );
+  await page.route('**/badges/test.glb*', async (route) => {
+    modelRequests += 1;
+    if (modelRequests === 1) return route.abort('failed');
+    await route.fulfill({ contentType: 'model/gltf-binary', body: badgeModelFixture() });
+  });
   try {
     const admin = await adminContext.newPage();
     const friend = await friendContext.newPage();
@@ -23,6 +35,34 @@ test('badge collection, lost confirmation, administrator honors and public pins 
     await page.getByRole('link', { name: '我的徽章 →', exact: true }).click();
     const welcome = page.getByRole('article', { name: '初来乍到', exact: true });
     await expect(welcome).toContainText('已获得');
+    const preview = welcome.getByRole('button', { name: '查看初来乍到的 3D 模型' });
+    await expect(preview).toBeVisible();
+    await expect(page.getByRole('button', { name: '查看初试身手的 3D 模型' })).toHaveCount(0);
+    expect(modelRequests).toBe(0);
+    await preview.click();
+    const modelDialog = page.getByRole('dialog', { name: '初来乍到', exact: true });
+    await expect(modelDialog.getByRole('alert')).toContainText('普通徽章仍可使用');
+    await modelDialog.getByRole('button', { name: '重试加载' }).click();
+    await expect(modelDialog).toContainText('拖动或使用方向键旋转', { timeout: 30_000 });
+    expect(modelRequests).toBe(2);
+    const viewer = modelDialog.locator('model-viewer');
+    await expect(viewer).toHaveAttribute('camera-controls', '');
+    await expect(viewer).not.toHaveAttribute('auto-rotate');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    for (const width of info.project.name === 'desktop' ? [1440, 1280] : [390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      await page.screenshot({
+        path: info.outputPath(`badge-model-${width}.png`),
+        animations: 'disabled',
+      });
+      expect(
+        await modelDialog.evaluate((element) => element.scrollWidth <= element.clientWidth),
+      ).toBe(true);
+    }
+    await page.keyboard.press('Escape');
+    await expect(modelDialog).toHaveCount(0);
+    await expect(preview).toBeFocused();
+    await expect(page.locator('model-viewer')).toHaveCount(0);
     await expect(
       page.getByRole('article', { name: '初试身手', exact: true }).getByRole('checkbox'),
     ).toBeDisabled();
@@ -151,6 +191,13 @@ test('badge collection, lost confirmation, administrator honors and public pins 
     await expect(shelf).not.toContainText('内测玩家');
     await page.reload();
     await expect(shelf).toContainText('社区贡献者');
+    const pinPreview = shelf.getByRole('button', { name: '查看初来乍到的 3D 模型' });
+    await pinPreview.click();
+    await expect(page.getByRole('dialog')).toContainText('拖动或使用方向键旋转', {
+      timeout: 30_000,
+    });
+    await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
+    await expect(pinPreview).toBeFocused();
   } finally {
     await adminContext.close();
     await friendContext.close();

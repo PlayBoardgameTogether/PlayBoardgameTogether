@@ -19,6 +19,7 @@
     "@boardgame/protocol": "workspace:*",
     "@boardgame/test-counter": "workspace:*",
     "@boardgame/ui": "workspace:*",
+    "@google/model-viewer": "4.2.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "@boardgame/game-sdk": "workspace:*",

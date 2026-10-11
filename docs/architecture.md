@@ -1,5 +1,9 @@
 # 架构
 
+## 回放表现通道（2026-10-11）
+
+ReplayPage 连续前进保留桌面，将本人历史 View/事件和 busy=false 交给原 GameBoard；平台通过 replay-motion 观察有限 CSS/Web Animations/DOM 变化，拦截输入、禁用控件并丢弃动作。在线包 desktop?replay=1 在原 opaque sandbox/CSP 内加入 catalog/replay-desktop 包装，自动观察动画并报告当前呈现 id 的时长；不改数据库中的源码/hash/规则版本，普通 desktop 响应不变。旧拉密 1.0.3、花砖等原桌面直接兼容，不要求新游戏包。可选 ReplayPresentation.hold 补充不可自动推断的自定义时长，观察上限60秒，过期回调忽略，跳转/卸载清理。未执行规则、未新增数据库或 WS 契约、未授予实时音效权限。
+
 ## 玩家徽章（2026-10-11）
 
 API `badges/BadgeService` 拥有收藏进度、精选展示与身份授予的持久操作；本人路由由 AccountRoutes 装配，管理员授予复用 AdminService 原有授权/回执事务。成长成就由固定参与者与已完成对局查询派生，不进入游戏规则或 matches 动作事务。protocol/badges 定义共享 DTO，client-sdk 提供校验后的五个方法；Web 的 badges 组件供独立徽章墙、本人资料和公共聊天名片复用。030 迁移保存精选、身份授予与本人回执。公开展示接口仅返回玩家主动选择的有效徽章，完整进度只供本人和管理员读取。详见 [玩家徽章](badges.md)。

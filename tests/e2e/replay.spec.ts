@@ -36,6 +36,7 @@ test('original participants can seek and play a saved match without sending acti
     await expect(page.getByRole('heading', { name: 'Color Match', exact: true })).toBeVisible();
     await expect(page.getByLabel('回放进度')).toHaveValue('0');
     await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
+    await page.locator('.color-hand-cards').evaluate(el => { el.setAttribute('data-replay-instance', 'retained'); });
     for (const button of await page.getByRole('region', { name: '回放棋桌' }).getByRole('button').all()) await expect(button).toBeDisabled();
     let releaseManualFrame!: () => void;
     let manualFrameRequested!: () => void;
@@ -57,6 +58,8 @@ test('original participants can seek and play a saved match without sending acti
     } finally { releaseManualFrame(); }
     await expect(page.getByLabel('回放进度')).toHaveValue('1');
     await expect(page.locator('.color-hand-cards button')).toHaveCount(6);
+    await expect(page.locator('.color-hand-cards')).toHaveAttribute('data-replay-instance', 'retained');
+    await expect(page.getByRole('region', { name: '行动记录' })).toContainText('摸了 1 张牌');
     await page.getByRole('button', { name: '末尾', exact: true }).click();
     await expect(page.getByLabel('回放进度')).toHaveValue('2');
     await page.getByRole('button', { name: '开头', exact: true }).click();

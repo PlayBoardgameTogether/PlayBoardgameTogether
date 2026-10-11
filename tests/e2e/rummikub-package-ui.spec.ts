@@ -2,6 +2,8 @@ import { platformStyles } from '../fixtures/platform-styles.js';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { replayDesktop } from '../../apps/api/src/catalog/replay-desktop.js';
 import { test, expect } from '@playwright/test';
 import { DeterministicRng, type Json } from '../../packages/game-sdk/src/index.js';
 import { PackageRuntime } from '../../apps/api/src/registry/package-runtime.js';
@@ -12,6 +14,100 @@ const webRequire = createRequire(new URL('../../apps/web/package.json', import.m
 const { buildSync } = createRequire(webRequire.resolve('vite'))('esbuild');
 const id = (color: number, number: number) => color * 26 + (number - 1) * 2;
 const run = (color: number, number: number, length = 3) => Array.from({ length }, (_, i) => id(color, number + i));
+
+test('platform replays the unchanged old package and waits for its original animation without author signals', async ({ page }, info) => {
+  const parsed = readGamePackage(await readFile('dist/game-packages/rummikub-1.0.3.zip'));
+  const game = (await PackageRuntime.create()).extension(parsed.server);
+  const seats = ['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222'];
+  const matchId = '33333333-3333-4333-8333-333333333333';
+  const table = run(0, 7, 6);
+  const remaining = Array.from({ length: 106 }, (_, i) => i).filter(id => !table.includes(id));
+  let state = game.deserialize({ seats, hands: [remaining.splice(0, 14), remaining.splice(0, 14)],
+    pool: remaining, table: [table], opened: [true, false], turn: 0, passes: 0, move: 0, publicLayout: null, layoutSeq: 0 });
+  const viewer = { kind: 'seat' as const, seatId: seats[0]! };
+  const frames = [{ view: game.getView(state, viewer), events: [] as Json[] }];
+  for (const layout of [[table.slice(0, 3), table.slice(3)], null]) {
+    const result = game.applyAction(state, { ...viewer, controllerEpoch: 0 }, { type: 'arrange_public', layout }, new DeterministicRng(7));
+    state = result.state;
+    frames.push({ view: game.getView(state, viewer), events: game.projectEvents(result.events, viewer) });
+  }
+  let actions = 0;
+  await page.route('**/api/**', async route => {
+    if (route.request().method() === 'POST') actions++;
+    if (new URL(route.request().url()).pathname.endsWith('/desktop')) {
+      await route.fulfill({ contentType: 'text/html', body: replayDesktop(parsed.client),
+        headers: { 'content-security-policy': "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'; frame-src 'none'; object-src 'none'" } });
+    } else if (route.request().url().includes(`/matches/${matchId}/replay`)) {
+      const revision = Number(new URL(route.request().url()).searchParams.get('revision') ?? 0);
+      await route.fulfill({ json: { ok: true, traceId: matchId, data: {
+        matchId, gameId: 'online.rummikub', gameVersion: '1.0.3', status: 'finished',
+        firstRevision: 0, lastRevision: 2, revision, seatIndex: 0,
+        actorSeatId: revision ? seats[0] : null, recordedAt: '2026-10-11T00:00:00Z',
+        players: seats.map((seatId, index) => ({ seatId, seatIndex: index, occupantKind: 'human', displayName: '玩家 ' + (index + 1) })),
+        assetBinding: null, view: frames[revision]!.view,
+        events: frames[revision]!.events.map((event, index) => ({ ...event as object, eventId: `${matchId}:${revision}:${index}` })),
+      } } });
+    } else await route.abort();
+  });
+  await page.goto('/');
+  await page.evaluate(async ({ path, matchId }) => {
+    const load = (url: string) => import(/* @vite-ignore */ url);
+    const [{ default: React }, { default: ReactDOM }, { ReplayPage }] = await Promise.all([
+      load('/node_modules/.vite/deps/react.js'), load('/node_modules/.vite/deps/react-dom_client.js'), load(path),
+    ]);
+    document.body.innerHTML = '<div id="replay-test"></div>';
+    ReactDOM.createRoot(document.getElementById('replay-test')).render(React.createElement(ReplayPage, { id: matchId }));
+  }, { path: `/@fs/${resolve('apps/web/src/pages/ReplayPage.tsx').replaceAll('\\', '/')}`, matchId });
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('#table .tile')).toHaveCount(6);
+  const child = page.frames().find(f => f.url().includes('/desktop'))!;
+  await child.evaluate(() => {
+    document.documentElement.dataset.instance = 'retained';
+    document.documentElement.dataset.flights = '0';
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (...args) {
+      document.documentElement.dataset.flights = String(Number(document.documentElement.dataset.flights) + 1);
+      // Model a slower developer-authored native animation without a platform callback.
+      args[1] = { ...(typeof args[1] === 'object' ? args[1] : {}), duration: 1200 };
+      return animate.apply(this, args);
+    };
+    addEventListener('message', event => {
+      if (event.source !== parent || event.data?.type !== 'boardgame:view') return;
+      document.documentElement.dataset.busy = String(event.data.busy);
+    });
+  });
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
+  await expect(frame.locator('#table .meld')).toHaveCount(2);
+  await expect.poll(() => frame.locator('html').getAttribute('data-flights')).not.toBe('0');
+  await expect(frame.locator('html')).toHaveAttribute('data-busy', 'false');
+  for (const button of await frame.getByRole('button').all()) await expect(button).toBeDisabled();
+  await expect(frame.locator('html')).toHaveAttribute('data-instance', 'retained');
+  await page.screenshot({ path: info.outputPath('replay-arrangement.png') });
+  await page.getByRole('button', { name: '开头', exact: true }).click();
+  await expect(frame.locator('#table .meld')).toHaveCount(1);
+  const flights = await frame.locator('html').getAttribute('data-flights');
+  await page.getByLabel('回放进度').fill('1');
+  await expect(frame.locator('#table .meld')).toHaveCount(2);
+  expect(await frame.locator('html').getAttribute('data-flights')).toBe(flights);
+  await page.getByRole('button', { name: '开头', exact: true }).click();
+  await expect(page.getByLabel('回放进度')).toHaveValue('0');
+  await page.getByLabel('播放速度').selectOption('4');
+  await page.getByRole('button', { name: '播放', exact: true }).click();
+  await expect(page.getByLabel('回放进度')).toHaveValue('1');
+  await page.waitForTimeout(600);
+  await expect(page.getByLabel('回放进度')).toHaveValue('1');
+  await expect(page.getByLabel('回放进度')).toHaveValue('2');
+  await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('button', { name: '开头', exact: true }).click();
+  await expect(page.getByLabel('回放进度')).toHaveValue('0');
+  const beforeReduced = await frame.locator('html').getAttribute('data-flights');
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
+  await expect(frame.locator('#table .meld')).toHaveCount(2);
+  expect(await frame.locator('html').getAttribute('data-flights')).toBe(beforeReduced);
+  await child.evaluate(() => parent.postMessage({ type: 'boardgame:action', action: { type: 'draw' } }, '*'));
+  expect(actions).toBe(0);
+});
 
 test('catalog artwork fits the real cover and small icon without letterboxing or cropping', async ({ page }, info) => {
   const parsed = readGamePackage(await readFile('dist/game-packages/rummikub-1.0.3.zip'));

@@ -2,7 +2,7 @@
 
 ## 统一回放（2026-10-04）
 
-内置和在线 ZIP 扩展自动接入回放，无需额外规则接口；平台通过原精确版本 deserialize/getView/projectEvents 保持本人历史视角。客户端继续遵守 busy=true 禁止动作，宿主丢弃 onAction 且不提供 live 音效。当前逐步切换局面，不重放计分/移动动画。详见 [回放](replays.md)。
+内置和在线 ZIP 扩展自动接入回放，无需额外规则接口；平台通过原精确版本 deserialize/getView/projectEvents 保持本人历史视角。宿主负责禁用交互、丢弃 onAction 且不提供 live 音效授权。连续前进支持原有计分/移动动画，平台处理兼容和播放等待，见下方“回放动画”。详见 [回放](replays.md)。
 
 ## 可选玩家名称（2026-10-04）
 
@@ -17,6 +17,14 @@ Web GameBoard 第七个可选参数 playerNames 为公开 seatId→displayName �
 Web `clientGames` 注册项可选 `finishBehavior: 'stay'`。声明后 MatchPage 在 active → finished 时保留最终身份化 View 和 live 投影事件，游戏可以播完计分/奖励；玩家用已有「返回房间」按钮主动离开。未声明的游戏维持自动返回行为。该项只是客户端表现策略，不改变服务端结算、房间 waiting 复位、权限、协议或版本锁。花砖物语使用此项；平台不按 gameId 添加规则分支。
 
 客户端可通过 `game-sdk/assets` 的 `PresentationAudioPort(eventId, cueId, key)` 请求动画节拍音效。Web 注册项设 `boardAudio: true` 后，GameBoard 第六个可选参数接收此端口，原即时 cue 播放由桌面替代；每个移动/得分节拍须使用稳定且不同的 key。平台只授权本页已接受且可播放的 WS live 事件，按事件/音效/键去重，静音、断线、后台、主控变化和卸载使旧授权失效。端口缺失（如教程）时保持静音；游戏不能创建独立音频播放器、从快照推断音效或将请求失败当成动作失败。
+
+
+
+## 回放动画（2026-10-11）
+
+平台连续前进时保留桌面、传递本人投影 events 和 busy=false，让旧游戏的原有动画代码执行；平台观察 CSS/Web Animations 和 DOM 变化来等待结束，无需升级游戏。初始化、倒退和跳转不传表现事件并保留 busy=true。宿主拦截输入、禁用控件并丢弃动作，busy=false 不授予动作权限。
+
+第八个可选参数 `@boardgame/game-sdk/presentation` 的 `ReplayPresentation`：`{id,animate,hold(durationMs)}`，仅供 Canvas/WebGL 或较长自定义空白延迟等无法自动观察的序列补充 1–60000ms 时长。id 标识当前呈现，过期回调无效；手动跳转允许中断，扩展清理自己的计时器和动画。不提供 audio 端口、不执行规则或提交动作、不传完整 State。在线 ZIP 接入见 [包格式](../apps/web/public/developer-docs/game-packages.md)。
 
 ## 可选交互教程（2026-10-03）
 
