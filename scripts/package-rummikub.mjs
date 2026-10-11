@@ -25,7 +25,7 @@ try {
   }
 } finally { await browser.close(); }
 files['game.json'] = Buffer.from(JSON.stringify(descriptor));
-const output = new URL('../dist/game-packages/rummikub-1.0.3.zip', import.meta.url);
+const output = new URL('../dist/game-packages/rummikub-1.0.4.zip', import.meta.url);
 await mkdir(new URL('.', output), { recursive: true });
 const bytes = zipSync(files, { mtime: new Date('2026-10-04T00:00:00Z'), level: 9 });
 await writeFile(output, bytes);

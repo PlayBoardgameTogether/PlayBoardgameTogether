@@ -1,5 +1,17 @@
 # 开发进度
 
+## 开发者动画的回放呈现（2026-10-11）
+
+按用户澄清，本轮修复回放动画展示，不扩展普通实时同步。定位到 ReplayPage 固定传空事件并按 revision 重建内置桌面，拉密又以 busy 禁止所有移动动画。现在「下一步」/自动播放保留桌面实例，传递该步本人历史投影事件；初始化、倒退、首尾和进度跳转直接展示目标局面，内置桌面重置，在线包保持同一 iframe。新增可选 ReplayPresentation 和 sandbox 回放提示，开发者可为完整动画序列声明 1–60000ms 时长，自动播放取步间隔和动画时间较长者；过期回调无效，手动跳转允许中断。保持 busy=true、动作丢弃和无 live 音效授权。
+
+花砖复用逐砖飞行、连线、奖励完整计分队列；拉密 1.0.4 复用现有 360ms 摸牌/公共牌移位动画，回放明确显示只读状态，并保留减少动态效果。已生成忽略目录 `dist/game-packages/rummikub-1.0.4.zip`，需管理员按原审核流程上传后供新局使用；旧局保持其锁定版本，未覆盖旧包或生产上架。没有为未实现动画的游戏合成动画。平台版本 0.3.0 → 0.4.0，为向后兼容的回放交互增强，README 同步；拉密内容/图包版本不变。
+
+验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；`pnpm --config.verify-deps-before-run=false test tests/unit/rummikub-package.test.ts tests/unit/azul-scoring.test.ts` 实际匹配拉密 1 文件/11 项通过（第二个路径无匹配，未计为测试）。完整 build 在沙箱 dist 写入 EPERM 后提权通过，含生产 bundle、API runtime、隔离 ZIP/序列化及 AI worker 检查。全库 ESLint 和 20 目录 AST 边界检查通过；完整 lint 的 format:check 因 38 个未修改文件的 CRLF 换行失败。逐一核对其与 HEAD 在归一换行后相同，归一后全部满足 Prettier；证据 `.data/replay-format-baseline.json`。未将此项记作完整 lint 通过，未批量改写无关文件。最终受影响 TS/TSX 文件定向 ESLint 通过。
+
+通过原 `test:e2e` 准备脚本使用独立 `boardgame_motion_20261011`，不清理开发库。`node .data/motion-validation.mjs --config.verify-deps-before-run=false test:e2e tests/e2e/rummikub-package-ui.spec.ts tests/e2e/replay.spec.ts tests/e2e/game-packages.spec.ts tests/e2e/azul-scoring-ui.spec.ts --output .data/replay-motion-after` 桌面/手机 20 项通过、2 项因新增夹具缺失 seatIndex/occupantKind 失败；修正夹具后仅重跑拉密回放专项，2/2 通过，无 skip。覆盖真实登录/完局/历史身份化回放、原 iframe 文档保持、内置连续步骤不重建、原移动和计分动画、4× 速度仍等待 1200ms 开发者序列、跳转不播放、减少动态效果与回放不提交动作。花砖/拉密动画专项使用真实规则生成的本人 View/事件夹具，不把它们计作真实联机整局。
+
+截图位于上述忽略输出目录，桌面 1440×900、手机 390×844 CSS 像素；实际查看拉密手机和花砖桌面截图，另有原真人回放笔记本 1024×768 截图。看图后修正拉密回放误显示同步中，再重新打包并执行 `.data/replay-motion-final` 专项，桌面/手机 2/2 通过，无 skip。未修改全局布局/主题，未额外运行全主题矩阵、物理手机或辅助技术检查；未改 API/数据库/身份契约，未运行全量集成或全量 E2E。下一步按原分支流程合入、部署，并由管理员审核新 ZIP；本轮未合并或部署。
+
 ## 徽章可选 3D 预览（2026-10-11）
 
 Web 使用 `public/badges/manifest.json` 按徽章 ID 独立配置封面与 GLB 模型。清单默认为空，不用示例素材冒充正式徽章；未配置的徽章沿用原符号。徽章墙仅对有模型的徽章显示「查看 3D」，资料/聊天名片对应徽章可打开同一原生模态预览。封面可单独配置，错误回退符号；清单有界 ID/同源静态路径校验，错误回退空清单。`@google/model-viewer@4.2.0` 只在打开后动态加载，GLB 支持拖动、方向键与缩放，不自动旋转/播放；有 30 秒超时、错误提示和重试，关闭清理监听/超时并恢复触发焦点。修复本轮回归发现的 StrictMode close 事件与焦点恢复问题，以及依赖缓存失败 URL 导致重试无效的问题。完整配置与 Blockbench 交付格式见 [徽章](badges.md)。没有 API、数据库、身份/授予/展示资格变更，没有上传入口。平台版本 0.2.4 → 0.3.0（向后兼容的可选交互功能），README 同步。

@@ -130,7 +130,7 @@ function suggestions(view) {
 }
 const game = {
   manifest: {
-    id: 'online.rummikub', version: '1.0.3', contentVersion: '1.1.0', name: '拉密', sdkRange: '^0.1.0',
+    id: 'online.rummikub', version: '1.0.4', contentVersion: '1.1.0', name: '拉密', sdkRange: '^0.1.0',
     description: '2–4 人经典数字牌桌：30 分破冰、普通百搭与自由重组。支持基础 AI。',
     players: { min: 2, max: 4 }, mode: 'rules-driven', capabilities: ['private-view', 'turn-based'],
     defaultAssetPack: { id: 'online.rummikub.default', version: '1.0.0' }, developmentOnly: false

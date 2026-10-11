@@ -24,4 +24,10 @@ GET `/api/v1/matches/:id/replay?revision=N` 要求活跃 session 和固定参与
 
 MatchService.replay 在只读 REPEATABLE READ 事务中读取身份、范围、帧与公开参与者，通过原精确 registry 扩展 deserialize/getView/projectEvents 投影，不重新执行规则。Web 的 `/matches/:id/replay` 按需加载 ReplayPage，复用 clientGame/PackageBoard，busy=true、丢弃动作、无 live 音效。内置桌面每步重建以避免选择/动画残留；在线包桌面通过 registry 的 preserveReplayDesktop 保留同一 iframe，只更新本人 View，避免每步重载 HTML 闪出初始加载界面。读取下一步时保留当前局面与步骤说明，完成后一起更新，仍以 aria-busy 表达读取状态。读取世代忽略迟到请求，卸载清理播放定时器，不缓存视图到本地存储。
 
-内置和在线 ZIP 扩展无需新增规则接口。桌面仍应遵守 busy=true 禁止动作。未来若新增历史动画，应使用已投影事件及专用回放表现通道，不复用正式 live 音效授权。
+## 回放动画（2026-10-11）
+
+以上“内置桌面每步重建”是初版行为；现在连续「下一步」和自动播放保留桌面实例，传递该步本人投影事件，让开发者已有动画完整呈现。跳转、倒退及重新开始不传表现事件；内置桌面重置，在线包保持 iframe 并收到 replay.animate=false。读取期间仍保留上一帧。
+
+GameBoard 第八个可选参数 ReplayPresentation 提供 id、animate 和 hold(durationMs)。自动播放等待速度对应的步间隔及当前动画时间中较长者，再读取下一帧；最后一帧也保留播放时间。hold 接受有限 1–60000ms，过期步骤的回调被忽略；手动跳转允许中断。桌面始终 busy=true、丢弃动作且无 live 音效授权，不改变服务端投影/身份/存档契约。
+
+在线包收到 boardgame:view.replay={id,animate}，可在只读 busy=true 时根据 animate 播放原动画，并通过 boardgame:replay-animation 回报同一 id 和 durationMs。旧包仍可读取，不会修改已锁定的桌面；若其动画被 busy 阻止，作者需发布新包接入。拉密 1.0.4 接入现有 360ms 移动动画，花砖物语复用原完整逐砖/连线/奖励计分序列及减少动态效果处理。没有为未实现动画的游戏自动合成动画。

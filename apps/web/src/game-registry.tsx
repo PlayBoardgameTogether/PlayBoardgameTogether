@@ -1,6 +1,6 @@
 import { viewSchema as azulViewSchema } from '@boardgame/azul/shared';
 import { viewSchema as splendorViewSchema } from '@boardgame/splendor/shared';
-import type { PlayerNames } from '@boardgame/game-sdk/presentation';
+import type { PlayerNames, ReplayPresentation } from '@boardgame/game-sdk/presentation';
 import type { ReactNode } from 'react';
 import type { GameTutorial } from '@boardgame/game-sdk/tutorial';
 import type { AssetResolverPort, PresentationAudioPort } from '@boardgame/game-sdk/assets';
@@ -9,14 +9,14 @@ import { viewSchema as counterViewSchema } from '@boardgame/test-counter/shared'
 import { viewSchema as colorViewSchema } from '@boardgame/color-match/shared';
 import { viewSchema as gardenViewSchema } from '@boardgame/grid-garden/shared';
 
-export type GameBoard = (view: unknown, busy: boolean, events: unknown[], onAction: (action: unknown) => void, assets?:AssetResolverPort, audio?: PresentationAudioPort, playerNames?: PlayerNames) => ReactNode;
+export type GameBoard = (view: unknown, busy: boolean, events: unknown[], onAction: (action: unknown) => void, assets?:AssetResolverPort, audio?: PresentationAudioPort, playerNames?: PlayerNames, replay?: ReplayPresentation) => ReactNode;
 export const clientGames = [
   {
     id: 'azul.base', version: '1.0.0', name: '花砖物语', defaultOptions: {}, finishBehavior: 'stay',
     boardAudio: true,
     load: async (): Promise<GameBoard> => {
       const { AzulBoard } = await import('@boardgame/azul/client');
-      return (view, busy, events, onAction, _assets, audio, playerNames) => <AzulBoard view={azulViewSchema.parse(view)} busy={busy} events={events} onAction={onAction} audio={audio} playerNames={playerNames} />;
+      return (view, busy, events, onAction, _assets, audio, playerNames, replay) => <AzulBoard view={azulViewSchema.parse(view)} busy={busy} events={events} onAction={onAction} audio={audio} playerNames={playerNames} replay={replay} />;
     },
   },
   {
@@ -61,8 +61,8 @@ export function clientGame(id: string, version: string) {
   return clientGames.find(game => game.id === id && game.version === version) ?? {
     id, version, name: id, defaultOptions: {}, finishBehavior: 'stay',
     preserveReplayDesktop: true,
-    load: async (): Promise<GameBoard> => (view, busy, events, onAction) =>
-      <PackageBoard id={id} version={version} view={view} busy={busy} events={events} onAction={onAction} />,
+    load: async (): Promise<GameBoard> => (view, busy, events, onAction, _assets, _audio, _names, replay) =>
+      <PackageBoard id={id} version={version} view={view} busy={busy} events={events} onAction={onAction} replay={replay} />,
   };
 }
 

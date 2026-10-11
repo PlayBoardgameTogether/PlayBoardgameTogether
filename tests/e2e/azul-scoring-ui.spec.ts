@@ -16,8 +16,8 @@ function settlement(index: number) {
   };
 }
 
-async function render(page: Page, view: AzulView, events: unknown[] = []) {
-  await page.evaluate(({ view, events }) => Reflect.get(window, 'renderAzul')(view, events), { view, events });
+async function render(page: Page, view: AzulView, events: unknown[] = [], replay = false) {
+  await page.evaluate(({ view, events, replay }) => Reflect.get(window, 'renderAzul')(view, events, replay), { view, events, replay });
 }
 
 async function mount(page: Page) {
@@ -32,8 +32,9 @@ async function mount(page: Page) {
     document.body.innerHTML = '<div id="azul-test"></div>';
     document.body.style.cssText = 'margin:0;background:#162a35';
     const root = ReactDOM.createRoot(document.getElementById('azul-test'));
-    Reflect.set(window, 'renderAzul', (view: unknown, events: unknown[]) => root.render(
-      React.createElement(AzulBoard, { view, events, busy: false, onAction: () => {} }),
+    Reflect.set(window, 'renderAzul', (view: unknown, events: unknown[], replay = false) => root.render(
+      React.createElement(AzulBoard, { view, events, busy: replay, onAction: () => {},
+        replay: replay ? { id: 1, animate: true, hold: (duration: number) => { document.documentElement.dataset.replayDuration = String(duration); } } : undefined }),
     ));
   }, `/@fs/${resolve('games/azul/src/client/index.tsx').replaceAll('\\', '/')}`);
 }
@@ -42,6 +43,24 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', route => route.abort());
   await page.goto('/');
   await mount(page);
+});
+
+test('read-only replay preserves developer scoring flights and reserves the entire sequence', async ({ page }, info) => {
+  const data = settlement(7);
+  await render(page, data.before, [], true);
+  await expect(page.getByLabel('你得分', { exact: true })).toHaveText('10分');
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await render(page, data.after, data.events, true);
+  await expect(page.locator('.az-flying-tile')).toHaveCount(1);
+  const duration = Number(await page.locator('html').getAttribute('data-replay-duration'));
+  expect(duration).toBeGreaterThan(1500);
+  await page.clock.runFor(1460);
+  await expect(page.locator('.az-score-float')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('replay-scoring.png'), fullPage: true });
+  await page.clock.runFor(duration);
+  await expect(page.locator('.az-flying-tile, .az-score-float')).toHaveCount(0);
+  await expect(page.getByLabel('你得分', { exact: true })).toHaveText('53分');
 });
 
 test('HTTP finished View cannot flash final scores or wall before delayed live settlement', async ({ page }) => {

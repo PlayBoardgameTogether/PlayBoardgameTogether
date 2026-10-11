@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { playerLabel, type PlayerNames } from '@boardgame/game-sdk/presentation';
+import { playerLabel, type PlayerNames, type ReplayPresentation } from '@boardgame/game-sdk/presentation';
 import type { PresentationAudioPort } from '@boardgame/game-sdk/assets';
 import {
   colors, names, symbols, floorPenalties, scoreEventSchema, wallColor, wallColumn,
@@ -32,9 +32,10 @@ type Beat = ScoreStep & {
   round: number;
   floor?: AzulView['players'][string]['floor'] | undefined;
 };
-export function AzulBoard({ view, busy, events = [], onAction, audio, playerNames }: {
+export function AzulBoard({ view, busy, events = [], onAction, audio, playerNames, replay }: {
   view: AzulView; busy: boolean; events?: unknown[]; onAction: (action: AzulAction) => void;
   audio?: PresentationAudioPort | undefined; playerNames?: PlayerNames | undefined;
+  replay?: ReplayPresentation | undefined;
 }) {
   const [selection, setSelection] = useState<{ source: number; color: Color } | null>(null);
   const [row, setRow] = useState<number | null>(null);
@@ -89,7 +90,14 @@ export function AzulBoard({ view, busy, events = [], onAction, audio, playerName
       }));
     }
     if (seen.current.size > 100) seen.current = new Set([...seen.current].slice(-50));
-    if (fresh.length) setPending(old => [...old, ...fresh].slice(-88));
+    if (fresh.length) {
+      if (replay?.animate) {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        replay.hold(fresh.reduce((total, step) => total + (reduced ? scoreTiming.reduced
+          : scoreTiming.landing + scoreImpacts(step).length * scoreTiming.impact + scoreTiming.hold), 0));
+      }
+      setPending(old => [...old, ...fresh].slice(-88));
+    }
   }, [events]);
   useLayoutEffect(() => {
     // HTTP may deliver the settled View before its live events. Preserve the old round.
