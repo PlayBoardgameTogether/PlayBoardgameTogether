@@ -19,6 +19,33 @@ test('lobby owns creation and profile changes persist across reloads', async ({ 
   await page.getByRole('link', { name: '我的资料', exact: true }).click();
   await expect(page.getByRole('heading', { name: '我的资料', exact: true })).toBeVisible();
   await expect(page.getByLabel('昵称', { exact: true })).toHaveCount(0);
+  const originalViewport = page.viewportSize()!;
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.evaluate(theme => localStorage.setItem('boardgame.theme', theme), colorScheme);
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await expect(page.getByRole('heading', { name: '我的资料', exact: true })).toBeVisible();
+    for (const width of [1440, 1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      const heading = page.locator('.profile-heading');
+      await expect(heading).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+      const layout = await heading.evaluate(element => {
+        const header = element.getBoundingClientRect();
+        const title = element.querySelector('h1')!.getBoundingClientRect();
+        const card = document.querySelector('.profile-card')!.getBoundingClientRect();
+        return {
+          singleLine: title.height < 70,
+          contained: title.top >= header.top && title.bottom <= header.bottom,
+          separated: header.bottom <= card.top,
+          fits: document.documentElement.scrollWidth <= innerWidth,
+        };
+      });
+      expect(layout).toEqual({ singleLine: true, contained: true, separated: true, fits: true });
+      await page.screenshot({ path: info.outputPath(`profile-heading-${colorScheme}-${width}.png`), fullPage: true, animations: 'disabled' });
+    }
+  }
+  await page.setViewportSize(originalViewport);
   await page.getByText('账户操作', { exact: true }).click();
   await expect(page.locator('.account-id')).toHaveText(/^[0-9a-f-]{36}$/);
   await page.getByText('账户操作', { exact: true }).click();
