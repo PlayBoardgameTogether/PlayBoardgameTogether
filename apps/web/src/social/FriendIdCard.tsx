@@ -8,6 +8,7 @@ export function FriendIdCard() {
   const action = useSocialCommand();
   const [value, setValue] = useState('');
   const [copy, setCopy] = useState('');
+  const [copyError, setCopyError] = useState('');
   useEffect(() => {
     if (data) setValue(formatFriendId(data.identity.friendId));
   }, [data?.identity.friendId]);
@@ -25,6 +26,17 @@ export function FriendIdCard() {
       () => void refresh(),
     );
   }
+  async function copyFriendId() {
+    if (!data) return;
+    setCopy('');
+    setCopyError('');
+    try {
+      await navigator.clipboard.writeText(formatFriendId(data.identity.friendId));
+      setCopy('好友 ID 已复制');
+    } catch {
+      setCopyError('复制失败，请长按或选中 ID 复制');
+    }
+  }
   return (
     <section className="panel friend-id-card">
       <h2>我的好友 ID</h2>
@@ -33,15 +45,7 @@ export function FriendIdCard() {
           <p>
             <code className="friend-id">{formatFriendId(data.identity.friendId)}</code>
           </p>
-          <button
-            className="secondary"
-            onClick={() =>
-              void navigator.clipboard
-                .writeText(formatFriendId(data.identity.friendId))
-                .then(() => setCopy('好友 ID 已复制'))
-                .catch(() => setCopy('复制失败，请长按或选中 ID 复制'))
-            }
-          >
+          <button className="secondary" onClick={() => void copyFriendId()}>
             复制好友 ID
           </button>
           <p className="muted">
@@ -91,9 +95,9 @@ export function FriendIdCard() {
           </form>
         </>
       ) : (
-        <p>正在读取好友 ID…</p>
+        !error && <p>正在读取好友 ID…</p>
       )}
-      {(error || action.error) && (
+      {(error || action.error || copyError) && (
         <div className="profile-feedback-toast profile-feedback-toast--error">
           <span className="toast-icon" aria-hidden="true">
             <svg
@@ -114,11 +118,15 @@ export function FriendIdCard() {
           <div className="toast-body">
             <strong className="toast-title">提示</strong>
             <span className="error-notice" role="alert">
-              {error || action.error}
+              {error || action.error || copyError}
             </span>
           </div>
-          <button type="button" className="secondary" onClick={() => void refresh()}>
-            重新读取
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => void (copyError && !error && !action.error ? copyFriendId() : refresh())}
+          >
+            {copyError && !error && !action.error ? '重试复制' : '重新读取'}
           </button>
         </div>
       )}

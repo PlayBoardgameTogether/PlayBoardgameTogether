@@ -22,6 +22,6 @@ GET `/api/v1/matches/:id/replay?revision=N` 要求活跃 session 和固定参与
 
 029 新增 match_replay_frames，主键 (match_id, revision)，对局删除级联删除；保存服务端 state、步骤 status、internal_events、可空 actor_seat_id、created_at。matches INSERT / UPDATE OF state,revision 触发器在原事务保存一次状态帧，重复同 revision 不覆盖。真人/自动动作在原 matches 事务附加内部事件及行动座位；后续 action/receipt/commit 故障一并回滚。控制权变化不生成步骤。
 
-MatchService.replay 在只读 REPEATABLE READ 事务中读取身份、范围、帧与公开参与者，通过原精确 registry 扩展 deserialize/getView/projectEvents 投影，不重新执行规则。Web 的 `/matches/:id/replay` 按需加载 ReplayPage，复用 clientGame/PackageBoard，busy=true、丢弃动作、无 live 音效，每步重建桌面避免选择/动画残留。读取世代忽略迟到请求，卸载清理播放定时器，不缓存视图到本地存储。
+MatchService.replay 在只读 REPEATABLE READ 事务中读取身份、范围、帧与公开参与者，通过原精确 registry 扩展 deserialize/getView/projectEvents 投影，不重新执行规则。Web 的 `/matches/:id/replay` 按需加载 ReplayPage，复用 clientGame/PackageBoard，busy=true、丢弃动作、无 live 音效。内置桌面每步重建以避免选择/动画残留；在线包桌面通过 registry 的 preserveReplayDesktop 保留同一 iframe，只更新本人 View，避免每步重载 HTML 闪出初始加载界面。读取下一步时保留当前局面与步骤说明，完成后一起更新，仍以 aria-busy 表达读取状态。读取世代忽略迟到请求，卸载清理播放定时器，不缓存视图到本地存储。
 
 内置和在线 ZIP 扩展无需新增规则接口。桌面仍应遵守 busy=true 禁止动作。未来若新增历史动画，应使用已投影事件及专用回放表现通道，不复用正式 live 音效授权。

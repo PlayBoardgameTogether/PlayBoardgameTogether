@@ -81,6 +81,12 @@ export function ReplayPage({ id }: { id: string }) {
   // Automatic frame reads must not flash the controls into their disabled style.
   // Manual seeks stop playback and supersede any pending read via its request token.
   const controlsBusy = busy && !playing;
+  const game = frame && clientGame(frame.gameId, frame.gameVersion);
+  // Keep sandbox desktops mounted: remounting reloads their HTML and flashes
+  // their initial loading screen. Built-in boards still reset local animation state.
+  const desktopKey = frame && game && 'preserveReplayDesktop' in game && game.preserveReplayDesktop
+    ? `${id}:${frame.gameId}:${frame.gameVersion}`
+    : `${id}:${frame?.revision}`;
 
   return <div className="replay-page">
     <section className="replay-heading">
@@ -93,7 +99,7 @@ export function ReplayPage({ id }: { id: string }) {
     {frame ? <>
       {frame.firstRevision > 0 && <p className="muted" role="status">这局开始于回放功能上线前，仅保存第 {frame.firstRevision} 步起的局面。</p>}
       <section className="replay-table" aria-label="回放棋桌" aria-busy={busy}>
-        <GameErrorBoundary key={`${id}:${frame.revision}`}>
+        <GameErrorBoundary key={desktopKey}>
           {board ? <ReplayTable board={board} frame={frame} assets={assets} /> : <PageFeedback title="正在加载游戏桌面…" loading />}
         </GameErrorBoundary>
       </section>
@@ -102,7 +108,7 @@ export function ReplayPage({ id }: { id: string }) {
           <label htmlFor="replay-position">第 {frame.revision} / {frame.lastRevision} 步</label>
           <input id="replay-position" aria-label="回放进度" type="range" min={frame.firstRevision} max={frame.lastRevision} value={frame.revision}
             disabled={controlsBusy || frame.firstRevision === frame.lastRevision} onChange={event => seek(Number(event.target.value))} />
-          <span className="muted" aria-live="polite">{controlsBusy ? '读取中…' : frame.actorSeatId ? `${frame.players.find(player => player.seatId === frame.actorSeatId)?.displayName ?? '玩家'}行动` : frame.revision === 0 ? '初始局面' : '已保存局面'}</span>
+          <span className="muted" aria-live="polite">{frame.actorSeatId ? `${frame.players.find(player => player.seatId === frame.actorSeatId)?.displayName ?? '玩家'}行动` : frame.revision === 0 ? '初始局面' : '已保存局面'}</span>
         </div>
         <div className="replay-buttons">
           <button className="secondary" disabled={controlsBusy || frame.revision <= frame.firstRevision} onClick={() => seek(frame.firstRevision)}>开头</button>

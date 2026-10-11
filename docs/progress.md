@@ -1,5 +1,55 @@
 # 开发进度
 
+## 回放下一步加载闪屏修复（2026-10-11）
+
+代码定位到 ReplayPage 以 revision 作为整个棋桌错误边界的 key，每一步都会卸载在线包 iframe，重新请求桌面 HTML 并短暂展示游戏初始加载界面。registry 为在线包声明 preserveReplayDesktop，回放按对局及精确游戏版本保持该桌面实例，只通过原 sandbox 消息桥更新本人 View；内置桌面仍按步重置动画/选择状态。读取期间保留当前局面和步骤说明，移除控制栏瞬间出现的「读取中…」，aria-busy、只读 busy、空事件、动作丢弃及请求世代保护保持。
+
+扩展现有 replay E2E，以挂起下一步请求验证当前手牌/进度/说明保持；扩展真实在线 ZIP 完局流程，验证下一步、首尾跳转和自动播放保留同一 iframe 文档、更新分数且不重新请求 desktop、不发送动作。平台版本 0.2.3 → 0.2.4（兼容缺陷修复），README 同步。
+
+实际验证：`pnpm --config.verify-deps-before-run=false typecheck`、`pnpm --config.verify-deps-before-run=false lint` 通过，包含 20 个 AST 边界目录和格式检查；该 pnpm 参数避免沙箱缓存链接 EPERM，不关闭项目测试或类型保护。Web 定向 tsc、相关文件 ESLint 和全库 ESLint 也通过。`pnpm --config.verify-deps-before-run=false build` 最初被沙箱 dist 目录写入权限阻止，用户明确授权后在沙箱外完整通过，含生产 bundle、API runtime、隔离 ZIP 规则恢复及 AI worker 检查。
+
+浏览器验证：沙箱数据库连接 EACCES、审批超时后，用户明确授权并最终获准执行。`node .data/badges-validation.mjs test:e2e tests/e2e/game-packages.spec.ts tests/e2e/replay.spec.ts --output .data/replay-flicker-after` 经原准备脚本使用独立 boardgame_badges_20261011，原迁移/同步/资源准备正常；内置回放桌面/手机 2/2 通过，无 skip。在线包两项初次仅因新增分数断言混用 innerText 与 textContent 导致换行不一致失败，统一 textContent 后只重跑失败文件：`node .data/badges-validation.mjs test:e2e tests/e2e/game-packages.spec.ts --output .data/replay-flicker-verified` 桌面/手机 2/2 通过，无 skip。确认 iframe 原文档标记保持、desktop 请求数为零、步进分数变化、首尾恢复与自动播放终局、游戏操作禁用及动作请求数为零。末次测试文件 ESLint 通过。
+
+截图在上述忽略目录，内置回放覆盖 1440×900、1024×768、390×844（CSS 像素），在线包覆盖桌面/手机；实际查看内置手机与在线包桌面、手机最终截图。本轮未改变布局/主题，未额外执行全主题矩阵；真实物理手机与辅助技术未验证。没有服务端/协议/数据库变更，未运行全套集成或全量 E2E，未部署。下一步按原发布分支流程合入。
+
+## 模型配置页精简（2026-10-11）
+
+移除快捷厂商模板、一键添加、模型推荐按钮、四块统计卡和筛选标签；保留搜索与紧凑配置列表。表单突出名称、端点、模型标识和密钥，高级参数/启用开关默认折叠；复制、撤销凭证与删除收进原生“更多”，保留删除确认。缩小标题，移除重复保存提示及装饰堆叠，沿用暖色 Token 和亮暗主题。认证、密钥保留/替换与调用接口不变。
+
+验证：`pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，含 20 个 AST 边界目录、生产 bundle 和 API runtime/隔离 ZIP 检查。原 `test:e2e` 准备脚本使用独立 `boardgame_models_20261011`，不修改开发库。`node .data/models-validation.mjs test:e2e tests/e2e/stage6-model.spec.ts --output .data/model-settings-e2e` 4/4 通过，无 skip；覆盖真实新增/编辑/重载/删除确认与取消、模拟模型测试和托管终局、密钥留空保留/替换/撤销/恢复。供应商错误使用明确的模拟响应验证提示，未调用真实付费模型。
+
+实际看图后修正标题被主题放大与重复成功提示，受影响 Web typecheck、定向 ESLint、Web build 与 production bundle 再次通过。最终通过原脚本 `.data/model-settings-final` 定向 E2E 4/4 通过，无 skip。扩展原用例检查模板/统计区移除、高级设置默认折叠与键盘 Space 展开收起、无横向溢出；截图等待主题过渡结束，亮暗主题覆盖 1440×900、1280×900、390×900、320×900（CSS 像素）。实际查看桌面/笔记本亮色和手机深色截图，产物均在忽略目录。
+
+本批界面简化按 PATCH 递增 `0.2.2 → 0.2.3`。验证期间共享工作区新增另一批游戏/回放改动及 `0.2.4` 版本草稿，保留其文件和版本，仅提交本轮改动与 `0.2.3` 版本差异。未改后端/公开契约，未运行全套集成/全量 E2E，未部署公网；真实物理手机和辅助技术未验证。下一步按发布分支流程合入。
+
+## 资料区整体布局与反馈检查（2026-10-11）
+
+接续标题修复，实际检查 `/profile`、`/profile/edit`、`/profile/identity`、`/profile/history`、`/profile/badges` 的亮暗主题。资料区使用局部标题尺寸变量，避免通用主题将其放大到 50px；手机标题和账户操作自然换行，编辑面板减少留白。清理 vibrancy/theme-refresh 中两套历史头像选择规则，统一由 profile.css 的单层网格拥有布局；保留原生 radio，补齐可见键盘焦点。长好友 ID 可换行，浅色 ID 使用正文对比度；名片头、保存区及历史行可换行，移除历史页重复分隔线。
+
+复制按钮、提示关闭与简介入口满足 44px 点击高度；资料复制失败显示错误，重复复制重置计时器且卸载清理。ID 管理区复制失败不再误显示为操作成功，提供重试复制，读取失败不同时显示正在加载。错误提示在 320px 下将重试按钮换到下一行，避免正文被挤成窄列；浅色资料区错误文字使用深红色。复用原接口、认证与保存链路，无服务端、协议和数据库变化。
+
+实际验证与证据：
+
+- 原 `test:e2e` 准备脚本使用独立 `boardgame_badges_20261011`。新增 `tests/e2e/profile-layout.spec.ts`，修复前桌面/手机均复现头像焦点轮廓缺失；修复后与原 `profile.spec.ts` 合跑 4/4 通过，原真实编辑/保存/重载、空历史检查保持。新用例真实保存 32 字昵称、300 字简介、36 字好友 ID，五个页面均检查亮/暗主题和无横向溢出，覆盖桌面 1440×900、笔记本 1280×900、手机宽度 390/320×900（CSS 像素）。检查账户菜单边界、键盘选择、复制被拒绝后的反馈、加载失败与重试恢复。非空历史使用明确标注的渲染响应夹具覆盖三个状态和长房间名，不计为真实对局完成证据。
+- `.data/profile-audit-before` 保存初始页面截图；`.data/profile-audit-repro` 保存缺失焦点的失败证据；`.data/profile-audit-after` 完成 4 项回归。后续反馈与历史夹具补齐后 `.data/profile-audit-final` 新用例 2/2 通过。实际查看最终桌面编辑、手机首页/编辑/ID/徽章、深色非空历史截图，发现错误提示仍挤窄后修正并加入正文宽度断言；最终定向 `node .data/badges-validation.mjs test:e2e tests/e2e/profile-layout.spec.ts --output .data/profile-audit-reviewed` 桌面/手机 2/2 通过，无 skip；已实际查看 320px 提示换行修复后的截图。所有产物均在忽略目录，未提交测试账户或截图。
+- `pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，包含 20 个 AST 边界目录、生产 bundle 与 API runtime 检查。末次交互调整后的 Web typecheck、指定 TS 文件 ESLint、`pnpm format:check` 通过；末次局部 CSS 修复后 Web build、production bundle、相关 Prettier/ESLint 检查通过。
+- `pnpm test:ui tests/e2e/platform-shell.spec.ts tests/e2e/navigation-menu.spec.ts --output .data/profile-audit-shell`：9 项通过，1 项按原条件跳过（窄屏用例在手机项目执行通过）。没有把该 skip 计为通过。
+
+未运行完整集成与全量 E2E；没有更改认证或持久化行为，没有部署线上。下一步按原发布流程合入发布分支；真实物理手机、软键盘和辅助技术仍未验证。
+
+## 资料页标题灰条与竖排修复（2026-10-11）
+
+截图问题来自 `base.css` 的通用 `header` 规则：页面标题继承网站导航的固定高度、视口级左右留白及半透明白底。将桌面和手机两处规则限定为 `.site-header`，保留导航外观，避免影响资料标题、名片与编辑区标题。扩展已有真实资料 E2E，检查标题单行、位于标题区内、不遮挡名片、无横向溢出及透明背景。
+
+实际验证：
+
+- 修复前通过原 `test:e2e` 脚本在独立 `boardgame_badges_20261011` 测试库复现，标题背景断言失败，实际为 `rgba(255, 255, 255, 0.86)`。
+- `node .data/badges-validation.mjs test:e2e tests/e2e/profile.spec.ts --output .data/profile-header-verified` 桌面/手机 2/2 通过，无 skip；保留真实登录、资料保存、重载和历史入口检查。亮/暗主题均确认根节点实际主题，覆盖 1440×900、1280×900、390×900、320×900；实际查看深色桌面及亮色手机截图。首轮截图发现夹具已保存亮色偏好，修正切换步骤后重跑，不将模拟系统外观误报为已切换主题。
+- `pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，包含生产 bundle 与 API runtime 检查。数据库连接和构建目录最初被沙箱限制，获准在沙箱外执行后通过，未关闭隔离保护。
+- 生产外壳定向检查：`pnpm test:ui tests/e2e/platform-shell.spec.ts tests/e2e/navigation-menu.spec.ts --output .data/profile-header-shell-verified`，9 项通过，1 项按既有条件跳过（桌面项目不执行窄屏专属用例，手机项目执行通过）。沙箱内预览连接未完成，停止后在获准的沙箱外执行。测试输出均在忽略的 `.data` 目录。
+
+本轮为样式作用域修复，不涉及服务端行为；未运行完整集成/全量 E2E，未部署线上。后续按现有 PR 与发布流程合入发布分支。
+
 ## 玩家徽章：成长成就与身份荣誉（2026-10-11）
 
 新增「我的资料 → 我的徽章」收藏墙，显示获取条件、真实进度、已获得/未解锁及分类筛选；最多选择三枚已获得徽章，持久展示在本人资料和公共聊天头像名片。五种成长成就覆盖加入平台、完成 1/10/50 局、完成三种不同游戏；三种身份荣誉为内测玩家、社区贡献者、活动荣誉，由账户管理中的「管理徽章」授予或收回。授予可撤销且同时清除精选，不自动将管理员身份算作荣誉。
