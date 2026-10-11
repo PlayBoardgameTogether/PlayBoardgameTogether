@@ -145,13 +145,14 @@
   .page-heading h1,
   .hero h1,
   .empty h1 {
-    font-size: clamp(28px, 3.2vw, 42px);
-    font-weight: 800;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 900;
     line-height: 1.15;
-    margin-block: 8px 12px;
-    background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    margin-block: 8px 14px;
+    color: var(--text);
+    background: none;
+    -webkit-text-fill-color: var(--text);
+    letter-spacing: -0.02em;
   }
 
   .page-heading p,
