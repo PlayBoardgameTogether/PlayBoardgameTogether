@@ -1,7 +1,15 @@
 import { createRoomResponseSchema } from '@boardgame/protocol';
 import {
-  badgeCollectionSchema, badgeDisplayInputSchema, badgeGrantInputSchema, displayedBadgesSchema,
-  type BadgeDisplayInput, type BadgeGrantInput,
+  badgeCollectionSchema,
+  badgeDisplayInputSchema,
+  badgeGrantInputSchema,
+  displayedBadgesSchema,
+  type BadgeDisplayInput,
+  type BadgeGrantInput,
+  badgeDefinitionsSchema,
+  badgeDefinitionSchema,
+  badgeDefinitionInputSchema,
+  type BadgeDefinitionInput,
 } from '@boardgame/protocol';
 import {
   sessionPublicSchema,
@@ -382,6 +390,19 @@ export class ApiClient {
   }
   async profile() {
     return profileSchema.parse(await this.request<unknown>('/profile'));
+  }
+  async adminBadgeDefinitions(signal?: AbortSignal) {
+    return badgeDefinitionsSchema.parse(
+      await this.request<unknown>('/admin/badges', { signal: signal ?? null }),
+    );
+  }
+  async saveBadgeDefinition(input: BadgeDefinitionInput) {
+    return badgeDefinitionSchema.parse(
+      await this.request<unknown>('/admin/badges', {
+        method: 'PUT',
+        body: JSON.stringify(badgeDefinitionInputSchema.parse(input)),
+      }),
+    );
   }
   async badges(signal?: AbortSignal) {
     return badgeCollectionSchema.parse(

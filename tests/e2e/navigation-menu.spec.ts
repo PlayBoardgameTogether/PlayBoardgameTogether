@@ -136,7 +136,7 @@ test('ordinary users see no administrator entrances, including on direct admin U
   await expect(more.getByRole('link', { name: '模型设置', exact: true })).toBeVisible();
   await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('player-menu.png'), fullPage: true });
-  for (const path of ['/admin', '/admin/accounts', '/admin/catalog', '/admin/submissions',
+  for (const path of ['/admin', '/admin/accounts', '/admin/badges', '/admin/catalog', '/admin/submissions',
     '/admin/games', '/admin/assets', '/admin/updates',
     '/admin/accounts/10000000-0000-4000-8000-000000000001/badges']) {
     await page.goto(path);

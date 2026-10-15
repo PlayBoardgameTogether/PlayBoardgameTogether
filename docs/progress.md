@@ -1,5 +1,11 @@
 # 开发进度
 
+## 手机导航修复合并主分支（2026-10-15）
+
+用户要求合并 PR #9 时，main 已合入 PR #10 的管理员徽章设计功能并升至 0.5.0。保留该功能及其原始开发记录，解决 README、package.json 和进度文档冲突；本批兼容修复以 0.5.0 → 0.5.1 交付，不回退为原分支 0.4.2。普通玩家后台直达回归补入新增 `/admin/badges`，覆盖九类后台地址。下方 0.4.2 的验证和未合并说明保留为前一轮交付事实。
+
+本次合并候选重新执行 `pnpm typecheck && pnpm lint && pnpm build` 全部通过（含原生产运行检查）；`FONTCONFIG_FILE=/workspace/PlayBoardgameTogether/.data/fonts.conf pnpm exec playwright test --config .data/navigation-validation.config.ts --project=desktop --project=mobile navigation-menu.spec.ts --output .data/navigation-merge` 12 项通过、2 项手机专属用例在桌面跳过。回归包含新增徽章设计地址，仍使用合成身份响应，未追加数据库或物理手机验收。冲突解决后按用户授权合并 PR；未连接生产服务器或手动执行部署。
+
 ## 手机更多菜单跳转与管理员入口可见性（2026-10-15）
 
 修复更多菜单在触屏浏览器清空焦点时提前关闭、后续链接 click 无法完成的问题：仅在焦点明确移到菜单外的节点时因 blur 收起，继续保留外部 pointerdown、Escape、Tab 离开和成功导航后的关闭。模型设置与管理员后台沿用原站内导航，不增加路由或改变页面布局。
@@ -14,6 +20,16 @@ SocialProvider 保存原 `/auth/me` 请求已校验的公开账户，复用现�
 - 首轮浏览器回归受环境字体缓存不可写影响，文字高度为零；在忽略目录复制系统字体并配置可写 fontconfig 缓存后重新执行上述检查，未修改产品字体、页面或断言。实际查看管理员与普通玩家手机截图，390×844；菜单可达检查另覆盖 320px、700px，桌面 1440×900。截图和临时配置均在忽略目录，不提交。
 
 浏览器身份响应为合成夹具，本轮未配置 PostgreSQL，未运行数据库准备型 `pnpm test:e2e` 或集成测试，不把前端模拟记作真实登录/联机验收。WebKit 已下载，但系统运行库缺失，安装需要不可用的 root 权限，未完成 WebKit/iPhone 或物理手机验证。本轮不合并、不部署；通过功能分支交付后由既有发布流程上线。
+
+## 0.5.0 管理员徽章设计（2026-10-15）
+
+新增后台 `/admin/badges`：管理员可创建、编辑与启停自定义徽章，设置名称、说明、符号，选择手动授予或正式完成局数、不同游戏种类数、指定游戏完成局数的全部/任一条件。手动徽章复用账户授予入口，自动徽章复用权威历史参与记录；不推断胜负。规则提高门槛或停用后，名片投影隐藏不再符合条件的徽章。
+
+共享协议、SDK、031 数据库迁移、后端权限/事务/回执与前端未知结果重试已接入；不改历史迁移、对局结算和游戏规则。平台版本从 0.4.1 升至 0.5.0（兼容新增功能）。升级需运行 `pnpm db:migrate` 并更新 API/Web；本轮不合并发布分支或部署。
+
+验证：`pnpm typecheck`、`pnpm lint`、`pnpm build` 均通过，含生产 bundle、API runtime 与边界检查；031 在独立 `boardgame_test` 成功迁移。`pnpm exec vitest run tests/integration/badges.test.ts tests/integration/admin-management.test.ts tests/unit/badge-media.test.ts` 中徽章12项、媒体6项和管理员6项通过；管理员游戏下架项初因新测试库缺少官方资源返回422。用原 seedAssets 准备 Color Match 经典资源后，完整重跑 `tests/integration/admin-management.test.ts` 七项全过。合计相关25项通过，不宣称全库集成套件通过。
+
+浏览器通过原 run-e2e 脚本运行 `tests/e2e/badges.spec.ts`：原徽章收藏/手动授予/聊天名片/3D流程在桌面、手机均通过；新设计用例修正下拉框的显式无障碍标签后，以 `--grep 'administrator designs'` 重跑桌面、手机两项全过。新用例覆盖配置全部/任一规则、指定游戏、响应丢失原请求重试、刷新恢复、停用隐藏及1440/1280/390宽度无横向溢出；实际查看1280与390截图。运行环境默认 WOFF2 系统字体导致零尺寸文字，使用临时 FONTCONFIG_FILE 指向本地 DejaVu/Noto 字体后验收；没有为此修改产品样式或既有测试断言。未执行全库 E2E，无部署操作。
 
 ## 回放动画改由平台兼容旧桌面（2026-10-11）
 
