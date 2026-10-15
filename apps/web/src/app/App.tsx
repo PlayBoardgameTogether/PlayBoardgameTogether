@@ -45,7 +45,7 @@ function AppShell({ path }: { path: string }) {
         <a href="/profile" aria-current={path === '/profile' || path.startsWith('/profile/') ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg>我的资料</a>
         <a href="/friends" aria-current={(path === '/friends' || path.startsWith('/friends/')) ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a6 6 0 0 1 3 5" /></svg>好友</a>
         <a className="mobile-chat-link" href="/chat" aria-current={path === '/chat' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5" /></svg>公共聊天</a>
-        <NavigationTools path={path} labEnabled={labEnabled} />
+        <NavigationTools path={path} labEnabled={labEnabled} administrator={social.account?.role === 'administrator' && social.account.status === 'active'} />
       </nav>
       <div className="sidebar-note"><span>和朋友，共享一张桌</span><small>私人房间 · 实时对局</small></div>
     </header>

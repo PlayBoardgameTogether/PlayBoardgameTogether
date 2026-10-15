@@ -1,5 +1,20 @@
 # 开发进度
 
+## 手机更多菜单跳转与管理员入口可见性（2026-10-15）
+
+修复更多菜单在触屏浏览器清空焦点时提前关闭、后续链接 click 无法完成的问题：仅在焦点明确移到菜单外的节点时因 blur 收起，继续保留外部 pointerdown、Escape、Tab 离开和成功导航后的关闭。模型设置与管理员后台沿用原站内导航，不增加路由或改变页面布局。
+
+SocialProvider 保存原 `/auth/me` 请求已校验的公开账户，复用现有请求取消、世代保护与会话清理；主导航仅为 active 管理员显示后台入口。初次身份未确认、验证失败、普通玩家、登录/注册页及会话失效均不显示；退出与账号切换清除旧角色，不新增角色缓存或身份请求。其他后台入口仍由原 AdminLayout 验证后挂载，普通玩家直达全部八类后台地址也不会看到管理导航或快捷入口。后端授权、Origin/CSRF、数据库及协议保持不变。平台版本 0.4.1 → 0.4.2，为兼容缺陷修复，README 同步。
+
+验证：
+
+- 旧生产构建上新增触屏焦点回归复现点击模型设置后仍停留 `/developers`，普通玩家回归复现错误展示一个后台链接；未将首次缺少浏览器可执行文件的失败算作产品复现。
+- `pnpm typecheck`、`pnpm lint` 通过，包含全部 workspace 类型检查、ESLint、20 个 AST 边界目录和现有格式检查；`pnpm build` 通过，包含生产 bundle、真实 API runtime、隔离 ZIP/恢复及 AI worker 检查。
+- `.data/navigation-validation.config.ts` 复用现有生产静态预览配置，仅选导航与三项相关社交外壳回归，无数据库准备/清理。最终命令：`FONTCONFIG_FILE=/workspace/PlayBoardgameTogether/.data/fonts.conf pnpm exec playwright test --config .data/navigation-validation.config.ts --project=desktop --project=mobile -g 'more tools|touch links|administrator entry|administrator entrances|switching from|unverified sessions|unchanged social polls|desktop chat stays|messages and invitations' --output .data/navigation-verified`，18 项通过，两个手机专属用例在 desktop 按条件跳过，不计入通过。覆盖真实触屏 tap 配合 null 焦点交错、两项菜单跳转及同一 document、Escape/Tab/外部点击/历史返回、管理员可见/玩家隐藏、身份读取挂起及失败、会话失效、切换普通账户与直接访问后台的前端保护；相邻社交概要、聊天和通知流程通过。
+- 首轮浏览器回归受环境字体缓存不可写影响，文字高度为零；在忽略目录复制系统字体并配置可写 fontconfig 缓存后重新执行上述检查，未修改产品字体、页面或断言。实际查看管理员与普通玩家手机截图，390×844；菜单可达检查另覆盖 320px、700px，桌面 1440×900。截图和临时配置均在忽略目录，不提交。
+
+浏览器身份响应为合成夹具，本轮未配置 PostgreSQL，未运行数据库准备型 `pnpm test:e2e` 或集成测试，不把前端模拟记作真实登录/联机验收。WebKit 已下载，但系统运行库缺失，安装需要不可用的 root 权限，未完成 WebKit/iPhone 或物理手机验证。本轮不合并、不部署；通过功能分支交付后由既有发布流程上线。
+
 ## 回放动画改由平台兼容旧桌面（2026-10-11）
 
 按用户纠正，撤回上一批仅为回放而新增的拉密 1.0.4 及花砖专用时长回调。拉密 client/server/README、打包入口及花砖客户端与 `aae4fec` 的源码一致；恢复使用原拉密 1.0.3，不重写数据库里已安装的包，不要求用户重新上传，不把本地旧的 1.0.4 产物作为交付包。上一条记录保留为先前方案事实，本条为当前实现。
