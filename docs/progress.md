@@ -1,5 +1,15 @@
 # 开发进度
 
+## 在线更新自动备份与默认迁移（2026-10-15）
+
+平台 0.5.1 → 0.6.0，为兼容新增的更新前自动备份能力；README 同步。在线更新每次切换在排空请求、关闭 API/AI worker 后，先生成数据库 custom dump、完整资源副本、选定的私密恢复配置及旧/新源码引用。检查归档签名与 pg_restore 目录，资源逐文件对比 SHA-256，完成清单记录所有文件的摘要与大小，目录原子改名后才运行原迁移/游戏同步。备份失败恢复旧 API，不执行迁移或同步。目录/恢复配置限制为 0700/0600，数据库 URI 不进入命令参数，环境只保存恢复所需字段。
+
+新增迁移默认继续，无需逐次确认；显式 UPDATE_ALLOW_MIGRATIONS=false 仍选择人工维护，历史迁移修改、删除及重命名不论开关值均拒绝。未改历史 SQL 或原逐文件事务，不把恢复旧进程宣称为回退数据库。备份与失败产物不自动删除，不自动用快照覆盖数据库。新增模块、一次性 PostgreSQL 客户端准备、旧 false 配置处理、更新器重启及恢复步骤见在线更新文档。Linux deploy.sh 原有备份流程保持。
+
+实际验证：`node --check scripts/update-backup.mjs`、`node --check scripts/online-update.mjs` 通过；`node tests/deployment/update-backup.test.mjs` 10/10 通过，无跳过。覆盖真实临时文件与摘要、私密配置和权限、dump/归档/资源/链接失败不标记完成、阻止递归备份、新增迁移默认自动及显式 opt-out、历史改写拒绝、备份失败不迁移/激活及成功顺序。数据库命令为受控替身，不把它计为真实 PostgreSQL 备份或恢复演练。同步调整原 Vitest fixture 的备份依赖与顺序断言。
+
+环境限制：工作区初始无仓库，Git clone 因会话代理 8080 连接失败；通过已连接 GitHub API 读取 main 快照并在原仓库创建 codex/automatic-update-backups 功能分支，未初始化本地 Git。离线安装依赖在 ERR_PNPM_NO_OFFLINE_META（@babel/code-frame 元数据缺失）失败，未完成 pnpm typecheck/lint、Vitest、build 或真实数据库集成/恢复验证。本轮未连接生产数据库、合并或部署。下一步在可用依赖与独立 PostgreSQL 环境补齐验证，再按发布流程安装新版更新器并重启；重启后常规更新使用自动备份与迁移流程。
+
 ## 手机导航修复合并主分支（2026-10-15）
 
 用户要求合并 PR #9 时，main 已合入 PR #10 的管理员徽章设计功能并升至 0.5.0。保留该功能及其原始开发记录，解决 README、package.json 和进度文档冲突；本批兼容修复以 0.5.0 → 0.5.1 交付，不回退为原分支 0.4.2。普通玩家后台直达回归补入新增 `/admin/badges`，覆盖九类后台地址。下方 0.4.2 的验证和未合并说明保留为前一轮交付事实。
@@ -1489,3 +1499,4 @@ bot 保持无账户登录身份，通过独立 model_owner_account_id 在开局�
 - `pnpm typecheck`、`pnpm lint`（20 个边界源目录）、`pnpm build` 均通过，保留生产 bundle/API runtime、隔离 ZIP 与 AI worker 检查。
 
 本轮未运行数据库集成测试，未上传开发或生产环境。现有集成 fixture 已同步到 1.0.1；只涉及封面资产和版本元数据，无业务/数据库改动。下一步管理员上传审核新版 ZIP 后使用新封面。
+
