@@ -64,6 +64,10 @@ Web 独立 /chat 路由与 PublicChatPage 负责名片/好友流程；DirectChat
 
 Web PackageBoard 在原 sandbox 消息监听中接收当前 iframe 的有界 boardgame:resize，使用组件状态设置高度，切换 id/version 清理尺寸并重建 iframe；旧包不发消息时保留原 560px 最小高度。五子棋 1.0.1 在内容 main 上使用 ResizeObserver，仅尺寸变化时发送，pagehide 断开观察器并取消动画帧；宽度上限 1000px，手机仍按可用宽度。平台没有按游戏 ID 分支；不改变规则、服务端包生命周期、HTTP/WS、数据库或旧局精确版本。
 
+## 自动备份后更新（2026-10-15）
+
+监督进程在关闭 API/AI worker 后、执行迁移与游戏同步前调用 `scripts/update-backup.mjs`，用原受控命令执行器运行 pg_dump/pg_restore，复制并校验资源、保存私密恢复配置与版本引用，完整备份原子发布到私有状态目录。备份失败恢复旧进程，不执行数据库准备。新增迁移默认继续；显式 UPDATE_ALLOW_MIGRATIONS=false 保留人工维护选择，已有迁移修改/删除/重命名始终拒绝。备份不自动覆盖回数据库，保留逐迁移提交与旧进程恢复的真实边界；单实例部署与原业务事务不变。首次需安装 PostgreSQL 客户端并重启监督脚本。详见 [在线更新](online-update.md)。
+
 ## 有限等待的服务更新（2026-10-04）
 
 本轮替换下方历史静默/active match/WS 排空条件。监督进程在候选构建完成后封闭 HTTP/WS 新入口，API 通过原本地 IPC 排空：向连接发送 1012 并在一秒后终止未响应连接（含闸门前已接收的晚完成握手），等待已接收 HTTP 请求最多 30 秒。超时返回失败并恢复服务；监督 IPC 最多等待 35 秒，过期排空通过世代校验取消。数据库中的 active matches 不作阻塞项，State/RNG/revision/请求回执与参与者继续由原事务持久化。停止 API 仍通过 app.close 等待 AI 调度器关闭，再运行原迁移/同步和候选就绪/失败恢复流程。不新增协议字段、数据库变更或运行单元；短暂断线通过既有认证重连与权威快照恢复，精确版本缺失仍报错。新版监督脚本须安装到启动目录并重启后才生效。
@@ -254,3 +258,4 @@ registry/PackageRuntime 对可选 getDecisionContext 做严格有界 JSON 适配
 ## 在线游戏更新审核（2026-10-04）
 
 catalog/package-service 复用同一隔离规则生命周期检查生成只读审核摘要，按 gameId 查询安装版本及启停 revision。发布在原安装 advisory lock、管理员/session 重验与回执事务中校验 catalogHash，再原子下架同 ID 旧版本并插入新版本。registry 保留全部不可变规则，旧 matches 不迁移；没有新增认证、数据库表或运行单元。上传弹窗以检查/审核发布两步消费 protocol/client-sdk，不解析 ZIP 或秘密 State。
+

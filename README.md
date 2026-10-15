@@ -2,7 +2,7 @@
 
 顶尖桌游联盟的桌游平台，支持多人实时对局、脚本与模型 AI、在线游戏扩展。先选游戏，再开一桌，让朋友在浏览器里一起玩。
 
-**平台版本 `0.5.1`** · TypeScript · React / Vite · Fastify · PostgreSQL
+**平台版本 `0.6.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
 
 [快速开始](#快速开始) · [游戏列表](#游戏列表) · [部署与更新](#部署与更新) · [开发者文档](#开发者文档) · [开发进度](docs/progress.md)
 
@@ -126,7 +126,7 @@ pnpm --filter @boardgame/api start
 pnpm start:online
 ```
 
-在线更新默认跟踪 GitHub `origin/main`，每五分钟检测一次，默认监听 `8080`。管理员也可在后台触发检测；含迁移的更新默认等待维护。`deploy.sh` 不会自动启用该托管入口，配合使用需要额外配置，详见 [在线更新](docs/online-update.md)。
+在线更新默认跟踪 GitHub `origin/main`，每五分钟检测一次，默认监听 `8080`。管理员也可在后台触发检测；每次切换先自动备份数据库、资源与恢复配置，备份校验通过后自动执行新增迁移，无需逐次确认。服务器需安装匹配数据库版本的 `pg_dump` / `pg_restore`；旧配置若显式设置 `UPDATE_ALLOW_MIGRATIONS=false`，需一次性删除或改为 `true`。`deploy.sh` 不会自动启用该托管入口，配合使用需要额外配置，详见 [在线更新](docs/online-update.md)。
 
 生产 HTTPS 必须设置 `COOKIE_SECURE=true`，反向代理需保留同源 Origin 和 WebSocket Upgrade。升级时执行当前版本所需迁移；备份应同时覆盖数据库、资源目录及锁定游戏源码。
 
@@ -189,3 +189,4 @@ pnpm build
 - **资源与备份**：资源默认位于 `.data/assets`；生产使用绝对路径 `ASSET_STORAGE_DIR` 指向独立持久目录。本机提取的 TTS 图包不随仓库分发，新环境需自行安装或恢复。
 - **部署规模**：presence 与广播仍是单 API 进程内状态，不宣称多副本生产高可用或更新零中断；当前不提供自动断线托管和观战。
 - **开发实验台**：`/dev/lab` 保持双开发开关限制，与正式身份和对局链路分离。
+
