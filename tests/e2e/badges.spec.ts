@@ -203,3 +203,60 @@ test('badge collection, lost confirmation, administrator honors and public pins 
     await friendContext.close();
   }
 });
+
+test('administrator designs, revises and disables a custom badge on desktop and mobile', async ({
+  page,
+}, info) => {
+  await login(page, 'stage7_admin');
+  await page.goto('/admin');
+  await page.getByRole('link', { name: '徽章设计', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '徽章设计', exact: true })).toBeVisible();
+  const name = `相聚纪念-${info.project.name}`;
+  await page.getByLabel('徽章名称', { exact: true }).fill(name);
+  await page.getByLabel('徽章说明', { exact: true }).fill('感谢一起探索更多桌游');
+  await page.getByLabel('徽章符号', { exact: true }).fill('🎲');
+  await page.getByLabel('授予方式', { exact: true }).selectOption('automatic');
+  await page.getByLabel('目标 1', { exact: true }).fill('2');
+  await page.getByRole('button', { name: '添加条件', exact: true }).click();
+  await page.getByLabel('条件 2', { exact: true }).selectOption('gameFinished');
+  await page.getByLabel('指定游戏 2', { exact: true }).selectOption('color-match');
+  await page.getByLabel('条件组合', { exact: true }).selectOption('any');
+  await expect(page.getByLabel('规则预览')).toContainText('满足任一条件');
+  let lost = false;
+  const ids: string[] = [];
+  await page.route('**/api/v1/admin/badges', async (route) => {
+    if (route.request().method() !== 'PUT') return route.continue();
+    ids.push(route.request().postDataJSON().requestId);
+    if (!lost) {
+      lost = true;
+      await route.fetch();
+      await route.abort('failed');
+    } else await route.continue();
+  });
+  await page.getByRole('button', { name: '保存徽章设计', exact: true }).click();
+  await expect(page.getByRole('button', { name: '重试原操作', exact: true })).toBeVisible();
+  await expect(page.getByLabel('徽章名称', { exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: '重试原操作', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('徽章设计已保存');
+  expect(ids).toHaveLength(2);
+  expect(ids[0]).toBe(ids[1]);
+  await page.unroute('**/api/v1/admin/badges');
+  await page.reload();
+  await page.getByRole('button', { name: `编辑${name}`, exact: true }).click();
+  await expect(page.getByLabel('授予方式', { exact: true })).toBeDisabled();
+  await expect(page.getByLabel('目标 1', { exact: true })).toHaveValue('2');
+  for (const width of info.project.name === 'desktop' ? [1440, 1280] : [390]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath(`badge-designer-${width}.png`), fullPage: true });
+  }
+  await page.getByLabel('启用徽章', { exact: true }).uncheck();
+  await page.getByRole('button', { name: '保存徽章设计', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('徽章设计已保存');
+  await expect(page.getByRole('article', { name, exact: true })).toContainText('已停用');
+  await page.goto('/profile/badges');
+  await expect(page.getByRole('heading', { name: '我的徽章', exact: true })).toBeVisible();
+  await expect(page.getByRole('article', { name, exact: true })).toHaveCount(0);
+});

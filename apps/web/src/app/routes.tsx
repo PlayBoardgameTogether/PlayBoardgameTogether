@@ -3,6 +3,7 @@ import { guides } from './developer-guides.js';
 
 const RootPage = lazy(() => import('./RootPage.js'));
 const BadgesPage = lazy(() => import('../pages/BadgesPage.js').then(module => ({ default: module.BadgesPage })));
+const AdminBadgeDesignerPage = lazy(() => import('../pages/admin/AdminBadgeDesignerPage.js').then(module => ({ default: module.AdminBadgeDesignerPage })));
 const AdminBadgesPage = lazy(() => import('../pages/admin/AdminBadgesPage.js').then(module => ({ default: module.AdminBadgesPage })));
 const LoginPage = lazy(() => import('../pages/LoginPage.js').then(module => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import('../pages/RegisterPage.js').then(module => ({ default: module.RegisterPage })));
@@ -89,6 +90,7 @@ export function resolvePage(path: string): PageRoute {
     case '/settings/models': return { title: '模型设置', page: <ModelSettingsPage /> };
     case '/admin': return { title: '管理员后台', page: <AdminOverviewPage /> };
     case '/admin/updates': return { title: '服务更新', page: <AdminUpdatesPage /> };
+    case '/admin/badges': return { title: '徽章设计', page: <AdminBadgeDesignerPage /> };
     case '/admin/accounts': return { title: '账户管理', page: <AdminAccountsPage /> };
     case '/admin/catalog': return { title: '游戏管理', page: <AdminGamesPage /> };
     case '/admin/submissions': return { title: '接入审核', page: <AdminSubmissionsPage /> };

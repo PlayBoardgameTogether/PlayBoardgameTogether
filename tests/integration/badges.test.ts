@@ -346,4 +346,199 @@ describe('player achievement and honor badges', () => {
       );
     }
   });
+  const definition = (
+    overrides: Partial<import('../../packages/protocol/src/index.js').BadgeDefinitionInput> = {},
+  ) => ({
+    requestId: randomUUID(),
+    expectedRevision: 0,
+    id: `custom-${randomUUID()}`,
+    name: '同行者',
+    description: '收藏一起玩的时光',
+    symbol: '🎖️',
+    enabled: true,
+    rule: { type: 'manual' as const },
+    ...overrides,
+  });
+
+  it('restricts badge design to administrators, validates rules and replays writes before revision checks', async () => {
+    const path = '/api/v1/admin/badges';
+    const input = definition();
+    expect((await read(path)).statusCode).toBe(403);
+    expect((await put(path, input)).statusCode).toBe(403);
+    expect((await put(path, input, { ...admin, origin: 'https://evil.example' })).statusCode).toBe(
+      403,
+    );
+    expect((await put(path, input, { ...admin, 'x-csrf-token': '' })).statusCode).toBe(403);
+    expect((await put(path, { ...input, id: 'welcome' }, admin)).statusCode).toBe(400);
+    for (const rule of [
+      { type: 'automatic', mode: 'all', conditions: [] },
+      { type: 'automatic', mode: 'any', conditions: [{ metric: 'finished', target: 0 }] },
+      { type: 'automatic', mode: 'all', conditions: [{ metric: 'wins', target: 1 }] },
+      { type: 'manual', script: 'return true' },
+    ])
+      expect((await put(path, { ...input, rule }, admin)).statusCode).toBe(400);
+    for (const gameId of ['missing-game', 'demo.test-counter']) {
+      expect(
+        (
+          await put(
+            path,
+            {
+              ...input,
+              rule: {
+                type: 'automatic',
+                mode: 'all',
+                conditions: [{ metric: 'gameFinished', target: 1, gameId }],
+              },
+            },
+            admin,
+          )
+        ).statusCode,
+      ).toBe(422);
+    }
+    const first = await put(path, input, admin);
+    expect(first.statusCode).toBe(200);
+    expect(first.json().data.revision).toBe(1);
+    expect((await put(path, input, admin)).json().data).toEqual(first.json().data);
+    expect((await put(path, { ...input, name: '另一枚' }, admin)).json().error.code).toBe(
+      'REQUEST_ID_CONFLICT',
+    );
+    expect((await put(path, { ...input, requestId: randomUUID() }, admin)).json().error.code).toBe(
+      'STATE_CONFLICT',
+    );
+    const outcomes = await Promise.all(
+      ['甲', '乙'].map((name) =>
+        put(path, { ...input, name, requestId: randomUUID(), expectedRevision: 1 }, admin),
+      ),
+    );
+    expect(outcomes.map((result) => result.statusCode).sort()).toEqual([200, 409]);
+    expect((await read(path, admin)).json().data.items).toHaveLength(1);
+  });
+
+  it('grants custom honors, preserves award time, hides disabled pins and rejects automatic grants', async () => {
+    const input = definition();
+    expect((await put('/api/v1/admin/badges', input, admin)).statusCode).toBe(200);
+    const path = `/api/v1/admin/accounts/${aid}/badges`;
+    expect((await put(path, grant(input.id), admin)).statusCode).toBe(200);
+    const awarded = (await own()).items.find((item) => item.id === input.id)?.awardedAt;
+    expect(awarded).toBeTruthy();
+    expect((await put(path, grant(input.id, 1), admin)).statusCode).toBe(200);
+    expect((await own()).items.find((item) => item.id === input.id)?.awardedAt).toBe(awarded);
+    expect((await put('/api/v1/profile/badges', selection([input.id], 2))).statusCode).toBe(200);
+    expect((await read(`/api/v1/profile/badges/${aid}`, b)).json().data.items[0].id).toBe(input.id);
+    const updated = { ...input, expectedRevision: 1, requestId: randomUUID(), enabled: false };
+    expect((await put('/api/v1/admin/badges', updated, admin)).statusCode).toBe(200);
+    expect((await own()).displayed).toEqual([]);
+    expect((await read(`/api/v1/profile/badges/${aid}`, b)).json().data.items).toEqual([]);
+    expect((await put('/api/v1/profile/badges', selection([input.id], 3))).statusCode).toBe(422);
+    expect((await put(path, grant(input.id, 3), admin)).statusCode).toBe(422);
+    expect(
+      (
+        await put(
+          '/api/v1/admin/badges',
+          { ...input, requestId: randomUUID(), expectedRevision: 2 },
+          admin,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect((await own()).displayed).toEqual([input.id]);
+    expect((await put(path, grant(input.id, 3, false), admin)).statusCode).toBe(200);
+    expect((await own()).displayed).toEqual([]);
+    const auto = definition({
+      rule: { type: 'automatic', mode: 'all', conditions: [{ metric: 'finished', target: 1 }] },
+    });
+    expect((await put('/api/v1/admin/badges', auto, admin)).statusCode).toBe(200);
+    expect((await put(path, grant(auto.id, 4), admin)).statusCode).toBe(422);
+    expect(
+      (
+        await put(
+          '/api/v1/admin/badges',
+          { ...auto, requestId: randomUUID(), expectedRevision: 1, rule: { type: 'manual' } },
+          admin,
+        )
+      ).statusCode,
+    ).toBe(422);
+  });
+
+  it('evaluates all/any conditions and specific games against historical formal matches and hides newly locked pins', async () => {
+    const matchId = await start();
+    const input = definition({
+      rule: {
+        type: 'automatic',
+        mode: 'all',
+        conditions: [
+          { metric: 'finished', target: 1 },
+          { metric: 'games', target: 2 },
+          { metric: 'gameFinished', gameId: 'demo.counter-room', target: 1 },
+        ],
+      },
+    });
+    expect((await put('/api/v1/admin/badges', input, admin)).statusCode).toBe(200);
+    expect((await own()).items.find((item) => item.id === input.id)?.earned).toBe(false);
+    expect(
+      (
+        await post(`/api/v1/matches/${matchId}/actions`, {
+          requestId: randomUUID(),
+          expectedRevision: 0,
+          action: { type: 'add', payload: { value: 2 } },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect((await own()).items.find((item) => item.id === input.id)).toMatchObject({
+      earned: false,
+      progress: 50,
+    });
+    const onlyColor = definition({
+      rule: {
+        type: 'automatic',
+        mode: 'all',
+        conditions: [{ metric: 'gameFinished', gameId: 'color-match', target: 1 }],
+      },
+    });
+    expect((await put('/api/v1/admin/badges', onlyColor, admin)).statusCode).toBe(200);
+    expect((await own()).items.find((item) => item.id === onlyColor.id)).toMatchObject({
+      earned: false,
+      progress: 0,
+    });
+    const any = {
+      ...input,
+      requestId: randomUUID(),
+      expectedRevision: 1,
+      rule: { ...input.rule, type: 'automatic' as const, mode: 'any' as const },
+    };
+    expect((await put('/api/v1/admin/badges', any, admin)).statusCode).toBe(200);
+    expect((await own()).items.find((item) => item.id === input.id)?.earned).toBe(true);
+    expect((await put('/api/v1/profile/badges', selection([input.id]))).statusCode).toBe(200);
+    // A nonexistent/foreign account has no progress, even when reading the same definition.
+    expect(
+      (await read('/api/v1/profile/badges', admin))
+        .json()
+        .data.items.find((item: { id: string }) => item.id === input.id).earned,
+    ).toBe(false);
+    expect(
+      (
+        await put(
+          '/api/v1/admin/badges',
+          { ...input, requestId: randomUUID(), expectedRevision: 2 },
+          admin,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect((await own()).displayed).toEqual([]);
+    expect((await read(`/api/v1/profile/badges/${aid}`, b)).json().data.items).toEqual([]);
+  });
+
+  it('rolls back a custom definition when its administrator receipt fails', async () => {
+    await db.query(`CREATE FUNCTION reject_custom_badge_receipt() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'test receipt fault'; END; $$;
+      CREATE TRIGGER reject_custom_badge_receipt BEFORE INSERT ON admin_command_receipts
+      FOR EACH ROW EXECUTE FUNCTION reject_custom_badge_receipt();`);
+    try {
+      expect((await put('/api/v1/admin/badges', definition(), admin)).statusCode).toBe(500);
+      expect((await read('/api/v1/admin/badges', admin)).json().data.items).toEqual([]);
+    } finally {
+      await db.query(
+        'DROP TRIGGER reject_custom_badge_receipt ON admin_command_receipts; DROP FUNCTION reject_custom_badge_receipt()',
+      );
+    }
+  });
 });
