@@ -3,3 +3,4 @@
 /deploy/Caddyfile text eol=lf
 /deploy/Dockerfile text eol=lf
 /apps/api/src/db/migrations/030_player_badges.sql text eol=lf
+/apps/api/src/db/migrations/031_custom_badges.sql text eol=lf

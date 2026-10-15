@@ -1,3 +1,4 @@
+import { badgeRuleLabel } from './rule-label.js';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import { manualBadgeIdSchema } from '@boardgame/protocol';
@@ -174,6 +175,7 @@ export function BadgeWall({ accountId }: { accountId?: string }) {
               </small>
               <h2>{item.name}</h2>
               <p>{item.description}</p>
+              {item.rule && <p className="muted">{badgeRuleLabel(item.rule)}</p>}
               {item.kind === 'achievement' && (
                 <div className="badge-progress">
                   <progress

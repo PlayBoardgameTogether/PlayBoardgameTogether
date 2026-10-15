@@ -1,6 +1,10 @@
 import type pg from 'pg';
 import {
   badgeCollectionSchema,
+  badgeDefinitionSchema,
+  badgeDefinitionsSchema,
+  type BadgeDefinitionInput,
+  type BadgeDefinition,
   type Badge,
   type BadgeDisplayInput,
   type BadgeGrantInput,
@@ -79,6 +83,48 @@ const definitions: Omit<Badge, 'progress' | 'earned' | 'awardedAt'>[] = [
 export class BadgeService {
   constructor(private db: Database) {}
 
+  async definitions() {
+    const rows = await this.db.query(
+      'SELECT id,name,description,symbol,enabled,revision,rule FROM badge_definitions ORDER BY id',
+    );
+    return badgeDefinitionsSchema.parse({ items: rows.rows });
+  }
+
+  // Called by AdminService inside its existing authorization/receipt transaction.
+  async saveDefinition(client: pg.PoolClient, actorId: string, input: BadgeDefinitionInput) {
+    const found = await client.query<{ revision: number; rule: BadgeDefinition['rule'] }>(
+      'SELECT revision,rule FROM badge_definitions WHERE id=$1 FOR UPDATE',
+      [input.id],
+    );
+    const old = found.rows[0];
+    if ((old?.revision ?? 0) !== input.expectedRevision)
+      throw new AppError('STATE_CONFLICT', '徽章设计已变化，请刷新后重试', 409);
+    // Changing the award channel would reinterpret existing manual grants.
+    if (old && old.rule.type !== input.rule.type)
+      throw new AppError('ACTION_NOT_ALLOWED', '已有徽章不能切换授予方式，请新建徽章', 422);
+    if (input.rule.type === 'automatic') {
+      for (const condition of input.rule.conditions) {
+        if (condition.metric !== 'gameFinished') continue;
+        const game = await client.query(
+          `SELECT 1 FROM game_installations WHERE game_id=$1
+          AND COALESCE((manifest->>'developmentOnly')::boolean,false)=false LIMIT 1`,
+          [condition.gameId],
+        );
+        if (!game.rowCount) throw new AppError('VALIDATION_ERROR', '请选择已安装的正式游戏', 422);
+      }
+    }
+    const saved = await client.query(
+      `INSERT INTO badge_definitions
+      (id,name,description,symbol,enabled,revision,rule,created_by)
+      VALUES($1,$2,$3,$4,$5,1,$6,$7)
+      ON CONFLICT(id) DO UPDATE SET name=$2,description=$3,symbol=$4,enabled=$5,
+        rule=$6,revision=badge_definitions.revision+1,updated_at=now()
+      RETURNING id,name,description,symbol,enabled,revision,rule`,
+      [input.id, input.name, input.description, input.symbol, input.enabled, input.rule, actorId],
+    );
+    return badgeDefinitionSchema.parse(saved.rows[0]);
+  }
+
   // All derived progress, manual grants and selection share one SQL snapshot.
   async collection(accountId: string, query: Pick<Database, 'query'> = this.db) {
     const result = await query.query<{
@@ -88,6 +134,8 @@ export class BadgeService {
       finished: number;
       games: number;
       grants: { id: string; awardedAt: string }[];
+      custom: unknown;
+      gameCounts: Record<string, number>;
     }>(
       `WITH completed AS (
       SELECT m.game_id FROM match_participants p
@@ -100,7 +148,12 @@ export class BadgeService {
       (SELECT count(*)::integer FROM completed) AS finished,
       (SELECT count(DISTINCT game_id)::integer FROM completed) AS games,
       COALESCE((SELECT jsonb_agg(jsonb_build_object('id',badge_id,'awardedAt',awarded_at))
-        FROM player_badge_grants WHERE account_id=a.id),'[]') AS grants
+        FROM player_badge_grants WHERE account_id=a.id),'[]') AS grants,
+      COALESCE((SELECT jsonb_object_agg(game_id,n) FROM
+        (SELECT game_id,count(*)::integer AS n FROM completed GROUP BY game_id) counts),'{}') AS "gameCounts",
+      COALESCE((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name,'description',description,
+        'symbol',symbol,'enabled',enabled,'revision',revision,'rule',rule) ORDER BY id)
+        FROM badge_definitions WHERE enabled),'[]') AS custom
     FROM accounts a LEFT JOIN player_badge_settings s ON s.account_id=a.id WHERE a.id=$1`,
       [accountId],
     );
@@ -123,11 +176,50 @@ export class BadgeService {
         awardedAt: grant ? new Date(grant.awardedAt).toISOString() : null,
       };
     });
+    for (const definition of badgeDefinitionsSchema.parse({ items: row.custom }).items) {
+      const grant = row.grants.find((item) => item.id === definition.id);
+      const rule = definition.rule;
+      const ratios =
+        rule.type === 'manual'
+          ? []
+          : rule.conditions.map((condition) => {
+              const count =
+                condition.metric === 'finished'
+                  ? row.finished
+                  : condition.metric === 'games'
+                    ? row.games
+                    : Object.hasOwn(row.gameCounts, condition.gameId)
+                      ? row.gameCounts[condition.gameId]!
+                      : 0;
+              return Math.min(count / condition.target, 1);
+            });
+      const ratio =
+        rule.type === 'manual'
+          ? Number(!!grant)
+          : rule.mode === 'all'
+            ? Math.min(...ratios)
+            : Math.max(...ratios);
+      items.push({
+        id: definition.id,
+        name: definition.name,
+        description: definition.description,
+        symbol: definition.symbol,
+        kind: rule.type === 'manual' ? 'honor' : 'achievement',
+        target: rule.type === 'manual' ? 1 : 100,
+        progress: rule.type === 'manual' ? ratio : Math.floor(ratio * 100),
+        earned: ratio >= 1,
+        awardedAt: grant ? new Date(grant.awardedAt).toISOString() : null,
+        rule,
+      });
+    }
+    const displayed = (row.displayed as string[]).filter((id) =>
+      items.some((item) => item.id === id && item.earned),
+    );
     return badgeCollectionSchema.parse({
       accountId,
       displayName: row.displayName,
       revision: row.revision,
-      displayed: row.displayed,
+      displayed,
       items,
     });
   }
@@ -150,6 +242,9 @@ export class BadgeService {
   // Called inside the existing administrator receipt/authorization transaction.
   async grant(client: pg.PoolClient, actorId: string, accountId: string, input: BadgeGrantInput) {
     await this.lock(client, accountId, input.expectedRevision);
+    const collection = await this.collection(accountId, client);
+    if (!collection.items.some((item) => item.id === input.badgeId && item.kind === 'honor'))
+      throw new AppError('ACTION_NOT_ALLOWED', '只能授予已启用的手动徽章', 422);
     if (input.granted) {
       await client.query(
         `INSERT INTO player_badge_grants(account_id,badge_id,awarded_by)
