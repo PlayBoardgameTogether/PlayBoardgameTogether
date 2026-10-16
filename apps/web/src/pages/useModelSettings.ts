@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import type { ModelEndpoint, ModelProfile } from '@boardgame/protocol';
 import { api, navigate } from '../platform.js';
+import { PROVIDER_PRESETS, detectProvider, type ProviderPreset } from './model-presets.js';
+
+export type FilterKind = 'all' | 'ready' | 'needs-key' | 'mock';
+
 type Draft = {
   name: string;
   endpointId: string;
@@ -45,6 +49,8 @@ export function useModelSettings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterKind, setFilterKind] = useState<FilterKind>('all');
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const nameInput = useRef<HTMLInputElement>(null);
   const formSectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -83,9 +89,18 @@ export function useModelSettings() {
         draft.baseUrl.replace(/\/+$/, '') !== editing.base_url.replace(/\/+$/, '')));
   const needsKey = !isMock && (!editing?.has_credential || endpointChanged);
   const cannotSave = !isMock && !credentialsAvailable && (needsKey || !!draft.apiKey);
+  const activePreset = useMemo(() => {
+    if (selectedPresetId) {
+      const found = PROVIDER_PRESETS.find((p) => p.id === selectedPresetId);
+      if (found) return found;
+    }
+    return detectProvider(draft.endpointId, draft.baseUrl);
+  }, [selectedPresetId, draft.endpointId, draft.baseUrl]);
+
   function reset() {
     setEditing(null);
     setDraft(emptyDraft());
+    setSelectedPresetId('openai');
     setShowAdvanced(false);
     setError('');
     setShowApiKey(false);
@@ -93,6 +108,8 @@ export function useModelSettings() {
   function edit(profile: ModelProfile) {
     setEditing(profile);
     const endpointId = profile.endpoint_id.startsWith('custom-') ? 'custom' : profile.endpoint_id;
+    const detected = detectProvider(endpointId, profile.base_url);
+    setSelectedPresetId(detected?.id ?? (endpointId === 'custom' ? 'custom' : null));
     setDraft({
       name: profile.name,
       endpointId,
@@ -118,6 +135,8 @@ export function useModelSettings() {
   function clone(profile: ModelProfile) {
     setEditing(null);
     const endpointId = profile.endpoint_id.startsWith('custom-') ? 'custom' : profile.endpoint_id;
+    const detected = detectProvider(endpointId, profile.base_url);
+    setSelectedPresetId(detected?.id ?? null);
     setDraft({
       name: `${profile.name} (副本)`,
       endpointId,
@@ -139,6 +158,29 @@ export function useModelSettings() {
     setShowAdvanced(false);
     nameInput.current?.focus();
     formSectionRef.current?.scrollIntoView({ block: 'nearest' });
+  }
+  function applyPreset(preset: ProviderPreset) {
+    setSelectedPresetId(preset.id);
+    setDraft((curr) => {
+      const isDefaultName =
+        !curr.name ||
+        curr.name === '我的桌游 AI' ||
+        PROVIDER_PRESETS.some((p) => curr.name.startsWith(p.shortName));
+      return {
+        ...curr,
+        name: isDefaultName ? `${preset.shortName} AI` : curr.name,
+        endpointId: preset.endpointId,
+        baseUrl: preset.baseUrl,
+        modelId: preset.defaultModelId,
+        temperature: preset.defaultTemperature,
+        maxOutputTokens: preset.defaultMaxTokens,
+        apiKey: preset.endpointId === 'mock' ? '' : curr.apiKey,
+      };
+    });
+    setError('');
+  }
+  function applyPresetModel(modelId: string) {
+    setDraft((curr) => ({ ...curr, modelId }));
   }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -224,14 +266,28 @@ export function useModelSettings() {
       setBusy('');
     }
   }
-  // Search saved profiles.
+  // Search & filter saved profiles.
   const filteredProfiles = profiles.filter((profile) => {
+    // 1. Status kind filter
+    if (filterKind === 'ready') {
+      const isReady = profile.enabled && (profile.endpoint_id === 'mock' || profile.has_credential);
+      if (!isReady) return false;
+    } else if (filterKind === 'needs-key') {
+      const needs = profile.enabled && profile.endpoint_id !== 'mock' && !profile.has_credential;
+      if (!needs) return false;
+    } else if (filterKind === 'mock') {
+      if (profile.endpoint_id !== 'mock') return false;
+    }
+    // 2. Query search
     if (!searchQuery.trim()) return true;
     const query = searchQuery.trim().toLowerCase();
+    const provider = detectProvider(profile.endpoint_id, profile.base_url);
     return (
       profile.name.toLowerCase().includes(query) ||
       profile.model_id.toLowerCase().includes(query) ||
-      profile.base_url.toLowerCase().includes(query)
+      profile.base_url.toLowerCase().includes(query) ||
+      (provider?.name.toLowerCase().includes(query) ?? false) ||
+      (provider?.shortName.toLowerCase().includes(query) ?? false)
     );
   });
   return {
@@ -255,6 +311,8 @@ export function useModelSettings() {
     setShowAdvanced,
     searchQuery,
     setSearchQuery,
+    filterKind,
+    setFilterKind,
     nameInput,
     formSectionRef,
     isMock,
@@ -267,5 +325,10 @@ export function useModelSettings() {
     save,
     action,
     filteredProfiles,
+    activePreset,
+    applyPreset,
+    applyPresetModel,
+    selectedPresetId,
+    setSelectedPresetId,
   };
 }
