@@ -1,4 +1,5 @@
 import { createRoomResponseSchema } from '@boardgame/protocol';
+import { coinAdjustmentSchema, coinHistoryQuerySchema, coinWalletPageSchema, coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import {
   badgeCollectionSchema, badgeDisplayInputSchema, badgeGrantInputSchema, displayedBadgesSchema,
   type BadgeDisplayInput, type BadgeGrantInput,
@@ -124,6 +125,27 @@ export class ApiError extends Error {
   }
 }
 export class ApiClient {
+  async coinWallet(before?: number, signal?: AbortSignal) {
+    const query = coinHistoryQuerySchema.parse({ before });
+    return coinWalletPageSchema.parse(await this.request<unknown>(
+      `/profile/coins${query.before === undefined ? '' : `?before=${query.before}`}`,
+      signal ? { signal } : undefined,
+    ));
+  }
+  async adminCoinWallet(accountId: string, before?: number, signal?: AbortSignal) {
+    const query = coinHistoryQuerySchema.parse({ before });
+    return coinWalletPageSchema.parse(await this.request<unknown>(
+      `/admin/accounts/${encodeURIComponent(accountId)}/coins${query.before === undefined ? '' : `?before=${query.before}`}`,
+      signal ? { signal } : undefined,
+    ));
+  }
+  async adjustAdminCoins(accountId: string, input: CoinAdjustment) {
+    return coinWalletSchema.parse(await this.request<unknown>(
+      `/admin/accounts/${encodeURIComponent(accountId)}/coins`, {
+        method: 'POST', body: JSON.stringify(coinAdjustmentSchema.parse(input)),
+      },
+    ));
+  }
   async adminUpdateStatus(signal?: AbortSignal) {
     return adminUpdateStatusSchema.parse(
       await this.request<unknown>('/admin/updates', signal ? { signal } : undefined),

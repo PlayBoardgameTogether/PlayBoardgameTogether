@@ -1,0 +1,48 @@
+@layer components.coins {
+  .coin-wallet {
+    display: grid;
+    gap: 1rem;
+    max-width: 880px;
+  }
+  .coin-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .coin-amount {
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+  .coin-account-id {
+    overflow-wrap: anywhere;
+  }
+  .coin-ledger {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+  .coin-entry {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+  .coin-entry > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .coin-entry time,
+  .coin-entry small {
+    display: block;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
+  .coin-entry-amount {
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}

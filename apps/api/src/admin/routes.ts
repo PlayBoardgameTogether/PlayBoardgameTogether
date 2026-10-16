@@ -6,6 +6,8 @@ import {
   adminGameCommandSchema,
   adminUpdateCommandSchema,
   badgeGrantInputSchema,
+  coinAdjustmentSchema,
+  coinHistoryQuerySchema,
 } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { AppError } from '../errors.js';
@@ -32,7 +34,21 @@ export function registerAdminRoutes(
     data,
     traceId: request.id,
   });
-  app.get('/api/v1/admin/updates', async request => {
+  app.get('/api/v1/admin/accounts/:id/coins', async (request) => {
+    await administrator(request);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    const query = coinHistoryQuerySchema.parse(request.query);
+    return ok(request, await service.coins(id, query.before));
+  });
+  app.post('/api/v1/admin/accounts/:id/coins', async (request) => {
+    const current = await administrator(request, true);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    return ok(
+      request,
+      await service.adjustCoins(current, id, coinAdjustmentSchema.parse(request.body)),
+    );
+  });
+  app.get('/api/v1/admin/updates', async (request) => {
     await administrator(request);
     return ok(request, await updates.request('status'));
   });
@@ -47,15 +63,18 @@ export function registerAdminRoutes(
     await administrator(request);
     return ok(request, await service.overview());
   });
-  app.get('/api/v1/admin/accounts/:id/badges', async request => {
+  app.get('/api/v1/admin/accounts/:id/badges', async (request) => {
     await administrator(request);
     const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
     return ok(request, await service.badges(id));
   });
-  app.put('/api/v1/admin/accounts/:id/badges', async request => {
+  app.put('/api/v1/admin/accounts/:id/badges', async (request) => {
     const current = await administrator(request, true);
     const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
-    return ok(request, await service.setBadge(current, id, badgeGrantInputSchema.parse(request.body)));
+    return ok(
+      request,
+      await service.setBadge(current, id, badgeGrantInputSchema.parse(request.body)),
+    );
   });
   app.get('/api/v1/admin/accounts', async (request) => {
     await administrator(request);
@@ -67,36 +86,29 @@ export function registerAdminRoutes(
     const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
     return ok(
       request,
-      await service.setAccount(
-        current,
-        id,
-        adminAccountCommandSchema.parse(request.body),
-      ),
+      await service.setAccount(current, id, adminAccountCommandSchema.parse(request.body)),
     );
   });
   app.get('/api/v1/admin/games', async (request) => {
     await administrator(request);
     return ok(request, await service.games());
   });
-  app.put(
-    '/api/v1/admin/games/:id/versions/:version/status',
-    async (request) => {
-      const current = await administrator(request, true);
-      const params = z
-        .object({
-          id: z.string().min(1).max(128),
-          version: z.string().min(1).max(32),
-        })
-        .parse(request.params);
-      return ok(
-        request,
-        await service.setGame(
-          current,
-          params.id,
-          params.version,
-          adminGameCommandSchema.parse(request.body),
-        ),
-      );
-    },
-  );
+  app.put('/api/v1/admin/games/:id/versions/:version/status', async (request) => {
+    const current = await administrator(request, true);
+    const params = z
+      .object({
+        id: z.string().min(1).max(128),
+        version: z.string().min(1).max(32),
+      })
+      .parse(request.params);
+    return ok(
+      request,
+      await service.setGame(
+        current,
+        params.id,
+        params.version,
+        adminGameCommandSchema.parse(request.body),
+      ),
+    );
+  });
 }

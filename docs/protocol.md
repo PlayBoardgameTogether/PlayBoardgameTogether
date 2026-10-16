@@ -1,5 +1,9 @@
 # 协议
 
+## 桌游币（2026-10-16）
+
+`GET /api/v1/profile/coins` 按 session 读取本人钱包；管理员通过 `GET/POST /api/v1/admin/accounts/:id/coins` 读取和调整。读取只接受可选正整数 `before`；写入严格 `{requestId,expectedRevision,delta,reason}`，不透支，不与 AI 点数兑换。共享 schema、字段、分页、权限及重试语义见 [桌游币](coins.md)。
+
 ## 玩家徽章（2026-10-11）
 
 新增认证 GET/PUT `/api/v1/profile/badges`，本人读取完整收藏并提交 `{requestId,expectedRevision,displayed}`（最多三枚无重复且已获得）；GET `/api/v1/profile/badges/:id` 仅返回对方主动精选的有效徽章，不公开完整进度。管理员 GET/PUT `/api/v1/admin/accounts/:id/badges` 读取收藏或提交 `{requestId,expectedRevision,badgeId,granted}`，只能授予/收回三种身份荣誉，不能写成就。所有响应 no-store；写操作保留 Origin/CSRF、事务内 session/身份复验、回执优先和 revision 冲突。共享 schema 位于 protocol/badges.ts；完整语义、SDK 与迁移见 [玩家徽章](badges.md)。

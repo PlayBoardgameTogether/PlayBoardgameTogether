@@ -1,5 +1,9 @@
 # 数据模型
 
+## 桌游币（032，2026-10-16）
+
+独立 `boardgame_coin_wallets` 保存账户余额（0–1,000,000,000）和 revision；首次调整创建，无行读取为 0。`boardgame_coin_ledger` 保存每次非零调整及余额、原因、管理员审计 UUID/requestId/时间，账户 revision 与管理员 requestId 分别唯一。管理员写入复用 `admin_command_receipts`，余额、流水、版本及回执原子提交；读取同一 SQL 快照。与 AI 点数无共享余额、兑换或扣费。完整契约见 [桌游币](coins.md)。
+
 ## 玩家徽章（030，2026-10-11）
 
 `player_badge_settings` 保存每账户精选 JSON 数组（最多三项）及 revision；`player_badge_grants` 以账户/徽章为主键保存身份荣誉、授予时间及授予管理员；`player_badge_receipts` 保存本人展示命令输入/结果，按账户/requestId 唯一。管理员授予/收回继续使用 `admin_command_receipts`；收回同时清除精选。成就进度直接由固定 match participant 的已完成正式对局计算，没有新增胜负统计或修改旧对局。详见 [玩家徽章](badges.md)。

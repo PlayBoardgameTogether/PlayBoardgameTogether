@@ -2,6 +2,8 @@ import { lazy, type ReactNode } from 'react';
 import { guides } from './developer-guides.js';
 
 const RootPage = lazy(() => import('./RootPage.js'));
+const CoinWalletPage = lazy(() => import('../pages/CoinWalletPage.js').then(module => ({ default: module.CoinWalletPage })));
+const AdminCoinsPage = lazy(() => import('../pages/admin/AdminCoinsPage.js').then(module => ({ default: module.AdminCoinsPage })));
 const BadgesPage = lazy(() => import('../pages/BadgesPage.js').then(module => ({ default: module.BadgesPage })));
 const AdminBadgesPage = lazy(() => import('../pages/admin/AdminBadgesPage.js').then(module => ({ default: module.AdminBadgesPage })));
 const LoginPage = lazy(() => import('../pages/LoginPage.js').then(module => ({ default: module.LoginPage })));
@@ -40,6 +42,8 @@ export interface PageRoute {
 
 // One owner for route matching, workspace titles and document titles.
 export function resolvePage(path: string): PageRoute {
+  const accountCoins = /^\/admin\/accounts\/([0-9a-f-]{36})\/coins$/i.exec(path);
+  if (accountCoins) return { title: '桌游币管理', page: <AdminCoinsPage accountId={accountCoins[1]!} /> };
   const accountBadges = /^\/admin\/accounts\/([0-9a-f-]{36})\/badges$/i.exec(path);
   if (accountBadges) return { title: '徽章管理', page: <AdminBadgesPage accountId={accountBadges[1]!} /> };
   const game = /^\/games\/([a-z0-9._-]+)\/([a-z0-9._-]+)(\/(?:new|tutorial))?$/i.exec(path);
@@ -75,6 +79,7 @@ export function resolvePage(path: string): PageRoute {
     case '/': return { title: '游戏大厅', page: <RootPage /> };
     case '/login': return { title: '账户登录', page: <LoginPage /> };
     case '/register': return { title: '账号注册', page: <RegisterPage /> };
+    case '/profile/coins': return { title: '我的桌游币', page: <CoinWalletPage /> };
     case '/profile': return { title: '我的资料', page: <ProfilePage /> };
     case '/profile/badges': return { title: '我的徽章', page: <BadgesPage /> };
     case '/profile/edit': return { title: '编辑资料', page: <ProfilePage section="edit" /> };

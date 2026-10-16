@@ -1,5 +1,9 @@
 # 架构
 
+## 桌游币（2026-10-16）
+
+`apps/api/src/coins/service.ts` 拥有独立钱包与审计流水，管理员调整复用 AdminService 原有授权、请求去重和事务，不创建平行认证或管理员命令链。AccountRoutes 只按会话读取本人钱包；Web 的 CoinWallet 共用本人/后台展示和未知结果恢复。协议与存储见 [桌游币](coins.md)。
+
 ## 回放表现通道（2026-10-11）
 
 ReplayPage 连续前进保留桌面，将本人历史 View/事件和 busy=false 交给原 GameBoard；平台通过 replay-motion 观察有限 CSS/Web Animations/DOM 变化，拦截输入、禁用控件并丢弃动作。在线包 desktop?replay=1 在原 opaque sandbox/CSP 内加入 catalog/replay-desktop 包装，自动观察动画并报告当前呈现 id 的时长；不改数据库中的源码/hash/规则版本，普通 desktop 响应不变。旧拉密 1.0.3、花砖等原桌面直接兼容，不要求新游戏包。可选 ReplayPresentation.hold 补充不可自动推断的自定义时长，观察上限60秒，过期回调忽略，跳转/卸载清理。未执行规则、未新增数据库或 WS 契约、未授予实时音效权限。
