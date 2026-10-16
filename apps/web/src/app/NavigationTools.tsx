@@ -28,6 +28,7 @@ export function NavigationTools({ path, labEnabled }: { path: string; labEnabled
     <summary ref={trigger}><span aria-hidden="true">⋯</span> 更多</summary>
     <div aria-label="平台设置">
       <ThemeSelect />
+      <a href="/official-ai" aria-current={path === '/official-ai' ? 'page' : undefined}>官方 AI 与点数</a>
       <a href="/settings/models" aria-current={path === '/settings/models' ? 'page' : undefined}>模型设置</a>
       <a href="/admin" aria-current={path === '/admin' || path.startsWith('/admin/') ? 'page' : undefined}>管理员后台</a>
       {labEnabled && <><a href="/dev/lab" aria-current={path === '/dev/lab' ? 'page' : undefined}>扩展实验台</a><a href="/dev/ui" aria-current={path === '/dev/ui' ? 'page' : undefined}>界面场景</a></>}

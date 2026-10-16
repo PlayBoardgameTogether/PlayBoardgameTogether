@@ -167,6 +167,7 @@ export function MatchPage({ id }: { id: string }) {
                 控制方式 · {data.controller.type === 'human' ? '由你操作' : '托管中'}
               </summary>
               <h2>控制方式</h2>
+              <a href="/official-ai">官方 AI / 我的点数</a>
               <p>
                 {data.controller.type === 'script' || data.controller.type === 'model'
                   ? `托管中 · ${aiNames[data.aiStatus.status]}`
@@ -187,6 +188,9 @@ export function MatchPage({ id }: { id: string }) {
                         onClick={() => void setController('model', profile.id)}
                       >
                         启用模型 · {profile.name}
+                        {profile.official_offer_id
+                          ? `（${profile.official_points_per_action} 点/行动，上限 ${profile.official_match_budget} 点/局）`
+                          : ''}
                       </button>
                     ))}
                 </>

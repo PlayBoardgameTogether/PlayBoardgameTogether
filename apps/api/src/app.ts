@@ -18,6 +18,8 @@ import { RoomService } from './rooms.js';
 import { MatchService } from './matches.js';
 import { AiScheduler } from './ai-scheduler.js';
 import { ModelProfileService } from './model-profiles.js';
+import { OfficialAiService } from './official-ai/service.js';
+import { registerOfficialAiRoutes } from './official-ai/routes.js';
 import { AssetService } from './assets/service.js';
 import { LocalAssetStorage } from './assets/storage.js';
 import { registerAssetRoutes } from './assets/routes.js';
@@ -100,6 +102,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   const runner = deps.runner ?? new LabRunner(deps.registry);
   const auth = new AuthService(deps.db, config);
   const models = new ModelProfileService(deps.db, config.MODEL_CREDENTIALS_KEY);
+  registerOfficialAiRoutes(app, auth, new OfficialAiService(deps.db, config.NODE_ENV === 'test'));
   const rooms = new RoomService(deps.db, deps.registry, config);
   const matches = new MatchService(
     deps.db,
@@ -143,7 +146,10 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
       request.url.startsWith('/api/v1/game-submissions') ||
       request.url.startsWith('/api/v1/admin/') ||
       request.url.startsWith('/api/v1/social') ||
-      request.url.startsWith('/api/v1/profile')
+      request.url.startsWith('/api/v1/profile') ||
+      request.url.startsWith('/api/v1/me/ai-points') ||
+      request.url.startsWith('/api/v1/me/official-ai') ||
+      request.url.startsWith('/api/v1/official-ai')
     ) {
       reply.header('cache-control', 'no-store');
       reply.header('x-content-type-options', 'nosniff');

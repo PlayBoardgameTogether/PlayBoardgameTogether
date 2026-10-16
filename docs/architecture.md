@@ -254,3 +254,7 @@ registry/PackageRuntime 对可选 getDecisionContext 做严格有界 JSON 适配
 ## 在线游戏更新审核（2026-10-04）
 
 catalog/package-service 复用同一隔离规则生命周期检查生成只读审核摘要，按 gameId 查询安装版本及启停 revision。发布在原安装 advisory lock、管理员/session 重验与回执事务中校验 catalogHash，再原子下架同 ID 旧版本并插入新版本。registry 保留全部不可变规则，旧 matches 不迁移；没有新增认证、数据库表或运行单元。上传弹窗以检查/审核发布两步消费 protocol/client-sdk，不解析 ZIP 或秘密 State。
+
+## 平台官方 AI 与点数（2026-10-16）
+
+`official-ai/service` 拥有官方目录、本人授权配置、点数钱包/账本/回执与调用预留生命周期；`official-ai/routes` 管理身份/CSRF 传输边界。来源配置复用 model-profiles 加密凭证，玩家官方配置无凭证。AiScheduler 在原 model 路径选择个人或官方来源，官方调用只收到本人 View、公开规则和候选，不增加动作入口。MatchService.actAutomation 在原 room→match→task 事务内调用 OfficialAiService.charge，使动作与扣点共同回滚；恢复按 task/租约/revision/epoch 释放过期预留，保留可提交的冻结提案。Web 独立 `/official-ai`、`/admin/official-ai` 页面，原模型设置保留，房间及对局复用 profile 选择。无独立服务、支付或通用 API 转售端点。详见 [官方 AI](official-ai.md)。

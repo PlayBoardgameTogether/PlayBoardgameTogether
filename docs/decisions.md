@@ -33,3 +33,5 @@
 - 脚本策略使用可终止 worker thread。worker 文件是仓库内固定装配，不接受上传、eval 或任意模块路径；这不是不可信代码沙箱。
 - 控制变更不伪造游戏 revision，使用独立 controllerVersion/aiStatusVersion。旧阶段 4 客户端只在 controllerEpoch=0 时兼容缺少 expectedControllerEpoch，以保留已冻结旧请求的恢复语义。
 - automation receipt 使用无账户 principal，不借用房主账户。成功动作、回执和任务完成尽量在统一动作事务中原子落库。
+
+- [ADR-007](adr/007-official-ai-points.md)：官方 AI 复用 model 控制器，钱包预留并在原动作事务按成功行动结算点数；来源/点价固定、每席位上限、失败不收费，不接支付。

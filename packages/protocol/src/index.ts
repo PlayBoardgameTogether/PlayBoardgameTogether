@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export * from './official-ai.js';
 import { friendIdSchema } from './social.js';
 export * from './auth.js';
 export * from './admin.js';
@@ -94,6 +95,9 @@ export const modelProfileSchema = z.object({
   enabled: z.boolean(),
   has_credential: z.boolean(),
   profile_version: z.number().int(),
+  official_offer_id: z.string().uuid().nullable().optional(),
+  official_match_budget: z.number().int().positive().nullable().optional(),
+  official_points_per_action: z.number().int().positive().optional(),
 });
 export const modelEndpointSchema = z.object({
   id: z.string(),

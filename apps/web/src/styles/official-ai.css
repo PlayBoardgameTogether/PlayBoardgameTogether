@@ -1,0 +1,139 @@
+@layer components.models {
+  .official-ai-page {
+    width: 100%;
+    max-width: 1040px;
+    margin: 0 auto;
+    display: grid;
+    gap: 2rem;
+  }
+  .official-ai-page h1 {
+    font-size: var(--page-heading-size, 2rem);
+  }
+  .official-ai-page h2 {
+    margin-bottom: 0.75rem;
+  }
+  .ai-wallet {
+    padding: clamp(1.25rem, 4vw, 2rem);
+    border-radius: 24px;
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+  }
+  .ai-wallet > div {
+    display: grid;
+    gap: 0.25rem;
+  }
+  .ai-wallet > div strong {
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .ai-feedback {
+    padding: 1rem 1.25rem;
+    border-radius: 18px;
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+  }
+  .ai-offer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .ai-offer {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--panel);
+  }
+  .ai-offer h3,
+  .ai-offer p {
+    margin: 0;
+  }
+  .ai-offer label {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .ai-offer input {
+    width: 100%;
+    min-width: 0;
+  }
+  .ai-ledger {
+    padding: 0;
+    list-style: none;
+  }
+  .ai-ledger li {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .ai-ledger li > div {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .ai-ledger small {
+    color: var(--muted);
+  }
+  .ai-ledger li > span {
+    white-space: nowrap;
+    font-weight: 700;
+  }
+  .ai-credit {
+    color: var(--text);
+  }
+  .official-ai-page button,
+  .official-ai-page input {
+    min-height: 44px;
+  }
+  .ai-admin-forms {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 1.5rem;
+  }
+  .ai-admin-forms form {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
+    min-width: 0;
+  }
+  .ai-admin-forms label {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .ai-admin-forms input,
+  .ai-admin-forms select {
+    width: 100%;
+    min-width: 0;
+  }
+  @media (max-width: 600px) {
+    .official-ai-page {
+      gap: 1.25rem;
+    }
+    .ai-offer {
+      padding: 1.1rem;
+    }
+  }
+}
+
+@layer theme {
+  :root .official-ai-page :is(input, select) {
+    background: var(--panel);
+    color: var(--text);
+    border-color: var(--control-line, var(--line));
+  }
+  :root .official-ai-page a {
+    color: var(--text);
+    text-decoration-color: var(--accent);
+    text-underline-offset: 0.2em;
+  }
+}

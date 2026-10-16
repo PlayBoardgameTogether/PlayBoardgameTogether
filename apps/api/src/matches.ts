@@ -5,6 +5,7 @@ import { controllerCommandSchema, matchActionSchema } from '@boardgame/protocol'
 import type { Database } from './db/index.js';
 import type { GameRegistry } from './registry/index.js';
 import { AppError } from './errors.js';
+import { OfficialAiService } from './official-ai/service.js';
 
 type MatchRow = {
   id: string;
@@ -689,6 +690,7 @@ export class MatchService {
         if (body.controllerType === 'model') {
           if (!body.profileId)
             throw new AppError('VALIDATION_ERROR', 'Model profile is required', 400);
+          await OfficialAiService.assertAvailable(client, body.profileId);
           const profile = await client.query<{
             id: string;
             protocol: string;
@@ -764,17 +766,30 @@ export class MatchService {
   }
 
   async retryAi(accountId: string, matchId: string, seatId: string) {
-    const access = await this.db.query<{ host_account_id: string; account_id: string | null }>(
-      'SELECT r.host_account_id,p.account_id FROM matches m JOIN rooms r ON r.id=m.room_id JOIN match_participants p ON p.match_id=m.id WHERE m.id=$1 AND p.seat_id=$2',
+    const access = await this.db.query<{
+      host_account_id: string;
+      account_id: string | null;
+      occupant_kind: string;
+    }>(
+      'SELECT r.host_account_id,p.account_id,p.occupant_kind FROM matches m JOIN rooms r ON r.id=m.room_id JOIN match_participants p ON p.match_id=m.id WHERE m.id=$1 AND p.seat_id=$2',
       [matchId, seatId],
     );
     if (
       !access.rowCount ||
-      (access.rows[0]!.account_id !== accountId && access.rows[0]!.host_account_id !== accountId)
+      (access.rows[0]!.account_id !== accountId &&
+        !(access.rows[0]!.occupant_kind === 'bot' && access.rows[0]!.host_account_id === accountId))
     )
       throw new AppError('FORBIDDEN', 'AI retry permission denied', 403);
     await this.db.query(
-      "UPDATE match_participants SET ai_status='idle',ai_error_code=NULL,ai_status_version=ai_status_version+1 WHERE match_id=$1 AND seat_id=$2 AND controller_type='script'",
+      "UPDATE match_participants SET ai_status='idle',ai_error_code=NULL,ai_status_version=ai_status_version+1 WHERE match_id=$1 AND seat_id=$2 AND controller_type IN ('script','model')",
+      [matchId, seatId],
+    );
+    await this.db.query(
+      `UPDATE ai_tasks t SET status='queued',attempt_count=0,available_at=now(),lease_owner=NULL,lease_until=NULL,
+        safe_error_code=NULL,updated_at=now() FROM match_participants p JOIN model_profiles profile ON profile.id=p.model_profile_id
+        WHERE t.match_id=$1 AND t.seat_id=$2 AND t.status='blocked' AND p.match_id=t.match_id AND p.seat_id=t.seat_id
+        AND p.controller_type='model' AND profile.official_offer_id IS NOT NULL
+        AND NOT EXISTS(SELECT 1 FROM official_ai_reservations r WHERE r.task_id=t.id)`,
       [matchId, seatId],
     );
     await this.db.query(
@@ -895,6 +910,7 @@ export class MatchService {
       });
       revision = applied.revision;
       roomChanged = applied.roomChanged;
+      await OfficialAiService.charge(client, taskId);
       await client.query(
         "UPDATE ai_tasks SET status='succeeded',applied_revision=$2,updated_at=now() WHERE id=$1",
         [taskId, revision],

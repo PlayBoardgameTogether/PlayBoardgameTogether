@@ -15,3 +15,7 @@
 ## 在线 ZIP 的 AI（2026-10-03）
 
 上传包可实现 getDecisionContext，在有界规则 VM 中按身份返回稳定 decisionKey 和完整有序合法候选；通用 basic-v1 worker 仅选择首个候选，不加载上传 JS/State。UNO 1.1.0 按自己的 View 优先出彩色牌与效果牌、用最多的手牌颜色选色，保留万能牌；兜底沿用同一排序。模型、冻结提案、epoch/revision/租约与提交校验保持原链路。未声明 context 的旧包仍返回 AI_NOT_SUPPORTED，不能仅靠 manifest 宣称支持。
+
+## 平台官方 AI（2026-10-16）
+
+官方档位沿用 model 控制器和本人 View/合法候选，付款身份继续来自固定参与者的 account/model_owner_account_id。官方配置无玩家凭证，服务端使用管理员来源凭证。调用前以钱包锁预留点数，成功行动与扣点在原 match 事务提交；失败、兜底、取消与过期不扣费。每席位单局上限不随 epoch 清零，同 task 一次外部调用、decision group 最多两次。进行中仅允许用户显式提高同档位所有席位上限，补点/提高上限后重新排队无调用任务，未知调用不自动重发。详见 [官方 AI](official-ai.md)、[ADR-007](adr/007-official-ai-points.md)。

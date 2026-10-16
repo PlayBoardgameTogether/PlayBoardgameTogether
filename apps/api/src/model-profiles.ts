@@ -21,7 +21,7 @@ export class ModelProfileService {
 
   async endpoints() {
     const result = await this.db.query<{ id: string; display_name: string; protocol: string }>(
-      "SELECT id,display_name,protocol FROM provider_endpoints WHERE enabled=true AND capabilities->>'ownerAccountId' IS NULL ORDER BY id",
+      "SELECT id,display_name,protocol FROM provider_endpoints WHERE enabled=true AND capabilities->>'ownerAccountId' IS NULL AND capabilities->>'internal' IS NULL ORDER BY id",
     );
     return result.rows.map(row => ({ id: row.id, name: row.display_name, protocol: row.protocol }));
   }
@@ -32,7 +32,7 @@ export class ModelProfileService {
       COALESCE(v.version,0) AS profile_version FROM model_profiles p
       JOIN provider_endpoints e ON e.id=p.endpoint_id LEFT JOIN model_credentials c ON c.id=p.credential_id
       LEFT JOIN LATERAL(SELECT version FROM model_profile_versions WHERE profile_id=p.id ORDER BY version DESC LIMIT 1)v ON true
-      WHERE p.owner_account_id=$1 AND p.deleted_at IS NULL ORDER BY p.created_at`, [owner])).rows;
+      WHERE p.owner_account_id=$1 AND p.deleted_at IS NULL AND p.official_offer_id IS NULL ORDER BY p.created_at`, [owner])).rows;
   }
 
   private requireEncryption() {
@@ -47,7 +47,7 @@ export class ModelProfileService {
       (SELECT max(version) FROM model_profile_versions WHERE profile_id=p.id) AS profile_version
       FROM model_profiles p JOIN provider_endpoints e ON e.id=p.endpoint_id
       LEFT JOIN model_credentials c ON c.id=p.credential_id
-      WHERE p.id=$1 AND p.owner_account_id=$2 AND p.deleted_at IS NULL FOR UPDATE OF p`, [id, owner]);
+      WHERE p.id=$1 AND p.owner_account_id=$2 AND p.deleted_at IS NULL AND p.official_offer_id IS NULL FOR UPDATE OF p`, [id, owner]);
     if (!result.rows[0]) throw new AppError('FORBIDDEN', '模型配置不存在或已删除', 404);
     return result.rows[0];
   }
@@ -57,6 +57,8 @@ export class ModelProfileService {
   }
 
   private async assertNotInUse(client: PoolClient, id: string) {
+    if ((await client.query('SELECT 1 FROM official_ai_offers WHERE source_profile_id=$1', [id])).rowCount)
+      throw new AppError('STATE_CONFLICT', '此配置已用于官方 AI，不能编辑或删除；请创建新配置发布新档位。密钥仍可轮换或撤销。', 409);
     const active = await client.query(`SELECT 1 FROM match_participants p JOIN matches m ON m.id=p.match_id
       WHERE p.model_profile_id=$1 AND p.controller_type='model' AND m.status='active' LIMIT 1`, [id]);
     if (active.rowCount) throw new AppError('STATE_CONFLICT', '此配置正在用于模型托管或模型 AI，请先收回本人控制或结束对局，再编辑或删除', 409);
@@ -104,6 +106,7 @@ export class ModelProfileService {
         }
       } else {
         const endpoint = await client.query<{ protocol: string }>(`SELECT protocol FROM provider_endpoints WHERE id=$1 AND enabled=true
+          AND capabilities->>'internal' IS NULL
           AND (capabilities->>'ownerAccountId' IS NULL OR capabilities->>'ownerAccountId'=$2)`, [endpointId, owner]);
         if (!endpoint.rows[0]) throw new AppError('VALIDATION_ERROR', '不允许使用此模型服务端点', 400);
         protocol = endpoint.rows[0].protocol;
@@ -184,7 +187,7 @@ export class ModelProfileService {
       (SELECT max(version) FROM model_profile_versions WHERE profile_id=p.id) AS profile_version
       FROM model_profiles p JOIN provider_endpoints e ON e.id=p.endpoint_id
       LEFT JOIN model_credentials c ON c.id=p.credential_id AND c.revoked_at IS NULL
-      WHERE p.id=$1 AND p.owner_account_id=$2 AND p.deleted_at IS NULL AND p.enabled AND e.enabled`, [id, owner]);
+      WHERE p.id=$1 AND p.owner_account_id=$2 AND p.deleted_at IS NULL AND p.official_offer_id IS NULL AND p.enabled AND e.enabled`, [id, owner]);
     const profile = result.rows[0];
     if (!profile) throw new AppError('FORBIDDEN', '模型配置不存在、已删除或已停用', 404);
     // Read endpoint, model, version and encrypted credential in one database snapshot.

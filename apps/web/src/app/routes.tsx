@@ -2,6 +2,8 @@ import { lazy, type ReactNode } from 'react';
 import { guides } from './developer-guides.js';
 
 const RootPage = lazy(() => import('./RootPage.js'));
+const OfficialAiPage = lazy(() => import('../pages/OfficialAiPage.js').then(module => ({ default: module.OfficialAiPage })));
+const AdminOfficialAiPage = lazy(() => import('../pages/admin/AdminOfficialAiPage.js').then(module => ({ default: module.AdminOfficialAiPage })));
 const CoinWalletPage = lazy(() => import('../pages/CoinWalletPage.js').then(module => ({ default: module.CoinWalletPage })));
 const AdminCoinsPage = lazy(() => import('../pages/admin/AdminCoinsPage.js').then(module => ({ default: module.AdminCoinsPage })));
 const BadgesPage = lazy(() => import('../pages/BadgesPage.js').then(module => ({ default: module.BadgesPage })));
@@ -92,6 +94,8 @@ export function resolvePage(path: string): PageRoute {
     case '/chat': return { title: '公共聊天', page: <PublicChatPage /> };
     case '/rooms/new': return { title: '创建房间', page: <NewRoomPage /> };
     case '/settings/models': return { title: '模型设置', page: <ModelSettingsPage /> };
+    case '/official-ai': return { title: '官方 AI', page: <OfficialAiPage /> };
+    case '/admin/official-ai': return { title: '官方 AI 与点数', page: <AdminOfficialAiPage /> };
     case '/admin': return { title: '管理员后台', page: <AdminOverviewPage /> };
     case '/admin/updates': return { title: '服务更新', page: <AdminUpdatesPage /> };
     case '/admin/accounts': return { title: '账户管理', page: <AdminAccountsPage /> };

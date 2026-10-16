@@ -188,3 +188,7 @@ HTTP envelope 为 `{ok:true,data,traceId}` 或 `{ok:false,error:{code,message,re
 ## 在线游戏包审核与替换（2026-10-04）
 
 POST `/api/v1/admin/game-packages/review` 接收 application/zip 字节，沿用管理员 session/Origin/CSRF/大小及限流保护，只检查不写库。共享 gamePackageReviewSchema 返回 gameId/version/name/hash/kind/installedVersions/catalogHash；kind 为 new/update/installed，按 manifest.id 识别。安装 query 新增可选 expectedCatalogHash，已有游戏的新版本必须提供审核时 catalogHash。事务内目录哈希冲突返回 STATE_CONFLICT；重复成功回执优先返回。新版本与旧版本下架及安装回执原子提交，旧精确规则不改写。同版本相同包不改变上架状态。
+
+## 官方 AI 与 AI 点数（2026-10-16）
+
+新增共享 `official-ai.ts` schema 与 typed SDK：登录读取 `/official-ai/offers`、本人 `/me/official-ai/profiles`、POST `/me/official-ai/enroll`（requestId/offerId/matchBudget）、GET `/me/ai-points` 和 `/me/ai-points/ledger?before=UUID`。管理员 GET/POST `/admin/official-ai/offers`、PUT `/:id`（requestId/expectedRevision/enabled）、POST `/admin/ai-points/grant`（requestId/accountId/points/note）及 GET `/admin/official-ai/stats`。全部 no-store，写入 Origin/CSRF、事务会话与角色重验，持久成功回执优先；错误复用既有代码。modelProfile DTO 增加可选官方档位/上限/行动价格，个人模型列表仍仅个人配置，官方目录不暴露来源 ID/密钥。房间/控制动作继续使用已有 model+本人 profileId，不新增 seat 授权方式。详见 [官方 AI API](official-ai.md#api-与存储)。

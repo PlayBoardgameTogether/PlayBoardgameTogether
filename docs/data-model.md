@@ -112,3 +112,7 @@ rooms.asset_version_id 与 matches.asset_version_id 外键绑定精确版本；m
 016 为 seats 增加 bot_model_profile_id，并为 match_participants 增加 model_owner_account_id。模型 bot 保持 account_id=NULL，controller_type=model，保存 model_profile_id 与独立授权 owner；二者的复合外键引用 model_profiles(id,owner_account_id)。真人沿用既有账户/profile 外键且 model_owner_account_id=NULL。017 进一步约束：model 座位必须有模型引用，脚本和真人座位不得有该引用。测试库已应用的 016 初版保持原校验和，约束增强使用后续迁移，不修改其历史含义。
 
 等待房间只保存 profile 引用，开局重新校验所有者、active、enabled、未删除和凭证，并在同一开局事务中固定授权。使用既有活跃绑定保护冻结本局配置；未新增 profile 版本快照机制。模型调用失败继续使用已有合法 fallback。
+
+## 官方 AI 点数（031，2026-10-16）
+
+031 新增 official_ai_offers（固定来源配置/行动点价、可停用 revision）、ai_point_wallets（整数余额）、ai_point_ledger（发放/行动审计）、ai_point_receipts（账户+请求去重）和 official_ai_reservations（task 唯一、attempt 唯一、预留/ready/charged/released、唯一消费账本引用）。model_profiles 增加 official_offer_id/official_match_budget，官方占位端点不可被普通模型输入选用。余额以钱包行锁串行消费与发放，预留/已消费按 match/seat/payer 累计；正式动作与钱包/账本/回执在原事务提交。model_attempts 保存供应商返回用量或 unknown，不保存 View/State/密钥。独立于桌游币，详见 [官方 AI](official-ai.md)。
