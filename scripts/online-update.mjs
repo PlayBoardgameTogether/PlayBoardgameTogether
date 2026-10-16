@@ -8,6 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 import { createUpdateControl } from './update-control.mjs';
 import { buildRelease, runUpdateCommand } from './update-command.mjs';
+import { backupUpdate, migrationPolicy } from './update-backup.mjs';
 const { fetch, AbortSignal } = globalThis;
 
 export function githubRemote(value) {
@@ -36,6 +37,7 @@ export async function applyPrepared(deps, candidate) {
   const previous = deps.current();
   try {
     await deps.stop();
+    await deps.backup(previous, candidate);
     await deps.prepareDatabase(candidate);
     await deps.start(candidate);
     await deps.persist(candidate);
@@ -252,13 +254,12 @@ async function main() {
           updates.patch({ phase: 'building' });
           await buildRelease(command, release, value => { stage = value; });
           stage = 'history';
-          // Applied migrations must never change. New migrations need deliberate rollout:
-          // database rollback cannot be promised merely by restarting an old binary.
-          const changed = await command('git', ['--git-dir', cache, 'diff', '--name-only', current.sha, sha, '--', 'apps/api/src/db/migrations']);
-          if (changed && env.UPDATE_ALLOW_MIGRATIONS !== 'true') {
+          // Additive migration history can roll forward after a verified backup.
+          const changed = await command('git', ['--git-dir', cache, 'diff', '--name-status', '--no-renames', current.sha, sha, '--', 'apps/api/src/db/migrations']);
+          if (!migrationPolicy(changed, env.UPDATE_ALLOW_MIGRATIONS)) {
             blockedSha = sha;
             updates.patch({ phase: 'maintenance' });
-            log('pending migrations: run maintenance or explicitly enable UPDATE_ALLOW_MIGRATIONS', sha); return;
+            log('pending migrations: UPDATE_ALLOW_MIGRATIONS=false opts into manual maintenance', sha); return;
           }
           pending = { sha, path: release };
         }
@@ -268,6 +269,15 @@ async function main() {
           drain, current: () => current,
           stop: async () => { if (stage === 'drain') stage = 'stop'; await stop(); },
           start: async release => { if (release === pending) stage = 'start'; await start(release); },
+          backup: async (previous, candidate) => {
+            updates.patch({ phase: 'applying' });
+            // Keep the existing public diagnostic schema: backup is the first
+            // migration step; private logs distinguish backup start/completion.
+            stage = 'migrate';
+            log('backup started', candidate.sha);
+            await backupUpdate({ stateRoot, env, previous, candidate });
+            log('backup verified', candidate.sha);
+          },
           prepareDatabase: async release => {
             updates.patch({ phase: 'applying' });
             stage = 'migrate';

@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
-import type { SocialOverview } from '@boardgame/protocol';
+import type { AccountPublic, SocialOverview } from '@boardgame/protocol';
 import { api, navigate } from '../platform.js';
 
 interface SocialState {
+  account: AccountPublic | undefined;
   data: SocialOverview | undefined;
   error: string;
   guest: boolean;
@@ -20,6 +21,7 @@ interface SocialState {
 const SocialContext = createContext<SocialState | undefined>(undefined);
 
 export function SocialProvider({ children, enabled }: { children: ReactNode; enabled: boolean }) {
+  const [account, setAccount] = useState<AccountPublic>();
   const [data, setData] = useState<SocialOverview>();
   const [error, setError] = useState('');
   const [guest, setGuest] = useState(false);
@@ -39,6 +41,7 @@ export function SocialProvider({ children, enabled }: { children: ReactNode; ena
     authenticated.current = false;
     overviewVersion.current = undefined;
     signedOut.current = true;
+    setAccount(undefined);
     setData(undefined);
     setChatId(undefined);
     setMinimized(true);
@@ -52,7 +55,11 @@ export function SocialProvider({ children, enabled }: { children: ReactNode; ena
     const controller = new AbortController();
     request.current = controller;
     try {
-      if (!authenticated.current) await api.me(controller.signal);
+      if (!authenticated.current) {
+        const session = await api.me(controller.signal);
+        if (!active.current || sequence.current !== version) return;
+        setAccount(session.account);
+      }
       if (!active.current || sequence.current !== version) return;
       const update = await api.socialUpdates(overviewVersion.current, controller.signal);
       if (!active.current || sequence.current !== version) return;
@@ -103,7 +110,7 @@ export function SocialProvider({ children, enabled }: { children: ReactNode; ena
     setChatTab('friends');
     setMinimized(false);
   };
-  return <SocialContext.Provider value={{ data, error, guest, refresh, chatId, minimized, openChat,
+  return <SocialContext.Provider value={{ account: enabled ? account : undefined, data, error, guest, refresh, chatId, minimized, openChat,
     closeChat: () => setChatId(undefined), setMinimized, chatTab, setChatTab, clearSession }}>{children}</SocialContext.Provider>;
 }
 

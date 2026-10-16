@@ -1,5 +1,22 @@
 # 开发进度
 
+## 官方 AI、桌游币与主分支合并验收（2026-10-16）
+
+按用户确认，将 `codex/optional-badge-3d` 的模型设置工作台、独立桌游币和官方 AI/点数合入 main。先同步 main，解决 README、版本、管理员路由/服务、导航及文档共 8 个冲突文件，保留主分支的徽章设计、手机导航权限修复和在线更新备份。导航同时识别徽章设计、桌游币和官方 AI 路由；普通玩家后台直达回归新增官方 AI 与桌游币地址。为主分支备份测试补充显式 Buffer 导入；清理合并文件末尾多余空行。
+
+主分支平台版本 0.6.0 → 0.7.0，沿用功能分支已递增的 0.7.0（兼容新增官方 AI 与点数），README 一致，本轮冲突处理不重复升号。迁移器以完整文件名为历史键，`031_custom_badges.sql` 与 `031_official_ai.sql` 操作不同表，连同 `032_boardgame_coins.sql` 保留原名及内容；全新独立库迁移及后续 checksum 复核通过，不改写已应用迁移。
+
+实际验证：
+
+- `pnpm --config.verify-deps-before-run=false typecheck`、同配置 `build` 通过，包含生产 bundle、API runtime、隔离 ZIP 与 AI worker 检查。相关 `vitest run tests/unit/online-update.test.ts tests/unit/model-ai.test.ts tests/unit/model-transport.test.ts tests/unit/badge-media.test.ts` 4 文件/27 项通过。
+- 完整 lint 的 ESLint、20 目录 AST 边界通过；format:check 报 26 个文件换行问题。逐文件核对均与 HEAD 或 origin/main 原内容一致，规范化 CRLF 后 26 个均通过 Prettier，未批量修改。最后补充修改的测试文件定向 ESLint、`git diff --check` 通过。
+- 数据库测试经 `.data/current-merge-validation.mjs` 仅覆盖进程内 TEST_DATABASE_URL，调用原准备/迁移/同步/种子及测试脚本，串行使用独立 `boardgame_merge_final_20261016`，未覆盖 .env 或清理开发/生产库。首次独立库资源准备发生媒体处理失败且失败被原回执保留；隔离媒体诊断通过后，改用上述全新独立库成功准备。
+- 完整 `test:integration` 27 文件/195 项中 194 项通过、注册首例在 beforeEach 的 TRUNCATE 与启动中的后台恢复任务竞争而死锁。注册夹具改为每例先清库、再启动应用，结束关闭应用，不删除业务断言。用原脚本及 `--testNamePattern=public.account.registration` 重跑，注册 7/7 通过，188 项按范围过滤跳过；不将该轮描述为全套通过。其他通过范围未受该夹具修改影响，不重复运行。
+- 原 `test:e2e tests/e2e/coins.spec.ts tests/e2e/official-ai.spec.ts tests/e2e/badges.spec.ts --output .data/current-merge-e2e` 桌面/手机 10/10 通过，无 skip。覆盖真实登录、徽章收藏/设计/停用、发币扣回、官方 AI 发布发点/授权、未知结果原请求重试、越权保护及刷新恢复。生产静态外壳 `playwright test --config playwright.ui.config.ts navigation-menu.spec.ts --output .data/current-merge-navigation` 另 12 项通过、2 项手机专属用例在 desktop 跳过；身份响应为合成夹具，不计真实登录。实际查看 1280px 徽章设计与 390px 菜单截图；自动布局覆盖 1440/1280/700/390/320px，未验收物理手机或辅助技术。
+- `node tests/deployment/update-backup.test.mjs` 在正常权限下 8/10 通过；另两项分别受 Windows 的 POSIX mode 语义与符号链接创建权限限制，未降低断言或计为通过。未完成本轮 Linux 备份全套或真实 PostgreSQL 备份/恢复演练；备份命令在这些测试中是受控替身。
+
+本轮按授权合并发布分支，未手动部署、调用真实模型供应商或修改生产数据库。线上更新器可能按既有配置获取 main；是否已上线须另查实际运行状态。
+
 ## 平台官方 AI 与 AI 点数（2026-10-16）
 
 新增 `/official-ai` 玩家目录、整数点数余额/预留与分页账单、每席位单局上限；`/admin/official-ai` 从管理员本人真实模型配置发布固定价格档位、开放/停用、搜索玩家发放点数并记录说明，以及供应商调用/失败/未知/token 汇总。房间添加模型 AI 与本人托管复用原 profile/controller 链路，明确显示点价、付款账户与上限；个人模型、免费脚本 AI 和独立桌游币保留。
@@ -47,6 +64,47 @@
 - `npx eslint`：定向与全文件检查 0 错误 0 警告；
 - `npx tsx scripts/check-boundaries.ts`：20 个源码根目录 AST 依赖边界全部通过；
 - `pnpm build`：完整生产 bundle、API runtime、隔离 ZIP 规则恢复与 AI worker 检查全部通过。
+
+## 在线更新自动备份与默认迁移（2026-10-15）
+
+平台 0.5.1 → 0.6.0，为兼容新增的更新前自动备份能力；README 同步。在线更新每次切换在排空请求、关闭 API/AI worker 后，先生成数据库 custom dump、完整资源副本、选定的私密恢复配置及旧/新源码引用。检查归档签名与 pg_restore 目录，资源逐文件对比 SHA-256，完成清单记录所有文件的摘要与大小，目录原子改名后才运行原迁移/游戏同步。备份失败恢复旧 API，不执行迁移或同步。目录/恢复配置限制为 0700/0600，数据库 URI 不进入命令参数，环境只保存恢复所需字段。
+
+新增迁移默认继续，无需逐次确认；显式 UPDATE_ALLOW_MIGRATIONS=false 仍选择人工维护，历史迁移修改、删除及重命名不论开关值均拒绝。未改历史 SQL 或原逐文件事务，不把恢复旧进程宣称为回退数据库。备份与失败产物不自动删除，不自动用快照覆盖数据库。新增模块、一次性 PostgreSQL 客户端准备、旧 false 配置处理、更新器重启及恢复步骤见在线更新文档。Linux deploy.sh 原有备份流程保持。
+
+实际验证：`node --check scripts/update-backup.mjs`、`node --check scripts/online-update.mjs` 通过；`node tests/deployment/update-backup.test.mjs` 10/10 通过，无跳过。覆盖真实临时文件与摘要、私密配置和权限、dump/归档/资源/链接失败不标记完成、阻止递归备份、新增迁移默认自动及显式 opt-out、历史改写拒绝、备份失败不迁移/激活及成功顺序。数据库命令为受控替身，不把它计为真实 PostgreSQL 备份或恢复演练。同步调整原 Vitest fixture 的备份依赖与顺序断言。
+
+环境限制：工作区初始无仓库，Git clone 因会话代理 8080 连接失败；通过已连接 GitHub API 读取 main 快照并在原仓库创建 codex/automatic-update-backups 功能分支，未初始化本地 Git。离线安装依赖在 ERR_PNPM_NO_OFFLINE_META（@babel/code-frame 元数据缺失）失败，未完成 pnpm typecheck/lint、Vitest、build 或真实数据库集成/恢复验证。本轮未连接生产数据库、合并或部署。下一步在可用依赖与独立 PostgreSQL 环境补齐验证，再按发布流程安装新版更新器并重启；重启后常规更新使用自动备份与迁移流程。
+
+## 手机导航修复合并主分支（2026-10-15）
+
+用户要求合并 PR #9 时，main 已合入 PR #10 的管理员徽章设计功能并升至 0.5.0。保留该功能及其原始开发记录，解决 README、package.json 和进度文档冲突；本批兼容修复以 0.5.0 → 0.5.1 交付，不回退为原分支 0.4.2。普通玩家后台直达回归补入新增 `/admin/badges`，覆盖九类后台地址。下方 0.4.2 的验证和未合并说明保留为前一轮交付事实。
+
+本次合并候选重新执行 `pnpm typecheck && pnpm lint && pnpm build` 全部通过（含原生产运行检查）；`FONTCONFIG_FILE=/workspace/PlayBoardgameTogether/.data/fonts.conf pnpm exec playwright test --config .data/navigation-validation.config.ts --project=desktop --project=mobile navigation-menu.spec.ts --output .data/navigation-merge` 12 项通过、2 项手机专属用例在桌面跳过。回归包含新增徽章设计地址，仍使用合成身份响应，未追加数据库或物理手机验收。冲突解决后按用户授权合并 PR；未连接生产服务器或手动执行部署。
+
+## 手机更多菜单跳转与管理员入口可见性（2026-10-15）
+
+修复更多菜单在触屏浏览器清空焦点时提前关闭、后续链接 click 无法完成的问题：仅在焦点明确移到菜单外的节点时因 blur 收起，继续保留外部 pointerdown、Escape、Tab 离开和成功导航后的关闭。模型设置与管理员后台沿用原站内导航，不增加路由或改变页面布局。
+
+SocialProvider 保存原 `/auth/me` 请求已校验的公开账户，复用现有请求取消、世代保护与会话清理；主导航仅为 active 管理员显示后台入口。初次身份未确认、验证失败、普通玩家、登录/注册页及会话失效均不显示；退出与账号切换清除旧角色，不新增角色缓存或身份请求。其他后台入口仍由原 AdminLayout 验证后挂载，普通玩家直达全部八类后台地址也不会看到管理导航或快捷入口。后端授权、Origin/CSRF、数据库及协议保持不变。平台版本 0.4.1 → 0.4.2，为兼容缺陷修复，README 同步。
+
+验证：
+
+- 旧生产构建上新增触屏焦点回归复现点击模型设置后仍停留 `/developers`，普通玩家回归复现错误展示一个后台链接；未将首次缺少浏览器可执行文件的失败算作产品复现。
+- `pnpm typecheck`、`pnpm lint` 通过，包含全部 workspace 类型检查、ESLint、20 个 AST 边界目录和现有格式检查；`pnpm build` 通过，包含生产 bundle、真实 API runtime、隔离 ZIP/恢复及 AI worker 检查。
+- `.data/navigation-validation.config.ts` 复用现有生产静态预览配置，仅选导航与三项相关社交外壳回归，无数据库准备/清理。最终命令：`FONTCONFIG_FILE=/workspace/PlayBoardgameTogether/.data/fonts.conf pnpm exec playwright test --config .data/navigation-validation.config.ts --project=desktop --project=mobile -g 'more tools|touch links|administrator entry|administrator entrances|switching from|unverified sessions|unchanged social polls|desktop chat stays|messages and invitations' --output .data/navigation-verified`，18 项通过，两个手机专属用例在 desktop 按条件跳过，不计入通过。覆盖真实触屏 tap 配合 null 焦点交错、两项菜单跳转及同一 document、Escape/Tab/外部点击/历史返回、管理员可见/玩家隐藏、身份读取挂起及失败、会话失效、切换普通账户与直接访问后台的前端保护；相邻社交概要、聊天和通知流程通过。
+- 首轮浏览器回归受环境字体缓存不可写影响，文字高度为零；在忽略目录复制系统字体并配置可写 fontconfig 缓存后重新执行上述检查，未修改产品字体、页面或断言。实际查看管理员与普通玩家手机截图，390×844；菜单可达检查另覆盖 320px、700px，桌面 1440×900。截图和临时配置均在忽略目录，不提交。
+
+浏览器身份响应为合成夹具，本轮未配置 PostgreSQL，未运行数据库准备型 `pnpm test:e2e` 或集成测试，不把前端模拟记作真实登录/联机验收。WebKit 已下载，但系统运行库缺失，安装需要不可用的 root 权限，未完成 WebKit/iPhone 或物理手机验证。本轮不合并、不部署；通过功能分支交付后由既有发布流程上线。
+
+## 0.5.0 管理员徽章设计（2026-10-15）
+
+新增后台 `/admin/badges`：管理员可创建、编辑与启停自定义徽章，设置名称、说明、符号，选择手动授予或正式完成局数、不同游戏种类数、指定游戏完成局数的全部/任一条件。手动徽章复用账户授予入口，自动徽章复用权威历史参与记录；不推断胜负。规则提高门槛或停用后，名片投影隐藏不再符合条件的徽章。
+
+共享协议、SDK、031 数据库迁移、后端权限/事务/回执与前端未知结果重试已接入；不改历史迁移、对局结算和游戏规则。平台版本从 0.4.1 升至 0.5.0（兼容新增功能）。升级需运行 `pnpm db:migrate` 并更新 API/Web；本轮不合并发布分支或部署。
+
+验证：`pnpm typecheck`、`pnpm lint`、`pnpm build` 均通过，含生产 bundle、API runtime 与边界检查；031 在独立 `boardgame_test` 成功迁移。`pnpm exec vitest run tests/integration/badges.test.ts tests/integration/admin-management.test.ts tests/unit/badge-media.test.ts` 中徽章12项、媒体6项和管理员6项通过；管理员游戏下架项初因新测试库缺少官方资源返回422。用原 seedAssets 准备 Color Match 经典资源后，完整重跑 `tests/integration/admin-management.test.ts` 七项全过。合计相关25项通过，不宣称全库集成套件通过。
+
+浏览器通过原 run-e2e 脚本运行 `tests/e2e/badges.spec.ts`：原徽章收藏/手动授予/聊天名片/3D流程在桌面、手机均通过；新设计用例修正下拉框的显式无障碍标签后，以 `--grep 'administrator designs'` 重跑桌面、手机两项全过。新用例覆盖配置全部/任一规则、指定游戏、响应丢失原请求重试、刷新恢复、停用隐藏及1440/1280/390宽度无横向溢出；实际查看1280与390截图。运行环境默认 WOFF2 系统字体导致零尺寸文字，使用临时 FONTCONFIG_FILE 指向本地 DejaVu/Noto 字体后验收；没有为此修改产品样式或既有测试断言。未执行全库 E2E，无部署操作。
 
 ## 回放动画改由平台兼容旧桌面（2026-10-11）
 

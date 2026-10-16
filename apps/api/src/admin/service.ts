@@ -13,7 +13,7 @@ import type { Database } from '../db/index.js';
 import type { GameRegistry } from '../registry/index.js';
 import { AppError } from '../errors.js';
 import { BadgeService } from '../badges/service.js';
-import { badgeCollectionSchema, type BadgeGrantInput } from '@boardgame/protocol';
+import { badgeCollectionSchema, badgeDefinitionSchema, type BadgeDefinitionInput, type BadgeGrantInput } from '@boardgame/protocol';
 import { coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import { CoinService } from '../coins/service.js';
 
@@ -51,6 +51,22 @@ export class AdminService {
       client => new CoinService(this.db).adjust(client, current.account.id, accountId, input),
     ));
   }
+
+  async badgeDefinitions() {
+    return new BadgeService(this.db).definitions();
+  }
+
+  async saveBadgeDefinition(current: AuthContext, input: BadgeDefinitionInput) {
+    return badgeDefinitionSchema.parse(
+      await this.command(
+        current,
+        input.requestId,
+        { operation: 'badge.definition', ...input },
+        (client) => new BadgeService(this.db).saveDefinition(client, current.account.id, input),
+      ),
+    );
+  }
+
   async badges(accountId: string) {
     return new BadgeService(this.db).collection(accountId);
   }

@@ -11,6 +11,7 @@ const meSchema = z.object({
 const links = [
   ['/admin', '管理总览'],
   ['/admin/accounts', '账户管理'],
+  ['/admin/badges', '徽章设计'],
   ['/admin/catalog', '游戏管理'],
   ['/admin/submissions', '接入审核'],
   ['/admin/games', '游戏展示'],

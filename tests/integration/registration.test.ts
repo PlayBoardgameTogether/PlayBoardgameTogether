@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import { createDatabase, type Database } from '../../apps/api/src/db/index.js';
 import { createRegistry } from '../../apps/api/src/registry/index.js';
@@ -18,15 +18,17 @@ describe('public account registration', () => {
   const register = (payload: unknown = input, remoteAddress = `192.0.2.${++ip}`) => app.inject({
     method: 'POST', url: '/api/v1/auth/register', headers: { origin }, payload, remoteAddress,
   });
-  beforeAll(async () => {
+  beforeEach(async () => {
     db = createDatabase(url);
+    // Clear fixtures before starting the scheduler so its recovery queries
+    // cannot race TRUNCATE's locks on accounts and dependent tables.
+    await db.query('TRUNCATE accounts CASCADE');
     app = await createApp({ db, registry: createRegistry(false), config: {
       NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: url,
       WEB_ORIGIN: origin, ENABLE_DEV_LAB: false, LOG_LEVEL: 'silent',
     } });
   });
-  beforeEach(async () => { await db.query('TRUNCATE accounts CASCADE'); });
-  afterAll(async () => { await app.close(); });
+  afterEach(async () => { await app.close(); });
 
   it('persists a normal account with exact ID and Argon2id password, then logs in with @', async () => {
     const response = await register();

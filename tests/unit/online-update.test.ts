@@ -36,7 +36,7 @@ describe('production online updates', () => {
     const next = { sha: 'new', path: 'new' };
     const deps = {
       current: () => old, drain: vi.fn(async () => idle), stop: vi.fn(async () => undefined),
-      start: vi.fn(async (release: typeof old) => { void release; }), prepareDatabase: vi.fn(async () => undefined),
+      start: vi.fn(async (release: typeof old) => { void release; }), backup: vi.fn(async () => undefined), prepareDatabase: vi.fn(async () => undefined),
       persist: vi.fn(async () => undefined), activate: vi.fn(), resume: vi.fn(),
     };
     return { old, next, deps };
@@ -45,16 +45,19 @@ describe('production online updates', () => {
     const { deps, next } = fixture(false);
     expect(await applyPrepared(deps, next)).toBe(false);
     expect(deps.stop).not.toHaveBeenCalled(); expect(deps.prepareDatabase).not.toHaveBeenCalled();
+    expect(deps.backup).not.toHaveBeenCalled();
   });
   it('publishes only after readiness and persisted release selection', async () => {
     const { deps, next } = fixture();
     expect(await applyPrepared(deps, next)).toBe(true);
     expect(deps.start).toHaveBeenCalledWith(next);
+    expect(deps.stop.mock.invocationCallOrder[0]).toBeLessThan(deps.backup.mock.invocationCallOrder[0]!);
+    expect(deps.backup.mock.invocationCallOrder[0]).toBeLessThan(deps.prepareDatabase.mock.invocationCallOrder[0]!);
     expect(deps.start.mock.invocationCallOrder[0]).toBeLessThan(deps.persist.mock.invocationCallOrder[0]!);
     expect(deps.persist.mock.invocationCallOrder[0]).toBeLessThan(deps.activate.mock.invocationCallOrder[0]!);
     expect(deps.resume).toHaveBeenCalledOnce();
   });
-  it.each(['prepareDatabase', 'start', 'persist'] as const)('restores the old process on %s failure without activating new files', async stage => {
+  it.each(['backup', 'prepareDatabase', 'start', 'persist'] as const)('restores the old process on %s failure without activating new files', async stage => {
     const { deps, old, next } = fixture();
     deps[stage].mockRejectedValueOnce(new Error('failure'));
     await expect(applyPrepared(deps, next)).rejects.toThrow('failure');

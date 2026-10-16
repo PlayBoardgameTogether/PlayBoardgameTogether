@@ -128,7 +128,7 @@ pnpm --filter @boardgame/api start
 pnpm start:online
 ```
 
-在线更新默认跟踪 GitHub `origin/main`，每五分钟检测一次，默认监听 `8080`。管理员也可在后台触发检测；含迁移的更新默认等待维护。`deploy.sh` 不会自动启用该托管入口，配合使用需要额外配置，详见 [在线更新](docs/online-update.md)。
+在线更新默认跟踪 GitHub `origin/main`，每五分钟检测一次，默认监听 `8080`。管理员也可在后台触发检测；每次切换先自动备份数据库、资源与恢复配置，备份校验通过后自动执行新增迁移，无需逐次确认。服务器需安装匹配数据库版本的 `pg_dump` / `pg_restore`；旧配置若显式设置 `UPDATE_ALLOW_MIGRATIONS=false`，需一次性删除或改为 `true`。`deploy.sh` 不会自动启用该托管入口，配合使用需要额外配置，详见 [在线更新](docs/online-update.md)。
 
 生产 HTTPS 必须设置 `COOKIE_SECURE=true`，反向代理需保留同源 Origin 和 WebSocket Upgrade。升级时执行当前版本所需迁移；备份应同时覆盖数据库、资源目录及锁定游戏源码。
 

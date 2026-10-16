@@ -8,6 +8,7 @@ import {
   badgeGrantInputSchema,
   coinAdjustmentSchema,
   coinHistoryQuerySchema,
+  badgeDefinitionInputSchema,
 } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { AppError } from '../errors.js';
@@ -62,6 +63,17 @@ export function registerAdminRoutes(
   app.get('/api/v1/admin/overview', async (request) => {
     await administrator(request);
     return ok(request, await service.overview());
+  });
+  app.get('/api/v1/admin/badges', async (request) => {
+    await administrator(request);
+    return ok(request, await service.badgeDefinitions());
+  });
+  app.put('/api/v1/admin/badges', async (request) => {
+    const current = await administrator(request, true);
+    return ok(
+      request,
+      await service.saveBadgeDefinition(current, badgeDefinitionInputSchema.parse(request.body)),
+    );
   });
   app.get('/api/v1/admin/accounts/:id/badges', async (request) => {
     await administrator(request);

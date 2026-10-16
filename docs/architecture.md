@@ -4,6 +4,10 @@
 
 `apps/api/src/coins/service.ts` 拥有独立钱包与审计流水，管理员调整复用 AdminService 原有授权、请求去重和事务，不创建平行认证或管理员命令链。AccountRoutes 只按会话读取本人钱包；Web 的 CoinWallet 共用本人/后台展示和未知结果恢复。协议与存储见 [桌游币](coins.md)。
 
+## 管理员徽章设计（0.5.0）
+
+031 迁移新增自定义徽章定义，BadgeService 在同一条收藏 SQL 快照读取定义、正式完成进度、逐游戏计数及手动授予，投影时过滤失效精选。定义写入复用 AdminService 的授权、事务、管理员锁与回执，不进入对局动作事务。protocol/badges 与 client-sdk 提供共享规则和设计接口；Web 独立 `/admin/badges` 编辑器支持创建、修改、启停及未知结果重试。详见 [玩家徽章](badges.md)。
+
 ## 回放表现通道（2026-10-11）
 
 ReplayPage 连续前进保留桌面，将本人历史 View/事件和 busy=false 交给原 GameBoard；平台通过 replay-motion 观察有限 CSS/Web Animations/DOM 变化，拦截输入、禁用控件并丢弃动作。在线包 desktop?replay=1 在原 opaque sandbox/CSP 内加入 catalog/replay-desktop 包装，自动观察动画并报告当前呈现 id 的时长；不改数据库中的源码/hash/规则版本，普通 desktop 响应不变。旧拉密 1.0.3、花砖等原桌面直接兼容，不要求新游戏包。可选 ReplayPresentation.hold 补充不可自动推断的自定义时长，观察上限60秒，过期回调忽略，跳转/卸载清理。未执行规则、未新增数据库或 WS 契约、未授予实时音效权限。
@@ -63,6 +67,10 @@ Web 独立 /chat 路由与 PublicChatPage 负责名片/好友流程；DirectChat
 ## 在线桌面自适应高度（2026-10-04）
 
 Web PackageBoard 在原 sandbox 消息监听中接收当前 iframe 的有界 boardgame:resize，使用组件状态设置高度，切换 id/version 清理尺寸并重建 iframe；旧包不发消息时保留原 560px 最小高度。五子棋 1.0.1 在内容 main 上使用 ResizeObserver，仅尺寸变化时发送，pagehide 断开观察器并取消动画帧；宽度上限 1000px，手机仍按可用宽度。平台没有按游戏 ID 分支；不改变规则、服务端包生命周期、HTTP/WS、数据库或旧局精确版本。
+
+## 自动备份后更新（2026-10-15）
+
+监督进程在关闭 API/AI worker 后、执行迁移与游戏同步前调用 `scripts/update-backup.mjs`，用原受控命令执行器运行 pg_dump/pg_restore，复制并校验资源、保存私密恢复配置与版本引用，完整备份原子发布到私有状态目录。备份失败恢复旧进程，不执行数据库准备。新增迁移默认继续；显式 UPDATE_ALLOW_MIGRATIONS=false 保留人工维护选择，已有迁移修改/删除/重命名始终拒绝。备份不自动覆盖回数据库，保留逐迁移提交与旧进程恢复的真实边界；单实例部署与原业务事务不变。首次需安装 PostgreSQL 客户端并重启监督脚本。详见 [在线更新](online-update.md)。
 
 ## 有限等待的服务更新（2026-10-04）
 
