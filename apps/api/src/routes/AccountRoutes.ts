@@ -10,6 +10,8 @@ import { ModelProfileService } from '../model-profiles.js';
 import { BadgeService } from '../badges/service.js';
 import { badgeDisplayInputSchema, displayedBadgesSchema } from '@boardgame/protocol';
 import { z } from 'zod';
+import { coinHistoryQuerySchema } from '@boardgame/protocol';
+import { CoinService } from '../coins/service.js';
 export function registerAccountRoutes(
   app: FastifyInstance,
   {
@@ -47,6 +49,12 @@ export function registerAccountRoutes(
     });
   });
   const profiles = new ProfileService(db);
+  const coins = new CoinService(db);
+  app.get('/api/v1/profile/coins', async (request) => {
+    const current = await requireAuth(request);
+    const query = coinHistoryQuerySchema.parse(request.query);
+    return ok(request, await coins.wallet(current!.account.id, query.before));
+  });
   const badges = new BadgeService(db);
   app.get('/api/v1/profile/badges', async (request) => {
     const current = await requireAuth(request);

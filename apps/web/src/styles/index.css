@@ -3,6 +3,7 @@
 @layer platform.room-base, platform.game-base, platform.environment, platform.interaction, platform.appearance;
 @layer components.social, components.assets, components.catalog, components.tutorial, components.models, components.rooms, components.profile, components.admin, components.developers, components.replay;
 @layer games.splendor, games.azul;
+@layer components.coins;
 @import './base.css';
 @import './stage2.css';
 @import './assets.css';

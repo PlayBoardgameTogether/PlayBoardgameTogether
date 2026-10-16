@@ -141,6 +141,7 @@ function Accounts() {
                 </div>
                 <div className="admin-record-actions">
                   <a href={`/admin/accounts/${account.id}/badges`}>管理徽章</a>
+                  <a href={`/admin/accounts/${account.id}/coins`}>管理桌游币</a>
                   <span className="status-badge">
                     {account.status === 'active' ? '已启用' : '已停用'}
                   </span>

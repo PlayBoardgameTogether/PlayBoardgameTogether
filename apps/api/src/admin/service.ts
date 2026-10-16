@@ -14,6 +14,8 @@ import type { GameRegistry } from '../registry/index.js';
 import { AppError } from '../errors.js';
 import { BadgeService } from '../badges/service.js';
 import { badgeCollectionSchema, badgeDefinitionSchema, type BadgeDefinitionInput, type BadgeGrantInput } from '@boardgame/protocol';
+import { coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
+import { CoinService } from '../coins/service.js';
 
 type AccountRow = {
   id: string;
@@ -39,6 +41,17 @@ const accountColumns =
   'id,username_canonical,display_name,role,status,admin_revision,created_at';
 
 export class AdminService {
+  async coins(accountId: string, before?: number) {
+    return new CoinService(this.db).wallet(accountId, before);
+  }
+
+  async adjustCoins(current: AuthContext, accountId: string, input: CoinAdjustment) {
+    return coinWalletSchema.parse(await this.command(
+      current, input.requestId, { operation: 'coin.adjust', accountId, ...input },
+      client => new CoinService(this.db).adjust(client, current.account.id, accountId, input),
+    ));
+  }
+
   async badgeDefinitions() {
     return new BadgeService(this.db).definitions();
   }

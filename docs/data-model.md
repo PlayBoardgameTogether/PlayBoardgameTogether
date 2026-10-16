@@ -1,5 +1,9 @@
 # 数据模型
 
+## 桌游币（032，2026-10-16）
+
+独立 `boardgame_coin_wallets` 保存账户余额（0–1,000,000,000）和 revision；首次调整创建，无行读取为 0。`boardgame_coin_ledger` 保存每次非零调整及余额、原因、管理员审计 UUID/requestId/时间，账户 revision 与管理员 requestId 分别唯一。管理员写入复用 `admin_command_receipts`，余额、流水、版本及回执原子提交；读取同一 SQL 快照。与 AI 点数无共享余额、兑换或扣费。完整契约见 [桌游币](coins.md)。
+
 ## 玩家徽章（030，2026-10-11）
 
 `player_badge_settings` 保存每账户精选 JSON 数组（最多三项）及 revision；`player_badge_grants` 以账户/徽章为主键保存身份荣誉、授予时间及授予管理员；`player_badge_receipts` 保存本人展示命令输入/结果，按账户/requestId 唯一。管理员授予/收回继续使用 `admin_command_receipts`；收回同时清除精选。成就进度直接由固定 match participant 的已完成正式对局计算，没有新增胜负统计或修改旧对局。详见 [玩家徽章](badges.md)。
@@ -108,3 +112,7 @@ rooms.asset_version_id 与 matches.asset_version_id 外键绑定精确版本；m
 016 为 seats 增加 bot_model_profile_id，并为 match_participants 增加 model_owner_account_id。模型 bot 保持 account_id=NULL，controller_type=model，保存 model_profile_id 与独立授权 owner；二者的复合外键引用 model_profiles(id,owner_account_id)。真人沿用既有账户/profile 外键且 model_owner_account_id=NULL。017 进一步约束：model 座位必须有模型引用，脚本和真人座位不得有该引用。测试库已应用的 016 初版保持原校验和，约束增强使用后续迁移，不修改其历史含义。
 
 等待房间只保存 profile 引用，开局重新校验所有者、active、enabled、未删除和凭证，并在同一开局事务中固定授权。使用既有活跃绑定保护冻结本局配置；未新增 profile 版本快照机制。模型调用失败继续使用已有合法 fallback。
+
+## 官方 AI 点数（031，2026-10-16）
+
+031 新增 official_ai_offers（固定来源配置/行动点价、可停用 revision）、ai_point_wallets（整数余额）、ai_point_ledger（发放/行动审计）、ai_point_receipts（账户+请求去重）和 official_ai_reservations（task 唯一、attempt 唯一、预留/ready/charged/released、唯一消费账本引用）。model_profiles 增加 official_offer_id/official_match_budget，官方占位端点不可被普通模型输入选用。余额以钱包行锁串行消费与发放，预留/已消费按 match/seat/payer 累计；正式动作与钱包/账本/回执在原事务提交。model_attempts 保存供应商返回用量或 unknown，不保存 View/State/密钥。独立于桌游币，详见 [官方 AI](official-ai.md)。

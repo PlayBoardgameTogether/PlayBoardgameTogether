@@ -339,4 +339,3 @@ async function main() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch(() => { console.error('[online-update] startup failed; check built files, ports, GitHub origin and supervisor.lock'); process.exitCode = 1; });
 }
-

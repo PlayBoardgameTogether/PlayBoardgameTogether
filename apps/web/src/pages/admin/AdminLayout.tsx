@@ -17,6 +17,7 @@ const links = [
   ['/admin/games', '游戏展示'],
   ['/admin/assets', '资源管理'],
   ['/admin/updates', '服务更新'],
+  ['/admin/official-ai', '官方 AI 与点数'],
 ] as const;
 
 export function AdminLayout({

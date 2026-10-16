@@ -1,4 +1,6 @@
+import { PROVIDER_PRESETS } from './model-presets.js';
 import type { useModelSettings } from './useModelSettings.js';
+
 type Props = Pick<
   ReturnType<typeof useModelSettings>,
   | 'endpoints'
@@ -20,6 +22,11 @@ type Props = Pick<
   | 'cannotSave'
   | 'reset'
   | 'save'
+  | 'activePreset'
+  | 'applyPreset'
+  | 'applyPresetModel'
+  | 'selectedPresetId'
+  | 'setSelectedPresetId'
 >;
 
 export function ModelProfileEditor({
@@ -42,11 +49,79 @@ export function ModelProfileEditor({
   cannotSave,
   reset,
   save,
+  activePreset,
+  applyPreset,
+  applyPresetModel,
+  selectedPresetId,
+  setSelectedPresetId,
 }: Props) {
   return (
     <section className="model-editor-panel" ref={formSectionRef}>
-      <h2>{editing ? `编辑「${editing.name}」` : '新增配置'}</h2>
-      <form className="form-stack" onSubmit={save}>
+      <div className="model-editor-header">
+        <div>
+          <h2>{editing ? `编辑「${editing.name}」` : '新增配置'}</h2>
+          <p className="model-editor-subtitle">
+            {editing
+              ? '修改模型参数、更新密钥或调整对局策略'
+              : '选用常用推荐服务商快速接入，或配置自定义端点'}
+          </p>
+        </div>
+        {editing && (
+          <button
+            type="button"
+            className="secondary model-btn-cancel-top"
+            disabled={!!busy}
+            onClick={reset}
+          >
+            取消编辑
+          </button>
+        )}
+      </div>
+
+      {/* 热门服务商快捷预设选区 */}
+      <div className="model-presets-bar">
+        <div className="model-presets-header">
+          <span className="presets-title">快速选用服务商预设</span>
+          <span className="presets-hint">一键填入地址与推荐模型</span>
+        </div>
+        <div className="model-presets-grid">
+          {PROVIDER_PRESETS.map((preset) => {
+            const isSelected = selectedPresetId === preset.id;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                className={`preset-pill-btn ${isSelected ? 'is-selected' : ''}`}
+                onClick={() => applyPreset(preset)}
+                disabled={!!busy}
+                title={`${preset.name} - ${preset.description}`}
+              >
+                <span className="preset-icon" aria-hidden="true">
+                  {preset.icon}
+                </span>
+                <span className="preset-name">{preset.shortName}</span>
+                {preset.tag && <span className="preset-tag">{preset.tag}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {activePreset?.websiteUrl && (
+          <div className="preset-guide-bar">
+            <span className="guide-desc">💡 {activePreset.description}</span>
+            <a
+              href={activePreset.websiteUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="preset-external-link"
+            >
+              前往 {activePreset.websiteName ?? '服务商平台'} 获取 Key ↗
+            </a>
+          </div>
+        )}
+      </div>
+
+      <form className="form-stack model-form-stack" onSubmit={save}>
         <label>
           配置名称
           <input
@@ -60,11 +135,16 @@ export function ModelProfileEditor({
             required
           />
         </label>
+
         <label>
           服务端点
           <select
             value={draft.endpointId}
-            onChange={(event) => setDraft({ ...draft, endpointId: event.target.value, apiKey: '' })}
+            onChange={(event) => {
+              const newEndpoint = event.target.value;
+              setSelectedPresetId(newEndpoint === 'custom' ? 'custom' : null);
+              setDraft({ ...draft, endpointId: newEndpoint, apiKey: '' });
+            }}
             disabled={!!busy}
             required
           >
@@ -77,6 +157,7 @@ export function ModelProfileEditor({
             <option value="custom">自定义 OpenAI 兼容服务</option>
           </select>
         </label>
+
         {draft.endpointId === 'custom' && (
           <label>
             Base URL（HTTPS）
@@ -91,8 +172,28 @@ export function ModelProfileEditor({
             />
           </label>
         )}
+
         <label>
           模型标识
+          {activePreset?.models && activePreset.models.length > 0 && (
+            <div className="model-quick-models">
+              <span className="quick-models-title">推荐标识：</span>
+              <div className="quick-models-list">
+                {activePreset.models.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`quick-model-chip ${draft.modelId === m.id ? 'is-active' : ''}`}
+                    onClick={() => applyPresetModel(m.id)}
+                    title={m.tag}
+                  >
+                    <span>{m.label}</span>
+                    {m.tag && <small>{m.tag}</small>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <input
             name="modelId"
             placeholder="服务商提供的 model ID"
@@ -103,6 +204,7 @@ export function ModelProfileEditor({
             required
           />
         </label>
+
         <div className="model-key-field">
           <label htmlFor="model-api-key">API key（仅写入，不会回显）</label>
           <div className="api-key-input-wrapper">
@@ -113,7 +215,7 @@ export function ModelProfileEditor({
               autoComplete="new-password"
               value={draft.apiKey}
               onChange={(event) => setDraft({ ...draft, apiKey: event.target.value })}
-              minLength={8}
+              minLength={isMock ? 0 : 4}
               maxLength={4096}
               disabled={!!busy || isMock || !credentialsAvailable}
               required={needsKey}
@@ -125,7 +227,7 @@ export function ModelProfileEditor({
             />
             <button
               type="button"
-              className="secondary"
+              className="secondary key-toggle-btn"
               disabled={!!busy || isMock || !credentialsAvailable}
               aria-pressed={showApiKey}
               onClick={() => setShowApiKey((value) => !value)}
@@ -138,6 +240,7 @@ export function ModelProfileEditor({
             <p className="muted model-field-hint">更换服务地址后，请重新填写密钥。</p>
           )}
         </div>
+
         <details
           className="model-advanced-box"
           open={showAdvanced}
@@ -162,7 +265,7 @@ export function ModelProfileEditor({
                 max="2"
                 step="0.05"
                 value={draft.temperature}
-                placeholder="服务商默认"
+                placeholder="服务商默认（推荐 0.3~0.5）"
                 onChange={(event) =>
                   setDraft({
                     ...draft,
@@ -180,7 +283,7 @@ export function ModelProfileEditor({
                 max="512"
                 step="1"
                 value={draft.maxOutputTokens}
-                placeholder="服务商默认"
+                placeholder="服务商默认（推荐 256）"
                 onChange={(event) =>
                   setDraft({
                     ...draft,
@@ -192,13 +295,15 @@ export function ModelProfileEditor({
             </label>
           </div>
         </details>
+
         {error && (
           <p className="error-notice" role="alert">
             {error}
           </p>
         )}
-        <div className="model-actions">
-          <button disabled={!!busy || cannotSave}>
+
+        <div className="model-actions model-editor-submit-bar">
+          <button className="model-btn-save" disabled={!!busy || cannotSave}>
             {busy === 'save' ? '保存中…' : editing ? '保存修改' : '保存配置'}
           </button>
           {editing && (

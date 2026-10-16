@@ -411,6 +411,13 @@ export function ProfilePage({
           </section>
 
           <nav className="profile-links" aria-label="资料功能">
+            <a href="/profile/coins" className="profile-feature-card">
+              <div className="profile-feature-text">
+                <span className="profile-feature-title">我的桌游币</span>
+                <span className="profile-feature-desc">查看平台通用货币余额与流水</span>
+              </div>
+              <span aria-hidden="true">→</span>
+            </a>
             <a href="/profile/history" className="profile-feature-card">
               <div className="profile-feature-lead">
                 <span

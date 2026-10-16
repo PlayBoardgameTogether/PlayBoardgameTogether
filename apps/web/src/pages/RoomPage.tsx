@@ -43,7 +43,7 @@ export function RoomPage({ id }: { id: string }) {
     setModelsLoading(true);
     setModelsError('');
     void api
-      .modelProfiles()
+      .playableModelProfiles()
       .then((profiles) => {
         if (!disposed) setModelProfiles(profiles);
       })

@@ -4,6 +4,7 @@ import {
   matchSnapshotMessageSchema,
   roomSnapshotSchema,
   type MatchView,
+  type ModelProfile,
 } from '@boardgame/protocol';
 import { api, command, navigate } from '../platform.js';
 import { clientGame, type GameBoard } from '../game-registry.js';
@@ -69,15 +70,7 @@ export function useMatchSession(id: string) {
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState<Pending>();
   const [connection, setConnection] = useState<Connection>('connecting');
-  const [modelProfiles, setModelProfiles] = useState<
-    Array<{
-      id: string;
-      name: string;
-      endpoint_id: string;
-      model_id: string;
-      has_credential: boolean;
-    }>
-  >([]);
+  const [modelProfiles, setModelProfiles] = useState<ModelProfile[]>([]);
   const latest = useRef<MatchView | undefined>(undefined);
   const pendingRef = useRef<Pending | undefined>(undefined);
   const accountId = useRef<string | undefined>(undefined);
@@ -641,7 +634,7 @@ export function useMatchSession(id: string) {
   useEffect(() => {
     const token = generation.current;
     void api
-      .modelProfiles()
+      .playableModelProfiles()
       .then((profiles) => {
         if (generation.current === token) setModelProfiles(profiles);
       })

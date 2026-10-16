@@ -1,4 +1,6 @@
 import { ModelProfileService } from './model-profiles.js';
+import { OfficialAiService } from './official-ai/service.js';
+import { AppError } from './errors.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { Worker } from 'node:worker_threads';
 import { DeterministicRng } from '@boardgame/game-sdk';
@@ -47,6 +49,7 @@ export class AiScheduler {
   private readonly inflight = new Set<Promise<void>>();
   private readonly workers = new Set<Worker>();
   private readonly models: ModelProfileService;
+  private readonly official: OfficialAiService;
   constructor(
     private db: Database,
     private registry: GameRegistry,
@@ -54,6 +57,7 @@ export class AiScheduler {
     private config: ApiConfig,
   ) {
     this.models = new ModelProfileService(db, config.MODEL_CREDENTIALS_KEY);
+    this.official = new OfficialAiService(db, config.NODE_ENV === 'test');
   }
   start() {
     if (this.timer) return;
@@ -88,6 +92,7 @@ export class AiScheduler {
         `UPDATE ai_tasks SET status=CASE WHEN attempt_count<$1 THEN 'queued' ELSE 'blocked' END,available_at=now(),lease_owner=NULL,lease_until=NULL,updated_at=now(),safe_error_code=CASE WHEN attempt_count<$1 THEN safe_error_code ELSE 'AI_TIMEOUT' END WHERE status IN ('running','proposed','submitting') AND lease_until<now()`,
         [this.config.AI_MAX_ATTEMPTS],
       );
+      await this.official.recover();
       const active = await this.db.query<{ id: string }>(
         "SELECT id FROM matches WHERE status='active' ORDER BY created_at LIMIT 100",
       );
@@ -250,6 +255,11 @@ export class AiScheduler {
   }
   private async model(t: Claim, context: Context) {
     if (!t.model_profile_id) throw new Error('AI_PROFILE_UNAVAILABLE');
+    const official = await this.db.query<{ official_offer_id: string | null }>(
+      'SELECT official_offer_id FROM model_profiles WHERE id=$1',
+      [t.model_profile_id],
+    );
+    if (official.rows[0]?.official_offer_id) return this.officialModel(t, context);
     const task = await this.db.query<{ decision_key: string }>(
       'SELECT decision_key FROM ai_tasks WHERE id=$1',
       [t.id],
@@ -315,6 +325,67 @@ export class AiScheduler {
     );
     return context.legalActions[choices.findIndex((choice) => choice.id === selected.choiceId)];
   }
+  private async officialModel(t: Claim, context: Context) {
+    const participant = await this.db.query<{ owner: string }>(
+      'SELECT COALESCE(model_owner_account_id,account_id) AS owner FROM match_participants WHERE match_id=$1 AND seat_id=$2',
+      [t.match_id, t.seat_id],
+    );
+    const owner = participant.rows[0]?.owner;
+    const profile = owner ? await this.official.runtime(t.model_profile_id!, owner) : null;
+    if (!profile || !owner)
+      throw new AppError('AI_BLOCKED', '官方 AI 暂不可用，请联系管理员或收回控制', 409);
+    const key =
+      profile.protocol === 'mock'
+        ? 'mock'
+        : await this.models.decryptCredential(profile.source_owner, profile.source_profile_id);
+    const task = (
+      await this.db.query<{ decision_key: string; game_version: string }>(
+        'SELECT t.decision_key,m.game_version FROM ai_tasks t JOIN matches m ON m.id=t.match_id WHERE t.id=$1',
+        [t.id],
+      )
+    ).rows[0]!;
+    const extension = this.registry.get(context.gameId, task.game_version);
+    const decisionKey = extension?.getDecisionRequests
+      ? task.decision_key
+      : `revision:${t.source_revision}:${task.decision_key}`;
+    await this.official.reserve(t.id, this.owner, t.lease_generation, profile, owner, decisionKey);
+    const started = Date.now();
+    try {
+      const choices = context.legalActions.map((action, index) => ({
+        id: `a${index.toString(36)}`,
+        description: canonical(action),
+      }));
+      const adapter =
+        profile.protocol === 'mock' ? new MockModelAdapter() : new OpenAiChatAdapter();
+      const response = await adapter.decide(
+        {
+          endpoint: profile.base_url,
+          model: profile.model_id,
+          apiKey: key,
+          decisionId: t.id,
+          choices,
+          rules: context.publicRules,
+          view: context.view,
+          timeoutMs: this.config.AI_DECISION_TIMEOUT_MS,
+        },
+        new AbortController().signal,
+      );
+      await this.official.recordResponse(t.id, response, Date.now() - started);
+      const selected = parseModelChoice(
+        response.raw,
+        t.id,
+        new Set(choices.map((choice) => choice.id)),
+      );
+      await this.official.ready(t.id);
+      return context.legalActions[choices.findIndex((choice) => choice.id === selected.choiceId)];
+    } catch (error) {
+      await this.official.release(
+        t.id,
+        error instanceof AppError && error.code === 'AI_INVALID_OUTPUT',
+      );
+      throw error;
+    }
+  }
   private async process(t: Claim) {
     try {
       const c = await this.context(t);
@@ -327,7 +398,10 @@ export class AiScheduler {
       if (action === null) {
         try {
           action = t.controller_type === 'model' ? await this.model(t, c) : await this.script(t, c);
-        } catch {
+        } catch (error) {
+          if (error instanceof AppError && error.code === 'AI_BLOCKED') throw error;
+          // A fallback must never consume a previous ready reservation after a restart.
+          await this.official.release(t.id);
           const ext = this.registry.get(
             c.gameId,
             (
@@ -343,6 +417,7 @@ export class AiScheduler {
         }
       }
       if (!c.legalActions.some((x) => canonical(x) === canonical(action))) {
+        await this.official.release(t.id, true);
         const ext = this.registry.get(
           c.gameId,
           (
@@ -373,7 +448,16 @@ export class AiScheduler {
       await this.db.query("UPDATE ai_tasks SET status='submitting' WHERE id=$1", [t.id]);
       await this.matches.actAutomation(t.id, this.owner, t.lease_generation);
       this.wake(t.match_id);
-    } catch {
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'AI_BLOCKED') {
+        await this.db.query(
+          "UPDATE ai_tasks SET status='blocked',safe_error_code='AI_BLOCKED',lease_owner=NULL,lease_until=NULL WHERE id=$1 AND lease_owner=$2 AND lease_generation=$3",
+          [t.id, this.owner, t.lease_generation],
+        );
+        await this.official.release(t.id);
+        await this.blockParticipant(t.match_id, t.seat_id, 'AI_BLOCKED');
+        return;
+      }
       const retry = await this.db.query<{ attempt_count: number }>(
         'SELECT attempt_count FROM ai_tasks WHERE id=$1',
         [t.id],
@@ -395,6 +479,7 @@ export class AiScheduler {
       t.id,
       t.lease_generation,
     ]);
+    await this.official.release(t.id);
   }
   private async blockParticipant(matchId: string, seatId: string, code: string) {
     await this.db.query(

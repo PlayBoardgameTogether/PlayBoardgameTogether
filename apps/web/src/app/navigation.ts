@@ -16,7 +16,7 @@ export function followPageLink(event: MouseEvent<HTMLElement>) {
       (link.target && link.target !== '_self') || link.relList.contains('external')) return;
   const url = new URL(link.href);
   if (url.origin !== location.origin || url.hash || url.search ||
-      !/^(?:\/|\/chat|\/login|\/register|\/profile(?:\/(?:edit|history|identity|badges))?|\/friends(?:\/(?:add|requests|invitations|chat\/[0-9a-f-]{36}))?|\/games\/[a-z0-9._-]+\/[a-z0-9._-]+(?:\/(?:new|tutorial))?|\/rooms\/new|\/rooms\/[0-9a-f-]+|\/matches\/[0-9a-f-]+(?:\/replay)?|\/settings\/models|\/admin(?:\/(?:accounts(?:\/[0-9a-f-]{36}\/badges)?|badges|catalog|submissions|assets|games|updates))?|\/status|\/developers(?:\/[a-z-]+)?|\/dev\/(?:ui|lab))$/i.test(url.pathname)) return;
+      !/^(?:\/|\/chat|\/login|\/register|\/profile(?:\/(?:edit|history|identity|badges|coins))?|\/friends(?:\/(?:add|requests|invitations|chat\/[0-9a-f-]{36}))?|\/games\/[a-z0-9._-]+\/[a-z0-9._-]+(?:\/(?:new|tutorial))?|\/rooms\/new|\/rooms\/[0-9a-f-]+|\/matches\/[0-9a-f-]+(?:\/replay)?|\/official-ai|\/settings\/models|\/admin(?:\/(?:accounts(?:\/[0-9a-f-]{36}\/(?:badges|coins))?|badges|catalog|submissions|assets|games|updates|official-ai))?|\/status|\/developers(?:\/[a-z-]+)?|\/dev\/(?:ui|lab))$/i.test(url.pathname)) return;
   event.preventDefault();
   if (url.pathname !== location.pathname) navigate(url.pathname);
 }

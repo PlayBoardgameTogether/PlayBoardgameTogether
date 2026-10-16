@@ -1,5 +1,70 @@
 # 开发进度
 
+## 官方 AI、桌游币与主分支合并验收（2026-10-16）
+
+按用户确认，将 `codex/optional-badge-3d` 的模型设置工作台、独立桌游币和官方 AI/点数合入 main。先同步 main，解决 README、版本、管理员路由/服务、导航及文档共 8 个冲突文件，保留主分支的徽章设计、手机导航权限修复和在线更新备份。导航同时识别徽章设计、桌游币和官方 AI 路由；普通玩家后台直达回归新增官方 AI 与桌游币地址。为主分支备份测试补充显式 Buffer 导入；清理合并文件末尾多余空行。
+
+主分支平台版本 0.6.0 → 0.7.0，沿用功能分支已递增的 0.7.0（兼容新增官方 AI 与点数），README 一致，本轮冲突处理不重复升号。迁移器以完整文件名为历史键，`031_custom_badges.sql` 与 `031_official_ai.sql` 操作不同表，连同 `032_boardgame_coins.sql` 保留原名及内容；全新独立库迁移及后续 checksum 复核通过，不改写已应用迁移。
+
+实际验证：
+
+- `pnpm --config.verify-deps-before-run=false typecheck`、同配置 `build` 通过，包含生产 bundle、API runtime、隔离 ZIP 与 AI worker 检查。相关 `vitest run tests/unit/online-update.test.ts tests/unit/model-ai.test.ts tests/unit/model-transport.test.ts tests/unit/badge-media.test.ts` 4 文件/27 项通过。
+- 完整 lint 的 ESLint、20 目录 AST 边界通过；format:check 报 26 个文件换行问题。逐文件核对均与 HEAD 或 origin/main 原内容一致，规范化 CRLF 后 26 个均通过 Prettier，未批量修改。最后补充修改的测试文件定向 ESLint、`git diff --check` 通过。
+- 数据库测试经 `.data/current-merge-validation.mjs` 仅覆盖进程内 TEST_DATABASE_URL，调用原准备/迁移/同步/种子及测试脚本，串行使用独立 `boardgame_merge_final_20261016`，未覆盖 .env 或清理开发/生产库。首次独立库资源准备发生媒体处理失败且失败被原回执保留；隔离媒体诊断通过后，改用上述全新独立库成功准备。
+- 完整 `test:integration` 27 文件/195 项中 194 项通过、注册首例在 beforeEach 的 TRUNCATE 与启动中的后台恢复任务竞争而死锁。注册夹具改为每例先清库、再启动应用，结束关闭应用，不删除业务断言。用原脚本及 `--testNamePattern=public.account.registration` 重跑，注册 7/7 通过，188 项按范围过滤跳过；不将该轮描述为全套通过。其他通过范围未受该夹具修改影响，不重复运行。
+- 原 `test:e2e tests/e2e/coins.spec.ts tests/e2e/official-ai.spec.ts tests/e2e/badges.spec.ts --output .data/current-merge-e2e` 桌面/手机 10/10 通过，无 skip。覆盖真实登录、徽章收藏/设计/停用、发币扣回、官方 AI 发布发点/授权、未知结果原请求重试、越权保护及刷新恢复。生产静态外壳 `playwright test --config playwright.ui.config.ts navigation-menu.spec.ts --output .data/current-merge-navigation` 另 12 项通过、2 项手机专属用例在 desktop 跳过；身份响应为合成夹具，不计真实登录。实际查看 1280px 徽章设计与 390px 菜单截图；自动布局覆盖 1440/1280/700/390/320px，未验收物理手机或辅助技术。
+- `node tests/deployment/update-backup.test.mjs` 在正常权限下 8/10 通过；另两项分别受 Windows 的 POSIX mode 语义与符号链接创建权限限制，未降低断言或计为通过。未完成本轮 Linux 备份全套或真实 PostgreSQL 备份/恢复演练；备份命令在这些测试中是受控替身。
+
+本轮按授权合并发布分支，未手动部署、调用真实模型供应商或修改生产数据库。线上更新器可能按既有配置获取 main；是否已上线须另查实际运行状态。
+
+## 平台官方 AI 与 AI 点数（2026-10-16）
+
+新增 `/official-ai` 玩家目录、整数点数余额/预留与分页账单、每席位单局上限；`/admin/official-ai` 从管理员本人真实模型配置发布固定价格档位、开放/停用、搜索玩家发放点数并记录说明，以及供应商调用/失败/未知/token 汇总。房间添加模型 AI 与本人托管复用原 profile/controller 链路，明确显示点价、付款账户与上限；个人模型、免费脚本 AI 和独立桌游币保留。
+
+031 新增官方目录、钱包、流水、回执和 task/attempt 唯一的消费预留；来源配置禁止改写/删除但可轮换或撤销凭证。官方配置无玩家密钥，目录不暴露来源 ID。调用前锁 task/官方授权/钱包，检查余额与该席位累计消费/预留；调用在事务外，仅本人 View/公开规则/候选。成功行动与扣点/账本在原 matches 事务提交，失败一起回滚；失败/非法结果/兜底/过期不收费，ready 冻结提案可恢复，未知调用不自动重发，丢失未冻结结果以新鲜 View 免费兜底。所有兜底先释放旧预留，防止重启后误收费。补点/用户显式提高上限后无调用 blocked task 原地重排，修复唯一决定键导致重试不执行的问题；进行中禁止降低上限，页面说明调整适用于同档位所有进行中席位且不清零已消费。重试权限限定本人或专用 bot 房主。详见 [官方 AI](official-ai.md)、[ADR-007](adr/007-official-ai-points.md)。
+
+平台版本 0.6.0 → 0.7.0，为向后兼容的新官方 AI 与点数功能；README 同步，游戏及 workspace 包版本不变。
+
+验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；同配置 `build` 通过，含生产 bundle/API runtime/隔离 ZIP/AI worker 检查。最后预算恢复/兜底修正后再次构建，API 和其余包通过，Web 因沙箱 dist 写入 EPERM 失败；仅提权重跑 `--filter @boardgame/web build` 及生产 bundle/API runtime/隔离 ZIP/AI worker 检查，全部通过。相关模型单元 2 文件/11 项通过。完整 lint 的 ESLint 与20目录 AST 边界通过，format:check 仍因25个未修改文件的既有换行问题未通过；未批量格式化。最终受影响 TS/TSX 定向 ESLint、新模块/页面/样式/测试的 Prettier 检查和 git diff --check 通过。
+
+数据库通过原准备/迁移/同步/资源脚本使用独立 `boardgame_official_20261016`，完整 `test:integration` 27文件188项通过，无 skip；包含官方 AI 首批7项（权限/隐私/请求去重、并发钱包预留、扣点与 State/RNG/回执故障共同回滚、恢复不重复扣点、过期释放/冻结提案、补点后重试与单局上限）。最后扩展官方专项并定向运行 `--testNamePattern=official`：官方10/10与匹配到的卡坦岛1项通过，其他180项因范围过滤跳过，不计该轮通过。新增覆盖非法结果免费兜底、unknown/ready 丢失未冻结结果恢复不重复请求/不扣点、显式提高上限后继续且不能降低；没有重新声称最后一轮为191项全套。首次连接受沙箱 EACCES，提权后实际完成，没有改写 .env 或清理开发库。
+
+原 `test:e2e tests/e2e/official-ai.spec.ts` 串行使用同一独立库，桌面/手机4/4通过，无 skip。覆盖真实管理员发布、检索/发点、已提交后响应丢失时锁表单并以原 ID 重试、玩家余额/流水/启用预算/房间授权与刷新保持，及空目录/零余额/玩家越权拒绝/键盘/无横向溢出/减少动态效果。看图后补齐桌面双列宽度、深色输入与链接对比度，再复验4/4；最后预算提示更新仅重跑受影响的发布/启用流程，桌面/手机2/2通过。最终截图在 `.data/official-ai-e2e-delivery`，空状态在 `.data/official-ai-e2e-final`；实际查看桌面后台和手机深色玩家页，覆盖1440×900、390×844、1280×800与320×740 CSS像素、亮/暗主题。没有在浏览器发出外部模型调用；测试凭证只用于独立测试库配置与授权，未开局调用。付费调度/结算由上述 test 模型集成验证，不计为真实供应商验收；未验证物理手机或辅助技术。
+
+边界：没有充值支付、退款、点数/桌游币兑换、供应商货币成本自动对账或利润统计；不预置假模型、密钥或余额。尚未调用真实外部供应商（缺少本轮可用凭证），测试模型只验证控制/事务/计费，不视为外部服务验收。未合并、部署或修改开发/生产库。上线需维护者执行迁移，管理员配置真实模型并测试连接、发布档位和发点；建议按实测设定点价、AI 超时和足够的租约。
+
+## 独立桌游币基础钱包（2026-10-16）
+
+按用户确认，本批提供平台通用桌游币钱包，所有新旧账户初始余额为 0；AI 点数仅用于 AI，两种货币独立记账，不兑换、不自动用于 AI。本人从资料页查看余额/流水/分页，管理员从账户列表进入目标钱包，填写对玩家可见的原因后发放/扣回，余额限制 0–1,000,000,000。没有商城、充值、转账、签到或对局奖励。
+
+032 新增独立钱包和审计流水；读取使用单条 SQL 快照，管理员写入复用原 AdminService 授权/会话复验/全操作请求去重事务，余额、revision、流水和回执原子提交。扣回不得透支，重复成功先于 revision 返回原结果，未知结果冻结表单并保留原请求重试，确认后读取当前钱包。protocol/client-sdk 共用严格 schema，公开 SDK 白名单补齐 coins.ts；模块、协议和后台文档同步，详见 [桌游币](coins.md)。
+
+平台版本以本轮已提交基线 0.5.0 递增到 0.6.0（向后兼容的新钱包功能），README 同步。独立于工作区同时进行的官方 AI 草稿，未替其提交、合并或部署。
+
+验证：`pnpm --config.verify-deps-before-run=false typecheck` 通过；最终 `pnpm --config.verify-deps-before-run=false build` 通过，包含生产 bundle/API runtime/隔离 ZIP/AI worker 检查。定向 ESLint 与本轮格式检查通过；完整 lint 的 ESLint 和 20 目录 AST 边界检查通过，format:check 因既有 CRLF/其他工作区改动未通过，没有批量改写无关文件。
+
+`node .data/coins-validation.mjs` 通过原 `test:integration` 准备/迁移/同步/资源脚本与名称过滤，在独立 `boardgame_coins_20261016` 库上 7/7 通过；其余 180 项按范围过滤跳过，不计为通过。覆盖身份/Origin/CSRF/严格输入、初始零余额与本人隔离、发放/扣回、同请求并发重试与跨目标冲突、首写/竞争 revision、透支/溢出无副作用、分页、回执故障回滚和事务内撤销会话复验。首次连接受沙箱 EACCES、Docker 未启动和 PostgreSQL 启动中阻塞，启动原环境后测试已实际完成，没有清理开发库。
+
+`node .data/coins-validation.mjs e2e` 使用同一独立库、原 E2E 准备序列及 3182/5378 隔离端口，最终桌面/手机 2/2 通过，无 skip。覆盖真实双账户登录、资料入口、管理员搜索目标/发放、已提交后丢失响应与原 ID 重试、扣回、玩家刷新后余额和流水保持、服务端拒绝超额扣回、键盘刷新和无横向溢出。首轮因操作 label 包含选项文本而无法精确定位超时；改为独立关联 label 后通过，没有放宽业务断言。后台截图首轮出现长页面滚动/动画渲染残留，关闭动态效果并回顶部后复验 2/2 通过，实际查看最终桌面/手机后台、320px 玩家亮色及1280px玩家深色截图。截图在忽略目录 `.data/coins-e2e-results`，玩家亮色覆盖1440/1280/390/320×900、深色1280/390×900，后台1440×900与390×844（CSS 像素）。
+
+标签修正后的 Web typecheck、定向 ESLint 通过；最终 Web build 最初因沙箱 dist 写入 EPERM 失败，提权重跑后及 production bundle 检查通过。未运行全量单元、全量集成或全量 E2E，未验证真实物理手机/辅助技术，未修改开发/生产数据库或部署。下一步按原发布分支流程合入，在目标环境执行迁移后启用；商城和奖励另行定义业务规则。
+
+## AI 模型配置界面全面美化与交互体验升级（2026-10-16）
+
+优化与重构 AI 模型配置界面（`/settings/models`），采用 PlayBoard 暖阳桌游乐园与沉浸工坊设计语言，解决原界面单调、简陋、散乱与缺乏服务商引导的问题：
+1. **智能预设模板与快速选型**：引入 DeepSeek (V3/R1)、OpenAI 官方 (GPT-4o/mini/o3-mini)、通义千问 (百炼 Qwen-Plus/Turbo/Max)、智谱 GLM-4、Kimi (月之暗面)、硅基流动 (SiliconFlow)、Ollama 本地模型与内置沙盒等主流服务商快捷选型；点击一键填充端点、Base URL、推荐参数并提供官方控制台 Key 获取直达链接，支持推荐模型 ID 一键点选。
+2. **左侧 AI 配置库与状态药丸过滤**：重塑配置卡片为微立体圆角卡片，具有柔和阴影与呼吸感高光边框；卡片智能识别服务商并展示专属 Emoji 品牌徽标与就绪状态胶囊；支持关键词搜索及「全部 / 已就绪 / 待配密钥 / 沙盒模拟」快捷状态分类筛选；测试连接与测速反馈优化为人性化 Alert 状态卡片（带耗时毫秒展示）。
+3. **右侧智能配置台与表单层级提升**：卡片顶标清晰区分创建与编辑状态，输入框带图标前缀与聚焦琥珀金光晕（`--accent-glow`）；API Key 具备安全锁与直观的显示/隐藏密码切换，辅以端到端加密安全告示；高级对局参数（采样温度与最大 Token）采用优雅圆角折叠面板并附带桌游博弈调优指引；大尺寸琥珀金保存主行动键带光泽交互。
+4. **全响应式与亮暗双主题支持**：在桌面双列与移动单列下自适应舒展，触控目标保持 40px+ 无横向溢出；100% 保持所有公开 API、WS、E2E 语义选择器与安全边界契约。
+
+平台版本 0.4.1 → 0.5.0（向后兼容的显著交互与页面视觉升级），README 同步。
+
+验证事实：
+- `npx prettier --check`：修改的 5 个页面与样式文件完全符合代码风格规范；
+- `npx eslint`：定向与全文件检查 0 错误 0 警告；
+- `npx tsx scripts/check-boundaries.ts`：20 个源码根目录 AST 依赖边界全部通过；
+- `pnpm build`：完整生产 bundle、API runtime、隔离 ZIP 规则恢复与 AI worker 检查全部通过。
+
 ## 在线更新自动备份与默认迁移（2026-10-15）
 
 平台 0.5.1 → 0.6.0，为兼容新增的更新前自动备份能力；README 同步。在线更新每次切换在排空请求、关闭 API/AI worker 后，先生成数据库 custom dump、完整资源副本、选定的私密恢复配置及旧/新源码引用。检查归档签名与 pg_restore 目录，资源逐文件对比 SHA-256，完成清单记录所有文件的摘要与大小，目录原子改名后才运行原迁移/游戏同步。备份失败恢复旧 API，不执行迁移或同步。目录/恢复配置限制为 0700/0600，数据库 URI 不进入命令参数，环境只保存恢复所需字段。
@@ -1499,4 +1564,3 @@ bot 保持无账户登录身份，通过独立 model_owner_account_id 在开局�
 - `pnpm typecheck`、`pnpm lint`（20 个边界源目录）、`pnpm build` 均通过，保留生产 bundle/API runtime、隔离 ZIP 与 AI worker 检查。
 
 本轮未运行数据库集成测试，未上传开发或生产环境。现有集成 fixture 已同步到 1.0.1；只涉及封面资产和版本元数据，无业务/数据库改动。下一步管理员上传审核新版 ZIP 后使用新封面。
-

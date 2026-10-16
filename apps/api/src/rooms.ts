@@ -1,4 +1,5 @@
 import { requestIdSchema as requestId } from '@boardgame/protocol';
+import { OfficialAiService } from './official-ai/service.js';
 import {
   joinRoomInputSchema,
   roomRevisionInputSchema,
@@ -771,6 +772,7 @@ export class RoomService {
     lock = true,
   ) {
     if (!profileId) throw new AppError('FORBIDDEN', '请选择房主自己的模型配置', 403);
+    await OfficialAiService.assertAvailable(client, profileId);
     const result = await client.query<{ protocol: string; has_credential: boolean }>(
       `SELECT e.protocol, (c.id IS NOT NULL AND c.revoked_at IS NULL) AS has_credential
        FROM model_profiles p JOIN provider_endpoints e ON e.id=p.endpoint_id

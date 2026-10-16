@@ -1,4 +1,11 @@
 import { createRoomResponseSchema } from '@boardgame/protocol';
+import type { z } from 'zod';
+import {
+  officialAiOffersSchema, officialAiOfferSchema, officialAiPublishSchema, officialAiStatusSchema,
+  officialAiEnrollSchema, officialAiEnrollmentSchema, aiPointWalletSchema, aiPointLedgerSchema,
+  aiPointGrantSchema, officialAiStatsSchema,
+} from '@boardgame/protocol';
+import { coinAdjustmentSchema, coinHistoryQuerySchema, coinWalletPageSchema, coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import {
   badgeCollectionSchema,
   badgeDisplayInputSchema,
@@ -132,6 +139,75 @@ export class ApiError extends Error {
   }
 }
 export class ApiClient {
+  async officialAiOffers(admin = false, signal?: AbortSignal) {
+    return officialAiOffersSchema.parse(
+      await this.request<unknown>(`${admin ? '/admin' : ''}/official-ai/offers`, signal ? { signal } : undefined),
+    );
+  }
+  async officialAiProfiles(signal?: AbortSignal) {
+    return modelProfileSchema
+      .array()
+      .parse(await this.request<unknown>('/me/official-ai/profiles', signal ? { signal } : undefined));
+  }
+  async playableModelProfiles() {
+    const [personal, official] = await Promise.all([this.modelProfiles(), this.officialAiProfiles()]);
+    return [...official, ...personal];
+  }
+  async aiPointWallet(signal?: AbortSignal) {
+    return aiPointWalletSchema.parse(await this.request<unknown>('/me/ai-points', signal ? { signal } : undefined));
+  }
+  async aiPointLedger(before?: string, signal?: AbortSignal) {
+    return aiPointLedgerSchema.parse(
+      await this.request<unknown>(
+        `/me/ai-points/ledger${before ? `?before=${encodeURIComponent(before)}` : ''}`,
+        signal ? { signal } : undefined,
+      ),
+    );
+  }
+  async enrollOfficialAi(input: z.input<typeof officialAiEnrollSchema>) {
+    return officialAiEnrollmentSchema.parse(await this.request<unknown>('/me/official-ai/enroll', {
+      method: 'POST', body: JSON.stringify(officialAiEnrollSchema.parse(input)),
+    }));
+  }
+  async publishOfficialAi(input: z.input<typeof officialAiPublishSchema>) {
+    return officialAiOfferSchema.parse(await this.request<unknown>('/admin/official-ai/offers', {
+      method: 'POST', body: JSON.stringify(officialAiPublishSchema.parse(input)),
+    }));
+  }
+  async setOfficialAiStatus(id: string, input: z.input<typeof officialAiStatusSchema>) {
+    return officialAiOfferSchema.parse(await this.request<unknown>(`/admin/official-ai/offers/${encodeURIComponent(id)}`, {
+      method: 'PUT', body: JSON.stringify(officialAiStatusSchema.parse(input)),
+    }));
+  }
+  async grantAiPoints(input: z.input<typeof aiPointGrantSchema>) {
+    return aiPointWalletSchema.parse(await this.request<unknown>('/admin/ai-points/grant', {
+      method: 'POST', body: JSON.stringify(aiPointGrantSchema.parse(input)),
+    }));
+  }
+  async officialAiStats(signal?: AbortSignal) {
+    return officialAiStatsSchema.parse(await this.request<unknown>('/admin/official-ai/stats', signal ? { signal } : undefined));
+  }
+  async coinWallet(before?: number, signal?: AbortSignal) {
+    const query = coinHistoryQuerySchema.parse({ before });
+    return coinWalletPageSchema.parse(await this.request<unknown>(
+      `/profile/coins${query.before === undefined ? '' : `?before=${query.before}`}`,
+      signal ? { signal } : undefined,
+    ));
+  }
+  async adminCoinWallet(accountId: string, before?: number, signal?: AbortSignal) {
+    const query = coinHistoryQuerySchema.parse({ before });
+    return coinWalletPageSchema.parse(await this.request<unknown>(
+      `/admin/accounts/${encodeURIComponent(accountId)}/coins${query.before === undefined ? '' : `?before=${query.before}`}`,
+      signal ? { signal } : undefined,
+    ));
+  }
+  async adjustAdminCoins(accountId: string, input: CoinAdjustment) {
+    return coinWalletSchema.parse(await this.request<unknown>(
+      `/admin/accounts/${encodeURIComponent(accountId)}/coins`, {
+        method: 'POST', body: JSON.stringify(coinAdjustmentSchema.parse(input)),
+      },
+    ));
+  }
   async adminUpdateStatus(signal?: AbortSignal) {
     return adminUpdateStatusSchema.parse(
       await this.request<unknown>('/admin/updates', signal ? { signal } : undefined),

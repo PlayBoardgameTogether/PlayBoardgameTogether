@@ -72,4 +72,3 @@ describe('production online updates', () => {
     expect(deps.resume).toHaveBeenCalledOnce();
   });
 });
-
