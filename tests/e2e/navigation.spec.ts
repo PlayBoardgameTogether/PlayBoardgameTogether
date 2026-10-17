@@ -35,7 +35,6 @@ test('page links preserve the shell, history and keyboard access without a reloa
   await expect(page.locator('.workspace-toolbar strong')).toHaveText('开发者文档');
   await page.locator('.nav-tools summary').click();
   await page.getByRole('link', { name: '界面场景', exact: true }).click();
-  await page.locator('.nav-tools summary').click();
   await page.getByRole('combobox', { name: '场景', exact: true }).selectOption('room-four');
   const seats = page.locator('.seat-card');
   expect(await seats.evaluateAll(elements => elements.map(element => getComputedStyle(element).animationDelay)))

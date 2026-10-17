@@ -31,9 +31,10 @@ export function NavigationTools({ path, labEnabled, administrator }: {
     // Outside pointer presses, Escape and navigation already dismiss the menu.
     if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
   }}>
-    <summary ref={trigger}><span aria-hidden="true">⋯</span> 更多</summary>
+    <summary ref={trigger}><svg className="nav-more-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></svg><span className="nav-more-dots" aria-hidden="true">⋯</span> 更多</summary>
     <div aria-label="平台设置">
       <ThemeSelect />
+      <a className="nav-mobile-doc" href="/developers" aria-current={path === '/developers' || path.startsWith('/developers/') ? 'page' : undefined}>开发者文档</a>
       <a href="/official-ai" aria-current={path === '/official-ai' ? 'page' : undefined}>官方 AI 与点数</a>
       <a href="/settings/models" aria-current={path === '/settings/models' ? 'page' : undefined}>模型设置</a>
       {administrator && <a href="/admin" aria-current={path === '/admin' || path.startsWith('/admin/') ? 'page' : undefined}>管理员后台</a>}

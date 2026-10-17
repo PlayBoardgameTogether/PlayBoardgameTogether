@@ -55,14 +55,15 @@ export function DashboardPage() {
 
     </section>
     {error && <p className="error-notice" role="alert">{error}</p>}
-    <GameCatalog />
-      <section className="panel"><h2>继续游戏</h2>
+    <div className="lobby-content">
+      <GameCatalog />
+      <section className={`panel continue-games${rooms.some(room => room.status !== 'closed') ? '' : ' continue-games--empty'}`}><h2>继续游戏</h2>
         {rooms.filter(room => room.status !== 'closed').length === 0 ? <p className="muted">暂时没有正在参与的房间。可以加入公开房间，或创建自己的房间。</p> : rooms.filter(room => room.status !== 'closed').map(room =>
           <button className="room-row" key={room.id} onClick={() => navigate(`/rooms/${room.id}`)}>
             <span><strong>{room.name}</strong><small>{room.seatCount} 人 · {statusNames[room.status]}</small></span><span>进入房间 →</span>
           </button>)}
         {cursor && <button className="secondary" onClick={() => void more()}>加载更多参与房间</button>}
       </section>
-
+    </div>
   </>;
 }

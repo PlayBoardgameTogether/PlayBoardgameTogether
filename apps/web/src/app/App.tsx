@@ -39,12 +39,12 @@ function AppShell({ path }: { path: string }) {
     <header className="site-header" ref={header}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
       <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">PlayBoard<span>顶尖桌游联盟</span></span></a>
-      <nav aria-label="主导航">
+      <nav className="platform-navigation" aria-label="主导航">
         <span className="nav-caption">游戏空间</span>
-        <a href="/" aria-current={path === '/' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg>游戏大厅</a>
-        <a href="/profile" aria-current={path === '/profile' || path.startsWith('/profile/') ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg>我的资料</a>
+        <a href="/" aria-label="游戏大厅" aria-current={path === '/' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg><span className="nav-desktop-label">游戏大厅</span><span className="nav-mobile-label">首页</span></a>
         <a href="/friends" aria-current={(path === '/friends' || path.startsWith('/friends/')) ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a6 6 0 0 1 3 5" /></svg>好友</a>
-        <a className="mobile-chat-link" href="/chat" aria-current={path === '/chat' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5" /></svg>公共聊天</a>
+        <a className="mobile-chat-link" href="/chat" aria-label="公共聊天" aria-current={path === '/chat' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5" /></svg>聊天</a>
+        <a href="/profile" aria-label="我的资料" aria-current={path === '/profile' || path.startsWith('/profile/') ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg><span className="nav-desktop-label">我的资料</span><span className="nav-mobile-label">我的</span></a>
         <NavigationTools path={path} labEnabled={labEnabled} administrator={social.account?.role === 'administrator' && social.account.status === 'active'} />
       </nav>
       <div className="sidebar-note"><span>和朋友，共享一张桌</span><small>私人房间 · 实时对局</small></div>

@@ -146,7 +146,7 @@ test('ordinary users see no administrator entrances, including on direct admin U
   }
 });
 
-test('switching from administrator to player never retains the administrator entry', async ({ page }) => {
+test('switching from administrator to player never retains the administrator entry', async ({ page, isMobile }) => {
   const state = await accountFixture(page, 'administrator');
   await page.goto('/developers');
   await page.locator('.nav-tools summary').click();
@@ -159,6 +159,7 @@ test('switching from administrator to player never retains the administrator ent
   await expect(page.getByRole('heading', { name: '回到游戏桌', exact: true })).toBeVisible();
   await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
   state.switchToPlayer();
+  if (isMobile) await page.locator('.nav-tools summary').click();
   await page.getByRole('link', { name: '开发者文档', exact: true }).click();
   await expect(page.getByRole('button', { name: '通知', exact: true })).toBeVisible();
   await page.locator('.nav-tools summary').click();
