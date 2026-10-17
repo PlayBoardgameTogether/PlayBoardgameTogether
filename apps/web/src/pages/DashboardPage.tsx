@@ -4,6 +4,7 @@ import { PageFeedback } from '@boardgame/ui';
 import { z } from 'zod';
 import { api, navigate } from '../platform.js';
 import { GameCatalog } from './GameCatalog.js';
+import { RoomInviteEntry } from './RoomInviteEntry.js';
 
 const roomSchema = z.object({
   id: z.string(), name: z.string(), status: z.string(), gameId: z.string(),
@@ -54,6 +55,7 @@ export function DashboardPage() {
     <section className="page-heading"><div><p className="eyebrow">你好，{me.account.displayName}</p><h1>游戏大厅</h1><p>先选择游戏，再创建房间或加入朋友的游戏桌。</p></div>
 
     </section>
+    <RoomInviteEntry />
     {error && <p className="error-notice" role="alert">{error}</p>}
     <div className="lobby-content">
       <GameCatalog />

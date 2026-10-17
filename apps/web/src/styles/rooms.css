@@ -1,5 +1,40 @@
 /* Owned by components.rooms. Cascade order is declared in index.css. */
 @layer components.rooms {
+  .lobby-invite {
+    margin-block: 0 24px;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    background: var(--panel);
+  }
+  .lobby-invite > summary {
+    padding: 14px 18px;
+    min-height: 52px;
+  }
+  .lobby-invite summary small {
+    margin-inline-start: 12px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .lobby-invite-body {
+    padding: 0 18px 18px;
+  }
+  .lobby-password-form {
+    margin-block: 8px 20px;
+    border: 1px solid var(--line-strong);
+    box-shadow: none;
+  }
+  .lobby-password-form h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+  @media (max-width: 480px) {
+    .lobby-invite summary small {
+      display: block;
+      margin: 5px 0 0 18px;
+      font-size: 12px;
+    }
+  }
   /* Room pages keep the seating and the next action ahead of auxiliary settings. */
   .new-room-page {
     max-width: 660px;

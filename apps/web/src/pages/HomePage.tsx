@@ -1,4 +1,5 @@
 import { GameCatalog } from './GameCatalog.js';
+import { RoomInviteEntry } from './RoomInviteEntry.js';
 
 export function HomePage() {
   return (
@@ -17,6 +18,7 @@ export function HomePage() {
           </p>
         </div>
       </section>
+      <RoomInviteEntry />
       <div className="mobile-lobby-actions" aria-label="大厅快捷入口">
         <a href="/friends"><span aria-hidden="true">♧</span><span>好友一起玩<small>找到你的桌友</small></span><span aria-hidden="true">↗</span></a>
         <a href="/friends/invitations"><span aria-hidden="true">✉</span><span>房间邀请<small>赴一场桌游之约</small></span><span aria-hidden="true">↗</span></a>

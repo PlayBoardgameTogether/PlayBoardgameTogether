@@ -40,11 +40,21 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
   const a = await first.newPage();
   const b = await second.newPage();
   const sockets = { active: 0, max: 0 };
+  let documentGeneration = 0;
+  a.on('domcontentloaded', () => {
+    // Chromium need not emit websocket.close for a destroyed document.
+    // SPA navigation does not fire this event; duplicate live sockets still fail.
+    documentGeneration++;
+    sockets.active = 0;
+  });
   a.on('websocket', socket => {
     if (!socket.url().includes('/api/v1/ws/session')) return;
+    const generation = documentGeneration;
     sockets.active++;
     sockets.max = Math.max(sockets.max, sockets.active);
-    socket.on('close', () => { sockets.active--; });
+    socket.on('close', () => {
+      if (generation === documentGeneration) sockets.active--;
+    });
   });
   async function login(page: typeof a, username: string) {
     await page.goto('/login');

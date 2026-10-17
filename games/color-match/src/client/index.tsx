@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AssetResolverPort } from '@boardgame/game-sdk/assets';
 export { ColorAssetPreview } from './preview.js';
 export { colorMatchTutorial } from './tutorial.js';
@@ -21,9 +21,16 @@ export function ColorBoard({ view, busy, events, onAction, assets }: {
 }) {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
+  const playersSection = useRef<HTMLElement>(null);
   const selected = selectedCardId && view.legalCardIds.includes(selectedCardId) ? selectedCardId : null;
   const mine = view.currentPlayerId === view.viewingSeatId;
   const finished = view.phase === 'finished';
+  const choosingTarget = mine && view.phase === 'choose_target';
+  useEffect(() => {
+    if (!choosingTarget || busy) return;
+    // Move to the next interaction, without choosing or submitting a target.
+    playersSection.current?.querySelector<HTMLButtonElement>('.color-target-button:not(:disabled)')?.focus();
+  }, [choosingTarget, busy]);
   useEffect(() => {
     if (finished || !mine || busy && view.legalCardIds.length === 0) setSelectedCardId(null);
     if (view.phase !== 'choose_target' || !mine) setTargetId(null);
@@ -42,13 +49,14 @@ export function ColorBoard({ view, busy, events, onAction, assets }: {
       <p>牌堆剩余 {view.deckCount} 张</p>
       <strong>{finished ? (view.winners.includes(view.viewingSeatId) ? (view.winners.length > 1 ? '平局，你是获胜者之一' : '你赢了！') : `座位 ${view.winners.map(id => view.seats.indexOf(id) + 1).join('、')} 获胜`) : mine ? (view.phase === 'choose_target' ? '请选择一名目标玩家' : '轮到你行动') : `等待座位 ${view.seats.indexOf(view.currentPlayerId ?? '') + 1} 行动`}</strong>
     </section>
-    <section className="panel" aria-label="玩家列表">
+    <section className="panel" aria-label="玩家列表" ref={playersSection}>
       <h2>玩家</h2>
+      {choosingTarget && <p role="status">数字 5 已打出，请选择一名对手，再确认目标。</p>}
       <div className="color-players">{view.seats.map((seatId, index) => <div key={seatId} className={seatId === view.currentPlayerId ? 'color-player--active' : ''}>
         <strong>座位 {index + 1}{seatId === view.viewingSeatId ? ' · 你' : ''}</strong>
         <span>{view.handCounts[seatId]} 张手牌</span>
         {seatId!==view.viewingSeatId&&<div className="card-backs" aria-label={`${view.handCounts[seatId]} 张隐藏手牌`}>{Array.from({length:Math.min(view.handCounts[seatId]??0,8)},(_,index)=><span className="card-back" key={index}><AssetImage key={assets?.resolveImage('card.back.default')??'back'} src={assets?.resolveImage('card.back.default')} label="牌背"/><span>牌背</span></span>)}</div>}
-        {view.targetSeatIds.includes(seatId) && <button disabled={busy} aria-pressed={targetId === seatId} onClick={() => setTargetId(seatId)}>指定摸牌</button>}
+        {view.targetSeatIds.includes(seatId) && <button className="color-target-button" disabled={busy} aria-pressed={targetId === seatId} onClick={() => setTargetId(seatId)}>指定摸牌</button>}
       </div>)}</div>
       {targetId && view.targetSeatIds.includes(targetId) && <div className="game-action-bar"><p>目标：座位 {view.seats.indexOf(targetId) + 1}</p><button disabled={busy} onClick={() => onAction({ type: 'choose_target', targetSeatId: targetId })}>确认目标</button><button className="secondary" disabled={busy} onClick={() => setTargetId(null)}>取消目标</button></div>}
     </section>

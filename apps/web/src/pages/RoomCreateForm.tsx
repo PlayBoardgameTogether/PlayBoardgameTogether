@@ -19,6 +19,9 @@ export function RoomCreateForm({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  const [optionsError, setOptionsError] = useState(false);
+  const optionsPanel = useRef<HTMLDetailsElement>(null);
+  const optionsInput = useRef<HTMLTextAreaElement>(null);
   const active = useRef(false);
 
   useEffect(() => {
@@ -33,12 +36,14 @@ export function RoomCreateForm({
     setLoading(true);
     setError('');
     void loadGames()
-      .then(items => {
+      .then((items) => {
         if (disposed) return;
-        const available = items.filter(item => !item.developmentOnly);
+        const available = items.filter((item) => !item.developmentOnly);
         setGames(available);
         const first = selectedGame
-          ? available.find(item => item.id === selectedGame.id && item.version === selectedGame.version)
+          ? available.find(
+              (item) => item.id === selectedGame.id && item.version === selectedGame.version,
+            )
           : available[0];
         if (first) setChoice(`${first.id}@${first.version}`);
         else if (selectedGame) setError('所选游戏或版本已不可用，请返回大厅重新选择。');
@@ -54,17 +59,27 @@ export function RoomCreateForm({
     };
   }, [attempt, selectedGame?.id, selectedGame?.version]);
 
-  const game = games.find(item => `${item.id}@${item.version}` === choice);
+  const game = games.find((item) => `${item.id}@${item.version}` === choice);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!game || busy) return;
     const fields = new FormData(event.currentTarget);
+    let options: unknown;
+    try {
+      options = JSON.parse(String(fields.get('options')));
+      setOptionsError(false);
+    } catch {
+      setError('游戏选项格式不正确，请填写有效的 JSON。');
+      setOptionsError(true);
+      if (optionsPanel.current) optionsPanel.current.open = true;
+      optionsInput.current?.focus();
+      return;
+    }
     setBusy(true);
     setError('');
     try {
       const password = String(fields.get('password') ?? '');
-      const options: unknown = JSON.parse(String(fields.get('options')));
       const result = await api.createConfiguredRoom({
         requestId: command(),
         name: String(fields.get('name')).trim(),
@@ -78,9 +93,7 @@ export function RoomCreateForm({
       if (active.current) navigate(`/rooms/${result.roomId}`, { inviteCode: result.inviteCode });
     } catch (cause) {
       if (active.current) {
-        setError(cause instanceof SyntaxError
-          ? '游戏选项格式不正确，请在高级设置中填写有效的 JSON。'
-          : cause instanceof Error ? cause.message : '创建失败，请检查设置。');
+        setError(cause instanceof Error ? cause.message : '创建失败，请检查设置。');
       }
     } finally {
       if (active.current) setBusy(false);
@@ -93,13 +106,26 @@ export function RoomCreateForm({
         <fieldset className="room-create-fields form-stack" disabled={busy || loading}>
           <label>
             房间名
-            <input name="name" defaultValue={defaultName} maxLength={40} required placeholder="例如：周末欢乐桌" />
+            <input
+              name="name"
+              defaultValue={defaultName}
+              maxLength={40}
+              required
+              placeholder="例如：周末欢乐桌"
+            />
           </label>
 
           <label>
             游戏与版本
-            <select value={choice} onChange={event => setChoice(event.target.value)}>
-              {games.map(item => (
+            <select
+              value={choice}
+              onChange={(event) => {
+                setChoice(event.target.value);
+                setOptionsError(false);
+                setError('');
+              }}
+            >
+              {games.map((item) => (
                 <option key={`${item.id}@${item.version}`} value={`${item.id}@${item.version}`}>
                   {item.name} · {item.version}
                 </option>
@@ -131,35 +157,51 @@ export function RoomCreateForm({
 
           <label>
             房间密码（选填）
-            <input
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              maxLength={128}
-            />
+            <input name="password" type="password" autoComplete="new-password" maxLength={128} />
           </label>
-          <p className="muted">设置密码后，大厅和邀请码加入都需要密码。每人最多创建一个未关闭房间。</p>
+          <p className="muted">
+            设置密码后，大厅和邀请码加入都需要密码。每人最多创建一个未关闭房间。
+          </p>
 
-          <details className="room-disclosure room-advanced">
+          <details className="room-disclosure room-advanced" ref={optionsPanel}>
             <summary>高级设置</summary>
             <p className="muted">默认规则即可开局；仅在需要自定义规则时修改。</p>
             <label>
               游戏选项（JSON）
               <textarea
                 name="options"
+                ref={optionsInput}
+                aria-invalid={optionsError || undefined}
+                aria-describedby={optionsError ? 'room-create-error' : undefined}
+                onChange={() => {
+                  if (optionsError) {
+                    setOptionsError(false);
+                    setError('');
+                  }
+                }}
                 rows={2}
                 key={`${choice}-options`}
-                defaultValue={JSON.stringify((game && clientGame(game.id, game.version)?.defaultOptions) ?? {})}
+                defaultValue={JSON.stringify(
+                  (game && clientGame(game.id, game.version)?.defaultOptions) ?? {},
+                )}
               />
             </label>
           </details>
         </fieldset>
 
-        {error && <p className="error-notice" role="alert">{error}</p>}
+        {error && (
+          <p className="error-notice" id="room-create-error" role="alert">
+            {error}
+          </p>
+        )}
         {loading && <p role="status">正在加载可用游戏…</p>}
         {!loading && !games.length && <p role="status">暂无可用游戏，请联系管理员安装游戏扩展。</p>}
         {!loading && error && !games.length && (
-          <button type="button" className="secondary" onClick={() => setAttempt(value => value + 1)}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => setAttempt((value) => value + 1)}
+          >
             重新加载游戏
           </button>
         )}
@@ -172,4 +214,3 @@ export function RoomCreateForm({
     </>
   );
 }
-

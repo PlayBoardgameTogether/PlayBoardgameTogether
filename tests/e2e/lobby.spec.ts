@@ -43,9 +43,16 @@ test('quick creation opens the room, copies invite, and exposes password rooms t
     await expect(row).toContainText('1/3 人');
     await expect(row).toContainText('房主：玩家 D · @stage3_a');
     await row.getByRole('button',{name:'加入房间'}).click();
+    await expect(b.getByLabel('加入房间密码',{exact:true})).toBeFocused();
+    await b.getByRole('button',{name:'取消',exact:true}).click();
+    await expect(row.getByRole('button',{name:'加入房间'})).toBeFocused();
+    await expect(b.getByLabel('加入房间密码',{exact:true})).toHaveCount(0);
+    await row.getByRole('button',{name:'加入房间'}).click();
     await b.getByLabel('加入房间密码',{exact:true}).fill('incorrect');
     await b.getByRole('button',{name:'确认加入'}).click();
     await expect(b.getByRole('alert')).toContainText('房间密码不正确');
+    await expect(b.getByLabel('加入房间密码',{exact:true})).toBeFocused();
+    await expect(b.getByRole('form', { name: '加入 周五密码桌' }).getByRole('alert')).toContainText('房间密码不正确');
     await b.getByLabel('加入房间密码',{exact:true}).fill('room-password');
     await b.getByRole('button',{name:'确认加入'}).click();
     await expect(b.getByRole('heading',{name:'周五密码桌',exact:true})).toBeVisible();

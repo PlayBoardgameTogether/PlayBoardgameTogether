@@ -32,6 +32,8 @@ test('guest completes the real board tutorial, retries and returns to game detai
   await hand.getByRole('button', { name: '蓝 5 可出' }).click();
   await page.getByRole('button', { name: '出牌', exact: true }).click();
   await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '指定摸牌', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: '指定摸牌', exact: true })).toBeInViewport();
   await page.getByRole('button', { name: '指定摸牌', exact: true }).click();
   await page.getByRole('button', { name: '确认目标', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: '目标已确认' })).toBeVisible();
