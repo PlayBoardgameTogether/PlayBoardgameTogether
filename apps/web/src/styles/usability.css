@@ -151,6 +151,12 @@
     width: min(1680px, calc(100% - 48px));
     padding-top: 20px;
   }
+  .match-action-feedback {
+    min-height: 1.5em;
+    margin-block: 0.25rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
   .match-heading {
     align-items: center;
     padding-bottom: 16px;

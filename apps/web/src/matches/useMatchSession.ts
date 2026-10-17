@@ -69,6 +69,9 @@ export function useMatchSession(id: string) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState<Pending>();
+  const [pendingPhase, setPendingPhase] = useState<'submitting' | 'checking' | 'uncertain'>();
+  // A ref also locks same-tick clicks and background recovery before React renders.
+  const operation = useRef<number | undefined>(undefined);
   const [connection, setConnection] = useState<Connection>('connecting');
   const [modelProfiles, setModelProfiles] = useState<ModelProfile[]>([]);
   const latest = useRef<MatchView | undefined>(undefined);
@@ -116,6 +119,7 @@ export function useMatchSession(id: string) {
   function storePending(value: Pending | undefined) {
     pendingRef.current = value;
     setPending(value);
+    if (!value) setPendingPhase(undefined);
     if (value) sessionStorage.setItem(pendingKey(id), JSON.stringify(value));
     else sessionStorage.removeItem(pendingKey(id));
   }
@@ -212,24 +216,33 @@ export function useMatchSession(id: string) {
             : cause.message,
         );
         await refresh(token).catch(() => undefined);
-      } else setError('操作结果尚未确认。请等待同步或点击确认结果。');
+      } else return false;
     }
+    return true;
   }
-  async function reconcile(token: number, manual = false) {
+  async function checkReceipt(token: number, manual = false) {
     const value = pendingRef.current;
     if (!value || generation.current !== token) return;
-    setBusy(true);
+    setPendingPhase('checking');
     try {
       const receipt = await api.matchCommandReceipt(id, value.requestId);
       if (generation.current !== token) return;
       if (receipt.outcome === 'accepted') {
-        storePending(undefined);
-        await refresh(token);
+        // Keep the durable request until the authoritative view has also recovered.
+        let view = await refresh(token);
         if (generation.current !== token) return;
+        // A coalesced read may have started before this command committed.
+        if (view.revision < receipt.appliedRevision) view = await refresh(token);
+        if (generation.current !== token) return;
+        if (view.revision < receipt.appliedRevision)
+          throw new Error('Snapshot does not yet include the accepted command');
+        storePending(undefined);
         setError('');
-        setNotice('操作已保存，已恢复最新局面。');
-      } else if (value.attempts < 3 || manual) await send(value, token);
-      else setError('仍无法确认操作结果。可以手动使用原请求继续确认。');
+        setNotice('操作已保存，已同步最新局面。');
+      } else if (value.attempts < 3 || manual) {
+        if (!(await send(value, token)) && generation.current === token)
+          setPendingPhase('uncertain');
+      } else setPendingPhase('uncertain');
     } catch (cause) {
       if (generation.current !== token) return;
       if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') {
@@ -238,8 +251,18 @@ export function useMatchSession(id: string) {
         latest.current = undefined;
         setData(undefined);
         setConnection('auth-expired');
-      } else setError('操作结果尚未确认。连接恢复后可继续确认。');
+      } else setPendingPhase('uncertain');
+    }
+  }
+  async function reconcile(token: number, manual = false) {
+    if (!pendingRef.current || generation.current !== token || operation.current !== undefined)
+      return;
+    operation.current = token;
+    setBusy(true);
+    try {
+      await checkReceipt(token, manual);
     } finally {
+      if (operation.current === token) operation.current = undefined;
       if (generation.current === token) setBusy(false);
     }
   }
@@ -264,6 +287,8 @@ export function useMatchSession(id: string) {
     audioManager.clear();
     latest.current = undefined;
     pendingRef.current = undefined;
+    operation.current = undefined;
+    setPendingPhase(undefined);
     accountId.current = undefined;
     seenEvents.current.clear();
     setData(undefined);
@@ -517,6 +542,7 @@ export function useMatchSession(id: string) {
         const saved = readPending(id, account.account.id);
         pendingRef.current = saved;
         setPending(saved);
+        setPendingPhase(saved ? 'checking' : undefined);
         const view = await refresh(token);
         if (generation.current !== token) return;
         roomId = view.roomId;
@@ -661,7 +687,13 @@ export function useMatchSession(id: string) {
   }, [data?.gameId, data?.gameVersion]);
   async function act(action: unknown) {
     const view = latest.current;
-    if (!view || busy || pendingRef.current || !connected.current || view.status !== 'active')
+    if (
+      !view ||
+      operation.current !== undefined ||
+      pendingRef.current ||
+      !connected.current ||
+      view.status !== 'active'
+    )
       return;
     const token = generation.current;
     const value: Pending = {
@@ -673,21 +705,34 @@ export function useMatchSession(id: string) {
       action,
       attempts: 0,
     };
+    operation.current = token;
     storePending(value);
+    setPendingPhase('submitting');
     setBusy(true);
     setError('');
     setNotice('');
     try {
-      await send(value, token);
+      if (!(await send(value, token)) && generation.current === token) {
+        if (navigator.onLine) await checkReceipt(token);
+        else setPendingPhase('uncertain');
+      }
     } finally {
+      if (operation.current === token) operation.current = undefined;
       if (generation.current === token) setBusy(false);
     }
   }
   async function setController(type: 'human' | 'script' | 'model', profileId?: string) {
     const view = latest.current;
-    if (!view || busy || pendingRef.current || !connected.current || view.status !== 'active')
+    if (
+      !view ||
+      operation.current !== undefined ||
+      pendingRef.current ||
+      !connected.current ||
+      view.status !== 'active'
+    )
       return;
     const token = generation.current;
+    operation.current = token;
     setBusy(true);
     setError('');
     try {
@@ -714,6 +759,7 @@ export function useMatchSession(id: string) {
         await refresh(token).catch(() => undefined);
       }
     } finally {
+      if (operation.current === token) operation.current = undefined;
       if (generation.current === token) setBusy(false);
     }
   }
@@ -725,6 +771,7 @@ export function useMatchSession(id: string) {
     busy,
     notice,
     pending,
+    pendingPhase,
     connection,
     modelProfiles,
     resolver,

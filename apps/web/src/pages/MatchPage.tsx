@@ -6,7 +6,7 @@ import { clientGame, type GameBoard } from '../game-registry.js';
 import { AssetResolver } from '../assets/resolver.js';
 import { AudioControls } from '../assets/AudioControls.js';
 import type { PresentationAudioPort } from '@boardgame/game-sdk/assets';
-import { ActionHint, GameErrorBoundary, PageFeedback } from '@boardgame/ui';
+import { GameErrorBoundary, PageFeedback } from '@boardgame/ui';
 const aiNames = {
   idle: '等待行动',
   queued: '等待处理',
@@ -45,6 +45,7 @@ export function MatchPage({ id }: { id: string }) {
     busy,
     notice,
     pending,
+    pendingPhase,
     connection,
     modelProfiles,
     resolver,
@@ -115,7 +116,7 @@ export function MatchPage({ id }: { id: string }) {
             : '连接中断或正在同步，操作已暂停。'}
         </p>
       )}
-      {pending && (
+      {pending && pendingPhase === 'uncertain' && (
         <p className="error-notice" role="status">
           操作结果尚未确认。
           <button className="secondary" disabled={busy} onClick={() => void confirmPending()}>
@@ -128,7 +129,13 @@ export function MatchPage({ id }: { id: string }) {
           {error}
         </p>
       )}
-      {(busy || notice) && <ActionHint title={busy ? '正在保存操作…' : notice} />}
+      <div className="match-action-feedback" role="status" aria-live="polite">
+        {busy
+          ? pendingPhase === 'checking'
+            ? '正在核对操作结果…'
+            : '正在保存操作…'
+          : notice || '\u00a0'}
+      </div>
       <div className="match-layout">
         <section className="match-table" aria-label="游戏桌">
           <GameErrorBoundary key={id}>
