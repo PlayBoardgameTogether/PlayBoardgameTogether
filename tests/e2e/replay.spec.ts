@@ -1,64 +1,144 @@
 import { randomUUID } from 'node:crypto';
 import { test, expect } from './fixtures.js';
 
-test('original participants can seek and play a saved match without sending actions', async ({ page, browser }, info) => {
+test('original participants can seek and play a saved match without sending actions', async ({
+  page,
+  browser,
+}, info) => {
   const origin = 'http://127.0.0.1:5273';
   const second = await browser.newContext();
   try {
-    const a = await page.request.post('/api/v1/auth/login', { headers: { origin }, data: { username: 'stage3_a', password: 'stage two password' } });
-    const b = await second.request.post(`${origin}/api/v1/auth/login`, { headers: { origin }, data: { username: 'stage3_b', password: 'stage two password' } });
-    expect(a.ok()).toBe(true); expect(b.ok()).toBe(true);
+    const a = await page.request.post('/api/v1/auth/login', {
+      headers: { origin },
+      data: { username: 'stage3_a', password: 'stage two password' },
+    });
+    const b = await second.request.post(`${origin}/api/v1/auth/login`, {
+      headers: { origin },
+      data: { username: 'stage3_b', password: 'stage two password' },
+    });
+    expect(a.ok()).toBe(true);
+    expect(b.ok()).toBe(true);
     const csrfA = (await a.json()).data.csrfToken;
     const csrfB = (await b.json()).data.csrfToken;
     const write = async (path: string, body: unknown, player = 'a', method = 'POST') => {
-      const response = await (player === 'a' ? page.request : second.request).fetch(`${origin}/api/v1${path}`, {
-        method, headers: { origin, 'x-csrf-token': player === 'a' ? csrfA : csrfB }, data: body,
-      });
+      const response = await (player === 'a' ? page.request : second.request).fetch(
+        `${origin}/api/v1${path}`,
+        {
+          method,
+          headers: { origin, 'x-csrf-token': player === 'a' ? csrfA : csrfB },
+          data: body,
+        },
+      );
       expect(response.ok(), await response.text()).toBe(true);
       return (await response.json()).data;
     };
-    const created = await write('/rooms', { requestId: randomUUID(), name: '回放验收', gameId: 'color-match', version: '1.0.0', options: {}, seatCount: 2 });
+    const created = await write('/rooms', {
+      requestId: randomUUID(),
+      name: '回放验收',
+      gameId: 'color-match',
+      version: '1.0.0',
+      options: {},
+      seatCount: 2,
+    });
     const roomId = created.roomId;
-    let room = await write('/rooms/join', { requestId: randomUUID(), inviteCode: created.inviteCode }, 'b');
-    room = await write(`/rooms/${roomId}/my-seat`, { requestId: randomUUID(), expectedRoomRevision: room.roomRevision, seatIndex: 1 }, 'b', 'PUT');
-    room = await write(`/rooms/${roomId}/my-ready`, { requestId: randomUUID(), expectedRoomRevision: room.roomRevision, ready: true }, 'a', 'PUT');
-    room = await write(`/rooms/${roomId}/my-ready`, { requestId: randomUUID(), expectedRoomRevision: room.roomRevision, ready: true }, 'b', 'PUT');
-    const started = await write(`/rooms/${roomId}/start`, { requestId: randomUUID(), expectedRoomRevision: room.roomRevision });
+    let room = await write(
+      '/rooms/join',
+      { requestId: randomUUID(), inviteCode: created.inviteCode },
+      'b',
+    );
+    room = await write(
+      `/rooms/${roomId}/my-seat`,
+      { requestId: randomUUID(), expectedRoomRevision: room.roomRevision, seatIndex: 1 },
+      'b',
+      'PUT',
+    );
+    room = await write(
+      `/rooms/${roomId}/my-ready`,
+      { requestId: randomUUID(), expectedRoomRevision: room.roomRevision, ready: true },
+      'a',
+      'PUT',
+    );
+    room = await write(
+      `/rooms/${roomId}/my-ready`,
+      { requestId: randomUUID(), expectedRoomRevision: room.roomRevision, ready: true },
+      'b',
+      'PUT',
+    );
+    const started = await write(`/rooms/${roomId}/start`, {
+      requestId: randomUUID(),
+      expectedRoomRevision: room.roomRevision,
+    });
     const id = started.matchId;
-    await write(`/matches/${id}/actions`, { requestId: randomUUID(), expectedRevision: 0, action: { type: 'draw_card' } });
-    await write(`/matches/${id}/actions`, { requestId: randomUUID(), expectedRevision: 1, action: { type: 'draw_card' } }, 'b');
+    await write(`/matches/${id}/actions`, {
+      requestId: randomUUID(),
+      expectedRevision: 0,
+      action: { type: 'draw_card' },
+    });
+    await write(
+      `/matches/${id}/actions`,
+      { requestId: randomUUID(), expectedRevision: 1, action: { type: 'draw_card' } },
+      'b',
+    );
     room = (await (await page.request.get(`/api/v1/rooms/${roomId}`)).json()).data;
-    await write(`/rooms/${roomId}/close`, { requestId: randomUUID(), expectedRoomRevision: room.roomRevision });
+    await write(`/rooms/${roomId}/close`, {
+      requestId: randomUUID(),
+      expectedRoomRevision: room.roomRevision,
+    });
     let actions = 0;
-    page.on('request', request => { if (request.method() === 'POST' && request.url().includes(`/matches/${id}/actions`)) actions++; });
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && request.url().includes(`/matches/${id}/actions`))
+        actions++;
+    });
     await page.goto('/profile/history');
     await page.getByRole('link', { name: '查看回放', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Color Match', exact: true })).toBeVisible();
     await expect(page.getByLabel('回放进度')).toHaveValue('0');
     await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
-    await page.locator('.color-hand-cards').evaluate(el => { el.setAttribute('data-replay-instance', 'retained'); });
-    for (const button of await page.getByRole('region', { name: '回放棋桌' }).getByRole('button').all()) await expect(button).toBeDisabled();
+    await page.locator('.color-hand-cards').evaluate((el) => {
+      el.setAttribute('data-replay-instance', 'retained');
+    });
+    for (const button of await page
+      .getByRole('region', { name: '回放棋桌' })
+      .getByRole('button')
+      .all())
+      await expect(button).toBeDisabled();
     let releaseManualFrame!: () => void;
     let manualFrameRequested!: () => void;
-    const heldManualFrame = new Promise<void>(resolve => { releaseManualFrame = resolve; });
-    const requestedManualFrame = new Promise<void>(resolve => { manualFrameRequested = resolve; });
-    await page.route(`**/matches/${id}/replay?revision=1`, async route => {
-      manualFrameRequested();
-      await heldManualFrame;
-      await route.continue();
-    }, { times: 1 });
+    const heldManualFrame = new Promise<void>((resolve) => {
+      releaseManualFrame = resolve;
+    });
+    const requestedManualFrame = new Promise<void>((resolve) => {
+      manualFrameRequested = resolve;
+    });
+    await page.route(
+      `**/matches/${id}/replay?revision=1`,
+      async (route) => {
+        manualFrameRequested();
+        await heldManualFrame;
+        await route.continue();
+      },
+      { times: 1 },
+    );
     await page.getByRole('button', { name: '下一步', exact: true }).click();
     await requestedManualFrame;
     try {
-      await expect(page.getByRole('region', { name: '回放棋桌' })).toHaveAttribute('aria-busy', 'true');
+      await expect(page.getByRole('region', { name: '回放棋桌' })).toHaveAttribute(
+        'aria-busy',
+        'true',
+      );
       await expect(page.getByLabel('回放进度')).toHaveValue('0');
       await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
       await expect(page.locator('.replay-progress [aria-live]')).toHaveText('初始局面');
       await expect(page.getByText('正在读取回放…', { exact: true })).toHaveCount(0);
-    } finally { releaseManualFrame(); }
+    } finally {
+      releaseManualFrame();
+    }
     await expect(page.getByLabel('回放进度')).toHaveValue('1');
     await expect(page.locator('.color-hand-cards button')).toHaveCount(6);
-    await expect(page.locator('.color-hand-cards')).toHaveAttribute('data-replay-instance', 'retained');
+    await expect(page.locator('.color-hand-cards')).toHaveAttribute(
+      'data-replay-instance',
+      'retained',
+    );
     await expect(page.getByRole('region', { name: '行动记录' })).toContainText('摸了 1 张牌');
     await page.getByRole('button', { name: '末尾', exact: true }).click();
     await expect(page.getByLabel('回放进度')).toHaveValue('2');
@@ -72,21 +152,34 @@ test('original participants can seek and play a saved match without sending acti
     // Hold an automatic frame request open to expose transient control flicker.
     let releaseFrame!: () => void;
     let frameRequested!: () => void;
-    const heldFrame = new Promise<void>(resolve => { releaseFrame = resolve; });
-    const requestedFrame = new Promise<void>(resolve => { frameRequested = resolve; });
-    await page.route(`**/matches/${id}/replay?revision=1`, async route => {
-      frameRequested();
-      await heldFrame;
-      await route.continue();
-    }, { times: 1 });
+    const heldFrame = new Promise<void>((resolve) => {
+      releaseFrame = resolve;
+    });
+    const requestedFrame = new Promise<void>((resolve) => {
+      frameRequested = resolve;
+    });
+    await page.route(
+      `**/matches/${id}/replay?revision=1`,
+      async (route) => {
+        frameRequested();
+        await heldFrame;
+        await route.continue();
+      },
+      { times: 1 },
+    );
     await page.getByRole('button', { name: '播放', exact: true }).click();
     await requestedFrame;
     try {
-      await expect(page.getByRole('region', { name: '回放棋桌' })).toHaveAttribute('aria-busy', 'true');
+      await expect(page.getByRole('region', { name: '回放棋桌' })).toHaveAttribute(
+        'aria-busy',
+        'true',
+      );
       await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeEnabled();
       await expect(page.getByRole('button', { name: '暂停', exact: true })).toBeEnabled();
       await expect(page.getByLabel('回放进度')).toBeEnabled();
-    } finally { releaseFrame(); }
+    } finally {
+      releaseFrame();
+    }
     await expect(page.getByLabel('回放进度')).toHaveValue('2');
     await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeDisabled();
@@ -97,26 +190,74 @@ test('original participants can seek and play a saved match without sending acti
     await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
     await page.reload();
     await expect(page.getByLabel('回放进度')).toHaveValue('0');
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
     const progress = await page.getByLabel('回放进度').boundingBox();
     const play = await page.getByRole('button', { name: '播放', exact: true }).boundingBox();
-    expect(progress).toBeTruthy(); expect(play).toBeTruthy();
+    expect(progress).toBeTruthy();
+    expect(play).toBeTruthy();
     expect(play!.y).toBeGreaterThanOrEqual(progress!.y + progress!.height);
     if (info.project.name === 'desktop') {
       const label = await page.locator('label[for="replay-position"]').boundingBox();
       const dock = await page.locator('.chat-dock').boundingBox();
       // The dock may sit on either side; require that it does not cover the label.
-      expect(label!.x + label!.width <= dock!.x || dock!.x + dock!.width <= label!.x ||
-        label!.y + label!.height <= dock!.y || dock!.y + dock!.height <= label!.y).toBe(true);
+      expect(
+        label!.x + label!.width <= dock!.x ||
+          dock!.x + dock!.width <= label!.x ||
+          label!.y + label!.height <= dock!.y ||
+          dock!.y + dock!.height <= label!.y,
+      ).toBe(true);
+    }
+    // Losing one frame must keep the last readable board and retry the same step.
+    await expect(page.getByLabel('回放进度')).toHaveValue('0');
+    await page.route(`**/matches/${id}/replay?revision=1`, (route) => route.abort('failed'), {
+      times: 1,
+    });
+    await page.getByRole('button', { name: '下一步', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('回放同步失败');
+    await expect(page.getByLabel('回放进度')).toHaveValue('0');
+    await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
+    await page.getByRole('button', { name: '重新加载', exact: true }).click();
+    await expect(page.getByLabel('回放进度')).toHaveValue('1');
+    await expect(page.locator('.color-hand-cards button')).toHaveCount(6);
+    if (info.project.name === 'mobile') {
+      const controls = await page.locator('.replay-controls').boundingBox();
+      const navigation = await page.locator('.platform-navigation').boundingBox();
+      expect(controls!.y + controls!.height).toBeLessThanOrEqual(navigation!.y);
     }
     await page.screenshot({ path: info.outputPath('replay.png'), fullPage: true });
     if (info.project.name === 'desktop') {
       await page.setViewportSize({ width: 1024, height: 768 });
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
       await page.screenshot({ path: info.outputPath('replay-laptop.png'), fullPage: true });
     }
+    // Temporary recovery may retain a frame; an access denial must remove it.
+    await page.route(
+      `**/matches/${id}/replay?revision=2`,
+      (route) =>
+        route.fulfill({
+          status: 403,
+          json: {
+            ok: false,
+            traceId: 'replay-access-denied',
+            error: { code: 'FORBIDDEN', message: '无权继续读取回放', retryable: false },
+          },
+        }),
+      { times: 1 },
+    );
+    await page.getByRole('button', { name: '下一步', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('无权继续读取回放');
+    await expect(page.locator('.color-hand-cards')).toHaveCount(0);
+    await expect(page.getByLabel('回放进度')).toHaveCount(0);
+    await page.getByRole('button', { name: '重新加载', exact: true }).click();
+    await expect(page.getByLabel('回放进度')).toHaveValue('2');
     await page.getByRole('link', { name: '返回对局记录' }).click();
     await expect(page).toHaveURL(/profile\/history$/);
     expect(actions).toBe(0);
-  } finally { await second.close(); }
+  } finally {
+    await second.close();
+  }
 });

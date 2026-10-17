@@ -9,24 +9,47 @@ async function fixture(page: Page, loseConfirmation = false) {
   const person = { id: other, friendId: 'bob', displayName: '桌友小明', avatar: 'cat' as const };
   const self = { id: me, friendId: 'alice', displayName: '桌友小红', avatar: 'dice' as const };
   const overview: SocialOverview = {
-    identity: { friendId: 'alice', revision: 1, changeIntervalDays: 30, nextChangeAt: null, canChange: true },
-    friends: [], requests: [], invitations: [],
+    identity: {
+      friendId: 'alice',
+      revision: 1,
+      changeIntervalDays: 30,
+      nextChangeAt: null,
+      canChange: true,
+    },
+    friends: [],
+    requests: [],
+    invitations: [],
   };
-  const messages: PublicMessage[] = [{ id: crypto.randomUUID(), sequence: '1', senderId: other,
-    sender: person, text: '晚上一起开桌吗？[微笑] 🎲 <script>bad()</script> [未知表情]', createdAt: timestamp }];
+  const messages: PublicMessage[] = [
+    {
+      id: crypto.randomUUID(),
+      sequence: '1',
+      senderId: other,
+      sender: person,
+      text: '晚上一起开桌吗？[微笑] 🎲 <script>bad()</script> [未知表情]',
+      createdAt: timestamp,
+    },
+  ];
   const sends: { requestId: string; text: string }[] = [];
   let application: unknown;
-  await page.route('**/api/v1/**', async route => {
+  await page.route('**/api/v1/**', async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace('/api/v1', '');
-    const ok = (data: unknown) => route.fulfill({ json: { ok: true, traceId: 'public-chat-ui', data } });
+    const ok = (data: unknown) =>
+      route.fulfill({ json: { ok: true, traceId: 'public-chat-ui', data } });
     if (path === '/auth/me') return ok(sessionFixture({ id: me, displayName: self.displayName }));
     if (path === '/social') return ok(overview);
     if (path === '/social/updates') return ok({ changed: true, version: 'a'.repeat(64), overview });
     if (path.startsWith('/profile/badges/')) return ok({ items: [] });
     if (path === '/social/requests') {
       application = route.request().postDataJSON();
-      const pending = { person, status: 'pending' as const, direction: 'outgoing' as const, revision: 1, unread: 0 };
+      const pending = {
+        person,
+        status: 'pending' as const,
+        direction: 'outgoing' as const,
+        revision: 1,
+        unread: 0,
+      };
       overview.requests = [pending];
       return ok(pending);
     }
@@ -34,34 +57,62 @@ async function fixture(page: Page, loseConfirmation = false) {
       if (route.request().method() === 'POST') {
         const input = route.request().postDataJSON() as { requestId: string; text: string };
         sends.push(input);
-        if (sends.length === 1) messages.push({ ...messages[0]!, id: crypto.randomUUID(), sequence: '2', senderId: me, sender: self, text: input.text });
-        if (loseConfirmation && sends.length === 1) return route.fulfill({ status: 503,
-          json: { ok: false, traceId: 'lost', error: { code: 'SERVICE_UNAVAILABLE', message: '发送结果未知', retryable: true } } });
+        if (sends.length === 1)
+          messages.push({
+            ...messages[0]!,
+            id: crypto.randomUUID(),
+            sequence: '2',
+            senderId: me,
+            sender: self,
+            text: input.text,
+          });
+        if (loseConfirmation && sends.length === 1)
+          return route.fulfill({
+            status: 503,
+            json: {
+              ok: false,
+              traceId: 'lost',
+              error: { code: 'SERVICE_UNAVAILABLE', message: '发送结果未知', retryable: true },
+            },
+          });
         return ok(messages.at(-1));
       }
       const after = url.searchParams.get('after');
-      const start = after ? messages.findIndex(item => item.id === after) + 1 : 0;
+      const start = after ? messages.findIndex((item) => item.id === after) + 1 : 0;
       return ok({ items: messages.slice(start), nextCursor: null });
     }
     if (path === `/social/friends/${other}/messages`) {
-      if (route.request().method() === 'POST') return ok({ ...messages[0], text: route.request().postDataJSON().text, senderId: me });
+      if (route.request().method() === 'POST')
+        return ok({ ...messages[0], text: route.request().postDataJSON().text, senderId: me });
       return ok({ items: [{ ...messages[0], text: '私聊也支持 [微笑]' }], nextCursor: null });
     }
     if (path === `/social/friends/${other}/read`) return ok({ done: true });
     return ok([]);
   });
-  return { sends, application: () => application, becomeFriends: () => {
-    overview.friends = [{ person, status: 'accepted', direction: 'incoming', revision: 2, unread: 0 }];
-    overview.requests = [];
-  } };
+  return {
+    sends,
+    messages,
+    application: () => application,
+    becomeFriends: () => {
+      overview.friends = [
+        { person, status: 'accepted', direction: 'incoming', revision: 2, unread: 0 },
+      ];
+      overview.requests = [];
+    },
+  };
 }
 
-test('public chat renders safe expressions, sends and opens a friend request from an avatar', async ({ page }, info) => {
+test('public chat renders safe expressions, sends and opens a friend request from an avatar', async ({
+  page,
+}, info) => {
   const state = await fixture(page);
   await page.goto('/chat');
   await expect(page.getByRole('heading', { name: '公共聊天', exact: true })).toBeVisible();
   const history = page.getByRole('list', { name: '聊天记录' });
-  await expect(page.getByLabel('查看 桌友小明 的名片', { exact: true })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(page.getByLabel('查看 桌友小明 的名片', { exact: true })).toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
   await expect(history.getByRole('img', { name: '微笑', exact: true })).toBeVisible();
   await expect(history).toContainText('<script>bad()</script>');
   await expect(history).toContainText('[未知表情]');
@@ -76,6 +127,7 @@ test('public chat renders safe expressions, sends and opens a friend request fro
   await page.getByRole('button', { name: '插入🎲', exact: true }).click();
   await page.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(input).toHaveValue('');
+  await expect(input).toBeFocused();
   await expect(history.getByRole('img', { name: '大笑', exact: true })).toBeVisible();
   expect(state.sends[0]!.text).toBe('来一局[大笑]🎲');
   await page.getByLabel('查看 桌友小明 的名片', { exact: true }).click();
@@ -89,18 +141,25 @@ test('public chat renders safe expressions, sends and opens a friend request fro
   await page.getByLabel('选择表情', { exact: true }).click();
   await page.getByRole('button', { name: '经典表情', exact: true }).click();
   for (const theme of ['light', 'dark']) {
-    await page.evaluate(value => document.documentElement.dataset.theme = value, theme);
+    await page.evaluate((value) => (document.documentElement.dataset.theme = value), theme);
     await expect(history.locator('li').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    await expect(page.getByLabel('查看 桌友小明 的名片', { exact: true })).toHaveCSS('border-top-width', '0px');
+    await expect(page.getByLabel('查看 桌友小明 的名片', { exact: true })).toHaveCSS(
+      'border-top-width',
+      '0px',
+    );
     const bounds = await page.getByRole('group', { name: '表情选择' }).boundingBox();
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
     await page.screenshot({ path: info.outputPath(`public-chat-${theme}.png`), fullPage: false });
   }
 });
 
-test('unknown send results preserve the original request and IME Enter does not submit', async ({ page }) => {
+test('unknown send results preserve the original request and IME Enter does not submit', async ({
+  page,
+}) => {
   const state = await fixture(page, true);
   await page.goto('/chat');
   const input = page.getByLabel('公共消息', { exact: true });
@@ -112,19 +171,32 @@ test('unknown send results preserve the original request and IME Enter does not 
   await expect(input).toHaveValue('你好 [捂脸]');
   await expect(input).toHaveAttribute('readonly', '');
   await expect(page.getByLabel('选择表情', { exact: true })).toBeDisabled();
+  const poll = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' && response.url().includes('/social/public/messages'),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await poll;
+  await expect(page.getByRole('alert')).toContainText('发送结果未知');
   await page.getByRole('button', { name: '重试发送', exact: true }).click();
   await expect(input).toHaveValue('');
   expect(state.sends).toHaveLength(2);
   expect(state.sends[1]).toEqual(state.sends[0]);
-  await expect(page.getByRole('list', { name: '聊天记录' }).getByRole('img', { name: '捂脸', exact: true })).toHaveCount(1);
+  await expect(
+    page.getByRole('list', { name: '聊天记录' }).getByRole('img', { name: '捂脸', exact: true }),
+  ).toHaveCount(1);
 });
 
-test('classic expressions work in the existing private chat and picker dismisses with Escape', async ({ page }) => {
+test('classic expressions work in the existing private chat and picker dismisses with Escape', async ({
+  page,
+}) => {
   const state = await fixture(page);
   state.becomeFriends();
   await page.goto(`/friends/chat/${other}`);
   const input = page.getByLabel('私聊消息', { exact: true });
-  await expect(page.getByRole('list', { name: '聊天记录' }).getByRole('img', { name: '微笑', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('list', { name: '聊天记录' }).getByRole('img', { name: '微笑', exact: true }),
+  ).toBeVisible();
   await page.getByLabel('选择表情', { exact: true }).click();
   await page.getByRole('button', { name: '插入爱心', exact: true }).click();
   await expect(input).toHaveValue('[爱心]');
@@ -136,11 +208,124 @@ test('classic expressions work in the existing private chat and picker dismisses
 
 test('guests are invited to log in without loading public messages', async ({ page }) => {
   let messageReads = 0;
-  await page.route('**/api/v1/**', async route => {
+  await page.route('**/api/v1/**', async (route) => {
     if (route.request().url().includes('/public/messages')) messageReads++;
-    return route.fulfill({ status: 401, json: { ok: false, traceId: 'guest', error: { code: 'UNAUTHENTICATED', message: '请登录', retryable: false } } });
+    return route.fulfill({
+      status: 401,
+      json: {
+        ok: false,
+        traceId: 'guest',
+        error: { code: 'UNAUTHENTICATED', message: '请登录', retryable: false },
+      },
+    });
   });
   await page.goto('/chat');
   await expect(page.getByRole('link', { name: '登录参与聊天' })).toBeVisible();
   expect(messageReads).toBe(0);
+});
+
+test('loading older messages preserves the reading position and new messages offer a jump to latest', async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  const original = state.messages[0]!;
+  const messages = Array.from({ length: 40 }, (_, index) => ({
+    ...original,
+    id: crypto.randomUUID(),
+    sequence: String(index + 1),
+    text: `位置回归消息 ${index + 1}`,
+  }));
+  await page.route('**/api/v1/social/public/messages*', async (route) => {
+    const url = new URL(route.request().url());
+    const after = url.searchParams.get('after');
+    const before = url.searchParams.get('before');
+    const watermark = messages.find((message) => message.id === after)?.sequence;
+    const items = before
+      ? messages.slice(0, 10)
+      : after
+        ? messages.filter((message) => BigInt(message.sequence) > BigInt(watermark ?? '0'))
+        : messages.slice(10);
+    await route.fulfill({
+      json: {
+        ok: true,
+        traceId: 'scroll-anchor',
+        data: { items, nextCursor: !after && !before ? messages[10]!.id : null },
+      },
+    });
+  });
+  await page.goto('/chat');
+  const history = page.getByRole('list', { name: '聊天记录' });
+  await expect(history.getByRole('listitem')).toHaveCount(30);
+  await history.evaluate((list) => {
+    list.scrollTop = 0;
+  });
+  const anchor = history.getByText('位置回归消息 11', { exact: true });
+  const relativeTop = () =>
+    anchor.evaluate(
+      (message) =>
+        message.getBoundingClientRect().top - message.closest('ol')!.getBoundingClientRect().top,
+    );
+  const top = await relativeTop();
+  await page.getByRole('button', { name: '加载更早消息', exact: true }).click();
+  await expect(history.getByRole('listitem')).toHaveCount(40);
+  expect(await relativeTop()).toBeCloseTo(top, 0);
+  messages.push({ ...original, id: crypto.randomUUID(), sequence: '41', text: '刚到的新消息' });
+  const poll = page.waitForResponse((response) =>
+    response.url().includes('/social/public/messages'),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await poll;
+  await expect(history.getByText('刚到的新消息', { exact: true })).toHaveCount(1);
+  expect(await relativeTop()).toBeCloseTo(top, 0);
+  await page.getByRole('button', { name: '有新消息，回到最新', exact: true }).click();
+  await expect(history).toBeFocused();
+  await expect
+    .poll(() => history.evaluate((list) => list.scrollHeight - list.scrollTop - list.clientHeight))
+    .toBeLessThan(48);
+  await expect(page.getByRole('button', { name: '回到最新消息', exact: true })).toHaveCount(0);
+});
+
+test('reading older private messages does not mark an unseen new message read', async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  state.becomeFriends();
+  const original = state.messages[0]!;
+  const messages = Array.from({ length: 10 }, (_, index) => ({
+    ...original,
+    id: crypto.randomUUID(),
+    sequence: String(index + 1),
+    text: `私聊阅读位置 ${index + 1}`,
+  }));
+  const readIds: string[] = [];
+  await page.route(`**/api/v1/social/friends/${other}/messages*`, (route) =>
+    route.fulfill({
+      json: { ok: true, traceId: 'private-reading', data: { items: messages, nextCursor: null } },
+    }),
+  );
+  await page.route(`**/api/v1/social/friends/${other}/read`, async (route) => {
+    const input = route.request().postDataJSON();
+    if (typeof input.messageId === 'string') readIds.push(input.messageId);
+    await route.fulfill({ json: { ok: true, traceId: 'private-reading', data: { done: true } } });
+  });
+  await page.goto(`/friends/chat/${other}`);
+  const history = page.getByRole('list', { name: '聊天记录' });
+  await expect(history.getByRole('listitem')).toHaveCount(10);
+  await expect.poll(() => readIds.at(-1)).toBe(messages[9]!.id);
+  await history.evaluate((list) => {
+    list.scrollTop = 0;
+  });
+  await expect(page.getByRole('button', { name: '回到最新消息', exact: true })).toBeVisible();
+  const next = { ...original, id: crypto.randomUUID(), sequence: '11', text: '还没看到的新私聊' };
+  messages.push(next);
+  const poll = page.waitForResponse((response) =>
+    response.url().includes(`/social/friends/${other}/messages`),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await poll;
+  await expect(history.getByRole('listitem')).toHaveCount(11);
+  expect(readIds.at(-1)).toBe(messages[9]!.id);
+  await page.getByRole('button', { name: '有新消息，回到最新', exact: true }).click();
+  await expect(history).toBeFocused();
+  await expect.poll(() => readIds.at(-1)).toBe(next.id);
 });

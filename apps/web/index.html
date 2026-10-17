@@ -10,8 +10,8 @@
     <script>
       // Resolve the first paint before downloading the application bundle.
       (() => {
-        let preference = 'light';
-        try { preference = localStorage.getItem('boardgame.theme') || 'light'; } catch {}
+        let preference = 'system';
+        try { preference = localStorage.getItem('boardgame.theme') || 'system'; } catch {}
         const theme = preference === 'light' || preference === 'dark'
           ? preference
           : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');

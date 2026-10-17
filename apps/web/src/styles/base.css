@@ -23,7 +23,7 @@
     min-width: 320px;
   }
   a {
-    color: var(--accent);
+    color: var(--link, var(--accent));
     text-underline-offset: 3px;
   }
   .site-header {

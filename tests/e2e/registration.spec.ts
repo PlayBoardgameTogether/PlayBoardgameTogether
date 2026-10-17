@@ -7,7 +7,9 @@ async function fillRegistration(page: Page, userId = '@rst307') {
   await page.getByLabel('确认密码', { exact: true }).fill('Abc307');
 }
 
-test('registers a real account, logs in and restores the exact friend ID', async ({ page }, info) => {
+test('registers a real account, logs in and restores the exact friend ID', async ({
+  page,
+}, info) => {
   await page.goto('/login');
   await page.getByRole('link', { name: '没有账号？注册账号' }).click();
   await expect(page).toHaveTitle('账号注册 · 桌游平台');
@@ -18,7 +20,11 @@ test('registers a real account, logs in and restores the exact friend ID', async
   await expect(page.getByLabel('确认密码', { exact: true })).toHaveAttribute('type', 'text');
   await page.getByRole('button', { name: '隐藏密码' }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: info.outputPath('registration.png'), fullPage: true, animations: 'disabled' });
+  await page.screenshot({
+    path: info.outputPath('registration.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.getByRole('button', { name: '注册账号', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('注册成功，请输入密码登录。');
   await expect(page.getByLabel('用户名', { exact: true })).toHaveValue('@rst307');
@@ -35,20 +41,30 @@ test('registers a real account, logs in and restores the exact friend ID', async
   await fillRegistration(page, '@RST307');
   await page.getByRole('button', { name: '注册账号', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('这个用户 ID 已被使用，请换一个。');
+  await expect(page.getByLabel('用户 ID', { exact: true })).toBeFocused();
 });
 
 test('validates password rules and confirmation before making a request', async ({ page }) => {
   let calls = 0;
-  await page.route('**/auth/register', async route => { calls++; await route.abort(); });
+  await page.route('**/auth/register', async (route) => {
+    calls++;
+    await route.abort();
+  });
   await page.goto('/register');
   await fillRegistration(page);
   await page.getByLabel('密码', { exact: true }).fill('OnlyLettersHere');
   await page.getByLabel('确认密码', { exact: true }).fill('OnlyLettersHere');
   await page.getByRole('button', { name: '注册账号', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('密码须为 6–128 位，至少包含一个字母和一个数字。');
+  await expect(page.getByRole('alert')).toHaveText(
+    '密码须为 6–128 位，至少包含一个字母和一个数字。',
+  );
+  await expect(page.getByLabel('密码', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('aria-invalid', 'true');
   await page.getByLabel('密码', { exact: true }).fill('Abc307');
   await page.getByRole('button', { name: '注册账号', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('两次输入的密码不一致。');
+  await expect(page.getByLabel('确认密码', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('密码', { exact: true })).not.toHaveAttribute('aria-invalid');
   expect(calls).toBe(0);
   await page.getByLabel('确认密码', { exact: true }).fill('Abc307');
   await page.getByRole('button', { name: '注册账号', exact: true }).click();
@@ -59,19 +75,29 @@ test('validates password rules and confirmation before making a request', async 
 test('locks duplicate submits and ignores late replies after navigation', async ({ page }) => {
   let calls = 0;
   let release: (() => void) | undefined;
-  await page.route('**/auth/register', async route => {
+  await page.route('**/auth/register', async (route) => {
     calls++;
-    await new Promise<void>(resolve => { release = resolve; });
-    await route.fulfill({ status: 201, json: {
-      ok: true, traceId: 'registration-pending-test',
-      data: { username: 'rst307', displayName: '新桌游玩家', friendId: 'rst307' },
-    } });
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await route.fulfill({
+      status: 201,
+      json: {
+        ok: true,
+        traceId: 'registration-pending-test',
+        data: { username: 'rst307', displayName: '新桌游玩家', friendId: 'rst307' },
+      },
+    });
   });
   await page.goto('/register');
   await fillRegistration(page);
   await page.getByRole('button', { name: '注册账号', exact: true }).click();
   await expect(page.getByLabel('用户 ID', { exact: true })).toBeDisabled();
-  await page.locator('form').evaluate(form => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  await page
+    .locator('form')
+    .evaluate((form) =>
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })),
+    );
   expect(calls).toBe(1);
   await page.getByRole('link', { name: '已有账号？去登录' }).click();
   await expect(page).toHaveTitle('账户登录 · 桌游平台');

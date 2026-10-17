@@ -72,6 +72,12 @@ test('a slow successful action stays calm, keeps the table still and never races
       await ack.promise;
       await route.fulfill({ response });
     });
+    if (info.project.name === 'mobile') {
+      const publicArea = active.getByRole('region', { name: '公共牌区域', exact: true });
+      const card = await publicArea.locator('.color-card').boundingBox();
+      const label = await publicArea.getByText('公共牌', { exact: true }).boundingBox();
+      expect(card!.x + card!.width).toBeLessThanOrEqual(label!.x);
+    }
     const y = await tableTop(active);
     const requested = active.waitForRequest(actionPath);
     await draw(active).click();

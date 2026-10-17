@@ -31,10 +31,18 @@ export function AdminLayout({
   description: string;
   children: ReactNode;
 }) {
-  const [state, setState] = useState<
-    'loading' | 'allowed' | 'denied' | 'error'
-  >('loading');
+  const [state, setState] = useState<'loading' | 'allowed' | 'denied' | 'error'>('loading');
   const [attempt, setAttempt] = useState(0);
+  const navigation = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const item = navigation.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (
+      item &&
+      navigation.current &&
+      navigation.current.scrollWidth > navigation.current.clientWidth
+    )
+      item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [path, state]);
   useEffect(() => {
     let disposed = false;
     setState('loading');
@@ -42,16 +50,11 @@ export function AdminLayout({
       .me()
       .then((raw) => {
         if (!disposed)
-          setState(
-            meSchema.parse(raw).account.role === 'administrator'
-              ? 'allowed'
-              : 'denied',
-          );
+          setState(meSchema.parse(raw).account.role === 'administrator' ? 'allowed' : 'denied');
       })
       .catch((cause) => {
         if (disposed) return;
-        if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED')
-          navigate('/login');
+        if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') navigate('/login');
         else setState('error');
       });
     return () => {
@@ -66,15 +69,11 @@ export function AdminLayout({
     );
   if (state === 'error')
     return (
-      <PageFeedback
-        title="无法验证管理权限"
-        retry={() => setAttempt((value) => value + 1)}
-      >
+      <PageFeedback title="无法验证管理权限" retry={() => setAttempt((value) => value + 1)}>
         请检查连接后重试。
       </PageFeedback>
     );
-  if (state === 'loading')
-    return <PageFeedback title="正在验证管理权限…" loading />;
+  if (state === 'loading') return <PageFeedback title="正在验证管理权限…" loading />;
   return (
     <div className="admin-workspace">
       <section className="page-heading">
@@ -83,16 +82,20 @@ export function AdminLayout({
           <h1>{title}</h1>
           <p>{description}</p>
         </div>
-        <a className="button secondary" href="/">
+        <a className="button-link secondary" href="/">
           返回大厅
         </a>
       </section>
-      <nav className="admin-nav" aria-label="后台导航">
+      <nav ref={navigation} className="admin-nav" aria-label="后台导航">
         {links.map(([href, label]) => (
           <a
             key={href}
             href={href}
-            aria-current={path === href ? 'page' : undefined}
+            aria-current={
+              path === href || (href === '/admin/accounts' && /^\/admin\/accounts\//.test(path))
+                ? 'page'
+                : undefined
+            }
           >
             {label}
           </a>
@@ -106,8 +109,7 @@ export function AdminLayout({
 export function adminError(cause: unknown) {
   if (cause instanceof ApiError) {
     if (cause.code === 'UNAUTHENTICATED') return '会话已失效，请重新登录。';
-    if (cause.code === 'STATE_CONFLICT')
-      return '数据已被其他操作更新，请刷新后重新决定。';
+    if (cause.code === 'STATE_CONFLICT') return '数据已被其他操作更新，请刷新后重新决定。';
     return cause.message;
   }
   return '操作未确认，请检查连接后重试或刷新。';
@@ -115,9 +117,7 @@ export function adminError(cause: unknown) {
 
 // Keep the original ID when a response is lost and the same decision is retried.
 export function useAdminRequestId() {
-  const previous = useRef<{ fingerprint: string; id: string } | undefined>(
-    undefined,
-  );
+  const previous = useRef<{ fingerprint: string; id: string } | undefined>(undefined);
   return (decision: unknown) => {
     const fingerprint = JSON.stringify(decision);
     if (previous.current?.fingerprint !== fingerprint)

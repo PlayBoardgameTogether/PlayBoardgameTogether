@@ -3,6 +3,7 @@ import type { ReplayPresentation } from '@boardgame/game-sdk/presentation';
 import type { MatchReplay } from '@boardgame/protocol';
 import { GameErrorBoundary, PageFeedback } from '@boardgame/ui';
 import { api } from '../platform.js';
+import { ApiError } from '@boardgame/client-sdk';
 import { clientGame, type GameBoard } from '../game-registry.js';
 import { AssetResolver, verifyManifest } from '../assets/resolver.js';
 import { observeReplayMotion } from '../games/replay-motion.js';
@@ -68,6 +69,10 @@ export function ReplayPage({ id }: { id: string }) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const request = useRef(0);
+  const retryFrame = useRef<{ revision: number | undefined; animate: boolean }>({
+    revision: undefined,
+    animate: false,
+  });
   const [transition, setTransition] = useState({ id: 0, animate: false });
   const [reset, setReset] = useState(0);
   const [animationUntil, setAnimationUntil] = useState(0);
@@ -93,6 +98,7 @@ export function ReplayPage({ id }: { id: string }) {
 
   async function load(revision?: number, animate = false) {
     const token = ++request.current;
+    retryFrame.current = { revision, animate };
     setBusy(true);
     setError('');
     try {
@@ -114,9 +120,19 @@ export function ReplayPage({ id }: { id: string }) {
       }
     } catch (cause) {
       if (request.current === token) {
-        setFrame(undefined);
+        // A transient read must not discard the last frame or restart the replay.
+        // Permission failures still clear the private view immediately.
+        if (
+          cause instanceof ApiError &&
+          (cause.code === 'UNAUTHENTICATED' ||
+            cause.code === 'FORBIDDEN' ||
+            cause.code === 'MATCH_NOT_FOUND')
+        ) {
+          currentFrame.current = undefined;
+          setFrame(undefined);
+        }
         setPlaying(false);
-        setError(cause instanceof Error ? cause.message : '无法读取回放');
+        setError(cause instanceof ApiError ? cause.message : '回放同步失败，请重试。');
       }
     } finally {
       if (request.current === token) setBusy(false);
@@ -219,7 +235,11 @@ export function ReplayPage({ id }: { id: string }) {
       {error && (
         <div role="alert" className="error-notice">
           {error}{' '}
-          <button className="secondary" onClick={() => void load()}>
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() => void load(retryFrame.current.revision, retryFrame.current.animate)}
+          >
             重新加载
           </button>
         </div>

@@ -151,10 +151,11 @@ export function ModelProfileDirectory({
             )}
           </div>
 
-          <div className="model-filter-tabs" role="tablist" aria-label="状态过滤">
+          <div className="model-filter-tabs" role="group" aria-label="状态过滤">
             <button
               type="button"
               className={`model-filter-tab ${filterKind === 'all' ? 'is-active' : ''}`}
+              aria-pressed={filterKind === 'all'}
               onClick={() => setFilterKind('all')}
             >
               全部 ({profiles.length})
@@ -162,6 +163,7 @@ export function ModelProfileDirectory({
             <button
               type="button"
               className={`model-filter-tab ${filterKind === 'ready' ? 'is-active' : ''}`}
+              aria-pressed={filterKind === 'ready'}
               onClick={() => setFilterKind('ready')}
             >
               <span className="dot dot--ready" aria-hidden="true" />
@@ -171,6 +173,7 @@ export function ModelProfileDirectory({
               <button
                 type="button"
                 className={`model-filter-tab ${filterKind === 'needs-key' ? 'is-active' : ''}`}
+                aria-pressed={filterKind === 'needs-key'}
                 onClick={() => setFilterKind('needs-key')}
               >
                 <span className="dot dot--warn" aria-hidden="true" />
@@ -180,6 +183,7 @@ export function ModelProfileDirectory({
             <button
               type="button"
               className={`model-filter-tab ${filterKind === 'mock' ? 'is-active' : ''}`}
+              aria-pressed={filterKind === 'mock'}
               onClick={() => setFilterKind('mock')}
             >
               🧪 沙盒模拟
@@ -196,26 +200,20 @@ export function ModelProfileDirectory({
               🎲
             </div>
             <h3>暂无模型配置</h3>
-            <p>还没有添加对局 AI 模型。您可以从右侧表单选择热门服务商一键创建：</p>
-            <div className="model-empty-presets">
-              {PROVIDER_PRESETS.slice(0, 4).map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className="model-empty-preset-btn"
-                  onClick={() => {
-                    applyPreset(p);
-                    formSectionRef.current?.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'nearest',
-                    });
-                  }}
-                >
-                  <span>{p.icon}</span>
-                  <strong>{p.shortName}</strong>
-                </button>
-              ))}
-            </div>
+            <p>添加自己的模型，或先用无需密钥的内置模拟体验托管。</p>
+            <button
+              type="button"
+              className="secondary"
+              disabled={!!busy}
+              onClick={() => {
+                const preset = PROVIDER_PRESETS.find((item) => item.id === 'mock');
+                if (preset) applyPreset(preset);
+                nameInput.current?.focus();
+                formSectionRef.current?.scrollIntoView({ block: 'nearest' });
+              }}
+            >
+              配置内置模拟
+            </button>
           </div>
         ) : filteredProfiles.length === 0 ? (
           <div className="model-no-results">
@@ -247,7 +245,7 @@ export function ModelProfileDirectory({
                 {isEditing && (
                   <div className="model-editing-ribbon">
                     <span className="model-pulse-dot" aria-hidden="true" />
-                    正在右侧编辑此配置
+                    正在编辑此配置
                   </div>
                 )}
 

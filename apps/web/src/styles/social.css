@@ -105,7 +105,7 @@
 
   .social-section-heading a {
     font-size: 13px;
-    color: var(--accent);
+    color: var(--link, var(--accent));
     text-decoration: none;
     transition: opacity 200ms ease-out;
   }
@@ -141,7 +141,7 @@
 
   .social-filter input[type='search']:focus {
     outline: none;
-    border-color: var(--accent);
+    border-color: var(--link, var(--accent));
   }
 
   /* macOS Directory & Social Rows */
@@ -535,7 +535,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
+    overflow-anchor: none;
+    overscroll-behavior: contain;
   }
 
   .chat-history li {
@@ -616,7 +618,7 @@
 
   .direct-chat textarea:focus {
     outline: none;
-    border-color: var(--accent);
+    border-color: var(--link, var(--accent));
   }
 
   .direct-chat button {
@@ -666,8 +668,8 @@
     margin-bottom: 10px;
   }
   .expression-tabs button[aria-pressed='true'] {
-    color: var(--accent);
-    border-color: var(--accent);
+    color: var(--link, var(--accent));
+    border-color: var(--link, var(--accent));
   }
   .expression-grid {
     display: grid;
@@ -960,7 +962,7 @@
     margin-top: 8px;
     border-top: 1px solid var(--line);
     font-size: 12px;
-    color: var(--accent);
+    color: var(--link, var(--accent));
     text-decoration: none;
   }
 
@@ -1012,7 +1014,7 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     font-size: 14px;
-    color: var(--accent);
+    color: var(--link, var(--accent));
   }
 
   /* ==========================================================================
@@ -1129,5 +1131,19 @@
     background: transparent;
     border: 0;
     box-shadow: none;
+  }
+}
+
+@layer components.social {
+  .chat-jump-latest {
+    align-self: center;
+    margin-block: 0 8px;
+  }
+}
+
+@layer components.social {
+  .chat-history:focus-visible {
+    outline: 2px solid var(--link, var(--accent));
+    outline-offset: 3px;
   }
 }

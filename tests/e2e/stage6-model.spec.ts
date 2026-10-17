@@ -9,7 +9,7 @@ test('model settings save and test an explicitly labelled mock profile', async (
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('heading', { name: '游戏大厅' })).toBeVisible();
   await page.goto('/settings/models');
-  await expect(page.getByRole('heading', { name: '模型配置' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '模型配置', exact: true })).toBeVisible();
   await expect(page.locator('.provider-presets-section, .model-metrics-grid')).toHaveCount(0);
   await expect(page.getByText('高级设置', { exact: true })).toBeVisible();
   await expect(page.getByLabel('采样温度')).toBeHidden();

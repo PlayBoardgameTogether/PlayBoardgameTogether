@@ -24,7 +24,6 @@ type Props = Pick<
   | 'save'
   | 'activePreset'
   | 'applyPreset'
-  | 'applyPresetModel'
   | 'selectedPresetId'
   | 'setSelectedPresetId'
 >;
@@ -51,7 +50,6 @@ export function ModelProfileEditor({
   save,
   activePreset,
   applyPreset,
-  applyPresetModel,
   selectedPresetId,
   setSelectedPresetId,
 }: Props) {
@@ -63,7 +61,7 @@ export function ModelProfileEditor({
           <p className="model-editor-subtitle">
             {editing
               ? '修改模型参数、更新密钥或调整对局策略'
-              : '选用常用推荐服务商快速接入，或配置自定义端点'}
+              : '填写服务地址和模型标识，保存后再选择是否测试'}
           </p>
         </div>
         {editing && (
@@ -79,7 +77,8 @@ export function ModelProfileEditor({
       </div>
 
       {/* 热门服务商快捷预设选区 */}
-      <div className="model-presets-bar">
+      <details className="model-presets-bar">
+        <summary>快速填入服务商配置（可选）</summary>
         <div className="model-presets-header">
           <span className="presets-title">快速选用服务商预设</span>
           <span className="presets-hint">一键填入地址与推荐模型</span>
@@ -119,7 +118,7 @@ export function ModelProfileEditor({
             </a>
           </div>
         )}
-      </div>
+      </details>
 
       <form className="form-stack model-form-stack" onSubmit={save}>
         <label>
@@ -175,25 +174,6 @@ export function ModelProfileEditor({
 
         <label>
           模型标识
-          {activePreset?.models && activePreset.models.length > 0 && (
-            <div className="model-quick-models">
-              <span className="quick-models-title">推荐标识：</span>
-              <div className="quick-models-list">
-                {activePreset.models.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className={`quick-model-chip ${draft.modelId === m.id ? 'is-active' : ''}`}
-                    onClick={() => applyPresetModel(m.id)}
-                    title={m.tag}
-                  >
-                    <span>{m.label}</span>
-                    {m.tag && <small>{m.tag}</small>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           <input
             name="modelId"
             placeholder="服务商提供的 model ID"

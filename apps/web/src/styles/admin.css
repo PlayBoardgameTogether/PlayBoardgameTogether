@@ -292,3 +292,21 @@
     margin: 8px 0;
   }
 }
+
+@layer components.admin {
+  @media (max-width: 760px) {
+    .admin-nav {
+      display: flex;
+      min-width: 0;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: thin;
+      padding-bottom: 8px;
+    }
+    .admin-nav a {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  }
+}

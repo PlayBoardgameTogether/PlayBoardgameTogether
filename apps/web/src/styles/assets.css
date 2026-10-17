@@ -347,3 +347,55 @@
     }
   }
 }
+
+@layer components.assets {
+  @media (max-width: 600px) {
+    .color-board > [aria-label='公共牌区域'] {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      grid-template-rows: auto auto 1fr;
+      gap: 4px 16px;
+      padding: 16px;
+      align-items: center;
+    }
+    .color-board > [aria-label='公共牌区域'] > .color-card {
+      grid-column: 1;
+      grid-row: 1 / 4;
+      width: 76px;
+      height: 112px;
+      min-height: 112px;
+    }
+    .color-board > [aria-label='公共牌区域'] > :is(p, strong) {
+      grid-column: 2;
+      margin: 0;
+    }
+    .color-board > [aria-label='玩家列表'] {
+      padding: 12px;
+    }
+    .color-board > [aria-label='玩家列表'] h2 {
+      margin-block: 0 8px;
+      font-size: 18px;
+    }
+    .color-players {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .color-players > div {
+      flex-direction: column;
+      align-items: start;
+      gap: 4px;
+      padding: 10px;
+    }
+    .color-players .card-backs {
+      display: none;
+    }
+    .color-players .color-target-button {
+      width: 100%;
+      min-height: 44px;
+    }
+    .garden-player:not(.garden-player--self) .garden-board-wrap {
+      max-width: 220px;
+    }
+  }
+}

@@ -45,15 +45,19 @@ test('login locks pending requests and distinguishes connection, credentials and
   await page.getByLabel('用户名').fill('player_test');
   await page.getByLabel('密码', { exact: true }).fill('example-password');
   let calls = 0;
+  let requestObserved!: () => void;
+  const observedRequest = new Promise<void>(resolve => { requestObserved = resolve; });
   let release: (() => void) | undefined;
   await page.route('**/auth/login', async route => {
     calls++;
+    requestObserved();
     await new Promise<void>(resolve => { release = resolve; });
     await route.abort();
   });
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByLabel('用户名')).toBeDisabled();
   await expect(page.getByLabel('密码', { exact: true })).toBeDisabled();
+  await observedRequest;
   await page.locator('form').evaluate(form => {
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   });

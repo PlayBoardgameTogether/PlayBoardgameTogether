@@ -45,6 +45,7 @@
     --control-line: #52473b;
     --control-line-focus: #f6c445;
     --accent: #f6c445;
+    --link: #f6c445;
     --accent-hover: #f8cd59;
     --accent-active: #e5ac25;
     --accent-soft: rgba(246, 196, 69, 0.16);
@@ -89,6 +90,7 @@
     --control-line: #d5ccc0;
     --control-line-focus: #f6c445;
     --accent: #f6c445;
+    --link: #805000;
     --accent-hover: #f8cd59;
     --accent-active: #e5ac25;
     --accent-soft: #fef6de;
@@ -97,11 +99,11 @@
     --accent-text: #1e1810;
     --color-join: #10b981;
     --color-join-hover: #059669;
-    --success: #10b981;
+    --success: #047857;
     --success-soft: #dcfce7;
-    --warning: #d97706;
+    --warning: #92400e;
     --warning-soft: #fef3c7;
-    --danger: #ef4444;
+    --danger: #b91c1c;
     --danger-soft: #fee2e2;
     --neutral-rgb: 35 31 28;
     --surface-rgb: 255 255 255;
@@ -383,9 +385,6 @@
   /* --------------------------------------------------------------------------
      9. Immersive Boardgame Tables & Specialized Artwork
      -------------------------------------------------------------------------- */
-  .desktop-shell--game {
-    --bg: #141210;
-  }
   :root[data-theme='light'] :is(.sp-table, .az-table) {
     color-scheme: dark;
     --bg: #181512;
@@ -397,6 +396,7 @@
     --line: rgba(255, 235, 210, 0.1);
     --line-strong: rgba(255, 235, 210, 0.18);
     --accent: #f6c445;
+    --link: #f6c445;
     --accent-hover: #f8cd59;
     --accent-soft: rgba(246, 196, 69, 0.18);
     --accent-text: #1e1810;
@@ -636,8 +636,8 @@
     justify-content: space-between !important;
     align-items: center !important;
     padding: 10px 8px !important;
-    min-width: 96px !important;
-    min-height: 138px !important;
+    min-width: 96px;
+    min-height: 138px;
     aspect-ratio: 2 / 3 !important;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
     border: 2px solid rgba(0, 0, 0, 0.15) !important;
@@ -768,6 +768,90 @@
   @media (forced-colors: active) {
     .theme-select select {
       appearance: auto;
+    }
+  }
+}
+
+@layer theme {
+  .eyebrow {
+    color: var(--link, var(--accent));
+  }
+  .action-hint {
+    color: var(--text);
+    background: var(--accent-soft);
+    border-color: var(--control-line);
+  }
+  .error-notice {
+    color: var(--danger);
+    background: var(--danger-soft);
+    border-color: var(--danger);
+  }
+  .auth-card {
+    box-shadow: var(--shadow-card);
+  }
+  .auth-field {
+    display: grid;
+    gap: 6px;
+  }
+  .auth-card .auth-field p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .auth-card .login-fields {
+    gap: 16px;
+  }
+  .auth-card .password-toggle {
+    min-height: 44px;
+  }
+  .auth-card .auth-back {
+    margin-top: 12px;
+    min-height: 44px;
+  }
+  :root[data-theme='light'] .friend-id-card code {
+    color: var(--link);
+  }
+  @media (max-width: 760px) {
+    .desktop-shell
+      :is(input, textarea, select):not([type='checkbox']):not([type='radio']):not([type='range']) {
+      font-size: 16px;
+    }
+    .auth-card {
+      padding: 24px 20px;
+    }
+    .auth-shell {
+      min-height: 0;
+    }
+    .direct-chat :is(button, summary),
+    .model-settings-shell :is(button, summary) {
+      min-height: 44px;
+    }
+    .desktop-shell .replay-controls {
+      bottom: var(--platform-bottom-inset, 0px);
+      padding: 10px 0;
+    }
+    .replay-buttons {
+      gap: 6px;
+    }
+    .replay-buttons button {
+      min-height: 44px;
+    }
+  }
+}
+
+@layer theme {
+  @media (max-width: 600px) {
+    .color-board > [aria-label='公共牌区域'] {
+      padding: 16px;
+    }
+    .color-board > [aria-label='公共牌区域'] > .color-card {
+      width: 76px;
+      min-width: 76px;
+      height: 112px;
+      min-height: 112px;
+    }
+    .color-board > [aria-label='玩家列表'] {
+      padding: 12px;
     }
   }
 }

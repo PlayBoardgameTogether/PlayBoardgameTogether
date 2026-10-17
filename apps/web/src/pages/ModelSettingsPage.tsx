@@ -5,56 +5,17 @@ import { ModelProfileEditor } from './ModelProfileEditor.js';
 export function ModelSettingsPage() {
   const model = useModelSettings();
 
-  const totalProfiles = model.profiles.length;
-  const readyProfiles = model.profiles.filter(
-    (p) => p.enabled && (p.endpoint_id === 'mock' || p.has_credential),
-  ).length;
-
   return (
     <div className="model-settings-shell">
-      {/* 页面顶栏 Banner */}
-      <header className="model-page-header">
-        <div className="header-text-block">
-          <div className="header-badge-row">
-            <span className="header-chip">
-              <span className="header-chip-pulse" aria-hidden="true" />
-              AI 智能对弈中枢
-            </span>
-            <span className="header-chip header-chip-sec">PlayBoard 智能体工坊</span>
-          </div>
+      <header className="model-page-header model-page-header--compact">
+        <div>
+          <p className="eyebrow">对局助手</p>
           <h1>模型配置</h1>
-          <p className="header-desc">
-            管理对局 AI 使用的模型与密钥。支持一键接入
-            DeepSeek、OpenAI、通义千问、智谱等云端端点，亦支持本地离线 Ollama 与免密沙盒模拟。
-          </p>
+          <p>保存模型后，可在房间添加 AI 或在对局中启用托管。</p>
         </div>
-
-        {/* 顶部状态指标卡片组 */}
-        {!model.loading && !model.loadError && (
-          <div className="header-stats-grid">
-            <div className="header-stat-card">
-              <span className="stat-label">已收录模型</span>
-              <span className="stat-number">{totalProfiles}</span>
-              <span className="stat-footnote">当前已保存配置</span>
-            </div>
-            <div className="header-stat-card">
-              <span className="stat-label">已就绪可出牌</span>
-              <span className="stat-number stat-number-ready">{readyProfiles}</span>
-              <span className="stat-footnote">随时加入对局席位</span>
-            </div>
-            <div className="header-stat-card">
-              <span className="stat-label">凭证加密引擎</span>
-              <span
-                className={`stat-status-badge ${model.credentialsAvailable ? 'is-secure' : 'is-warning'}`}
-              >
-                {model.credentialsAvailable ? '🔒 AES-GCM 安全就绪' : '⚠️ 密钥加密未启用'}
-              </span>
-              <span className="stat-footnote">
-                {model.credentialsAvailable ? '硬件/信封密钥防护' : '仅可使用内置沙盒模型'}
-              </span>
-            </div>
-          </div>
-        )}
+        <a className="button-link secondary" href="/official-ai">
+          使用官方 AI
+        </a>
       </header>
 
       {/* 服务端未启用加密时的警示 Alert */}
@@ -76,11 +37,8 @@ export function ModelSettingsPage() {
             <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <div className="alert-content">
-            <strong>服务器当前未配置加密主密钥 (MODEL_CREDENTIAL_KEY)</strong>
-            <p>
-              外部真实模型的 API Key
-              保存功能暂时受限，您依然可以自由使用「平台内置模拟」沙盒模型完成完整桌游对局流程。
-            </p>
+            <strong>暂时无法保存外部服务密钥</strong>
+            <p>可以先使用内置模拟体验托管；接入外部服务需由管理员启用密钥保存。</p>
           </div>
         </div>
       )}
