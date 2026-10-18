@@ -1,5 +1,17 @@
 # 开发进度
 
+## 手机导航闪烁与棋桌遮挡修复（2026-10-18，0.11.2）
+
+手机底栏点击前仍应用浏览器默认触摸高亮（Chromium 模拟读取为 rgba(51, 181, 229, 0.4)）和桌面导航过渡；站内切页同时启用 View Transition 与 main 淡入。现在 760px 及以下即时切页，移除导航触摸高亮、悬停位移和过渡，保留当前页标识及键盘焦点。手机正式棋桌、回放、教程默认收起平台导航，从页头「导航」按钮展开；展开区域进入正常文档流，Escape 逐层关闭，换页收起。底部 inset 只保留设备安全区，让游戏确认栏与回放控件释放原底栏空间。大厅底栏和桌面导航保留。平台由 0.11.1 递增为 0.11.2，属于兼容的交互缺陷修复。
+
+实际验证：`pnpm typecheck`、`pnpm lint`、`pnpm build` 通过（含生产 bundle、编译后 API 与隔离游戏运行检查）。`pnpm test:ui tests/e2e/mobile-discovery.spec.ts tests/e2e/navigation-menu.spec.ts tests/e2e/platform-shell.spec.ts`：25 项通过、5 项按设备条件跳过；覆盖手机即时切页、无刷新及焦点、导航展开/收起、设置菜单、历史返回与既有权限入口。`pnpm test:e2e tests/e2e/navigation.spec.ts -g 'game navigation preserves' --output=.data/mobile-navigation/real-match-results`：桌面/手机 2 项通过，真实登录、创建房间、添加脚本 AI、开局、动作返回 200、离开再返回后读取 revision 前进的权威视图。测试经项目准备脚本运行，事先确认 TEST_DATABASE_URL 与开发库名称不同。仅新增测试后的 `pnpm exec eslint tests/e2e/navigation.spec.ts` 通过。
+
+实际浏览器检查：Chromium 手机模拟 320×568、390×844、700×390，笔记本 1280×800、桌面 1440×900；花砖教程、璀璨宝石教程及真实 Color Match 棋桌，亮暗主题、减少动态效果、键盘 Escape/焦点与更多菜单。检查截图保存在忽略目录 `.data/mobile-navigation/`，无横向溢出；没有做物理手机或 iOS Safari 验收，没有验证完整终局。
+
+另执行 `pnpm test:e2e tests/e2e/color-match.spec.ts`，桌面/手机 2 项失败：用例在第 177 行等待「对局 · revision …」文案，但当前 MatchPage 已不渲染该文案。未修改旧测试断言或将失败计为通过；本轮导航真实流程由上述独立回归验证。下一步修复旧 Color Match 验收中的过时页面定位，并用实际手机复核触摸表现。
+
+补充触摸高亮与导航零过渡断言后，执行 `pnpm test:ui tests/e2e/mobile-discovery.spec.ts --project=mobile -g 'mobile tabs switch' --output=.data/mobile-navigation/tap-results`：1 项通过。
+
 ## 全平台玩家端文案优化与噪音精简（2026-10-18，0.11.1）
 
 针对普通玩家界面进行面对用户的文案全面优化与多余信息精简：

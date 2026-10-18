@@ -57,6 +57,7 @@
 @layer theme {
   .nav-mobile-label,
   .nav-more-icon,
+  .mobile-game-navigation-toggle,
   .mobile-lobby-actions,
   .desktop-shell .nav-tools .nav-mobile-doc {
     display: none;
@@ -153,6 +154,8 @@
       font-weight: 600;
       line-height: 1.2;
       text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: none;
     }
     .desktop-shell .platform-navigation > a[href='/'] {
       order: 1;
@@ -198,6 +201,17 @@
     .desktop-shell .platform-navigation > a:hover {
       transform: none;
     }
+    .desktop-shell .platform-navigation > a svg {
+      transform: none;
+      transition: none;
+    }
+    .desktop-shell .platform-navigation > a:not([aria-current='page']):hover {
+      background: transparent;
+      color: var(--muted);
+    }
+    .desktop-shell .platform-navigation summary:hover {
+      background: transparent;
+    }
     .desktop-shell .platform-navigation > a:focus-visible,
     .desktop-shell .platform-navigation summary:focus-visible {
       outline: 3px solid var(--accent);
@@ -235,6 +249,37 @@
     .desktop-shell--game .site-header {
       background: var(--panel);
     }
+    .desktop-shell--game {
+      --platform-bottom-inset: env(safe-area-inset-bottom, 0px);
+    }
+    .desktop-shell--game .site-header {
+      flex-wrap: wrap;
+    }
+    .desktop-shell--game .mobile-game-navigation-toggle {
+      display: block;
+      min-height: 44px;
+      min-width: 64px;
+      margin-left: auto;
+      margin-right: 64px;
+      padding: 8px;
+    }
+    .desktop-shell--game .site-header .platform-navigation {
+      display: none;
+      position: relative;
+      inset: auto;
+      flex-basis: 100%;
+      padding-bottom: 6px;
+      border: 0;
+      border-radius: 16px;
+      box-shadow: none;
+    }
+    .desktop-shell--game .site-header--navigation-open .platform-navigation {
+      display: grid;
+    }
+    .desktop-shell--game .platform-navigation .nav-tools > div {
+      inset: calc(100% + 8px) 0 auto auto;
+      max-height: calc(100dvh - 180px);
+    }
     .desktop-shell .workspace-toolbar {
       position: absolute;
       inset: 9px 16px auto auto;
@@ -254,6 +299,8 @@
       width: calc(100% - 32px);
       min-height: calc(100dvh - 220px);
       padding-block: 16px 28px;
+      animation: none;
+      view-transition-name: none;
     }
     .desktop-shell .page-heading {
       margin-bottom: 20px;

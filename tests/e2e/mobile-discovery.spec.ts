@@ -72,6 +72,69 @@ test('mobile navigation stays reachable and content clears the bar at narrow wid
   await expect(page.locator('main')).toBeFocused();
 });
 
+test('mobile tabs switch without page fades or a document reload', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Touch navigation regression');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => {
+    document.body.dataset.transitionCalls = '0';
+    const original = document.startViewTransition;
+    if (original) document.startViewTransition = update => {
+      document.body.dataset.transitionCalls = String(Number(document.body.dataset.transitionCalls) + 1);
+      return original.call(document, update);
+    };
+  });
+  const nav = page.getByRole('navigation', { name: '主导航', exact: true });
+  await expect(nav.locator(':scope > a').first()).toHaveCSS('-webkit-tap-highlight-color', 'rgba(0, 0, 0, 0)');
+  await expect(nav.locator(':scope > a').first()).toHaveCSS('transition-duration', '0s');
+  for (const path of ['/friends', '/chat', '/profile', '/']) {
+    await nav.locator(`:scope > a[href="${path}"]`).tap();
+    await expect(page).toHaveURL(path);
+    await expect(nav.locator(`:scope > a[href="${path}"]`)).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('main')).toBeFocused();
+    await expect(page.locator('main')).toHaveCSS('animation-name', 'none');
+    await expect(page.locator('body')).toHaveAttribute('data-transition-calls', '0');
+  }
+});
+
+test('game navigation collapses on mobile and remains available above the table', async ({ page, isMobile }, info) => {
+  await page.goto('/games/azul.base/1.0.0/tutorial');
+  await expect(page.locator('.az-table')).toBeVisible();
+  const nav = page.getByRole('navigation', { name: '主导航', exact: true });
+  const toggle = page.getByRole('button', { name: '导航', exact: true });
+  if (!isMobile) {
+    await expect(nav).toBeVisible();
+    await expect(toggle).toBeHidden();
+    return;
+  }
+  for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 700, height: 390 }]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(nav).toBeHidden();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(await page.locator('.desktop-shell').evaluate(element =>
+      getComputedStyle(element).getPropertyValue('--platform-bottom-inset').trim())).toBe('0px');
+    await page.screenshot({ path: info.outputPath(`mobile-game-collapsed-${viewport.width}.png`) });
+    await toggle.tap();
+    await expect(nav).toBeVisible();
+    const bar = await nav.boundingBox();
+    expect(bar!.y + bar!.height).toBeLessThan(viewport.height);
+    await page.locator('.nav-tools summary').tap();
+    await expect(page.locator('.nav-tools > div')).toBeInViewport();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.nav-tools')).not.toHaveAttribute('open');
+    await page.keyboard.press('Escape');
+    await expect(nav).toBeHidden();
+    await expect(toggle).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  await toggle.tap();
+  await nav.getByRole('link', { name: '公共聊天', exact: true }).tap();
+  await expect(page).toHaveURL('/chat');
+  await expect(nav).toBeVisible();
+  await page.goBack();
+  await expect(nav).toBeHidden();
+});
+
 test('light mobile game chrome retains readable text around the immersive table', async ({ page, isMobile }, info) => {
   test.skip(!isMobile, 'Mobile game shell');
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -97,7 +160,8 @@ test('light mobile game chrome retains readable text around the immersive table'
   const decision = page.getByRole('region', { name: '确认本回合操作' });
   await expect(decision).toBeVisible();
   const decisionBox = await decision.boundingBox();
-  const navBox = await page.getByRole('navigation', { name: '主导航', exact: true }).boundingBox();
-  expect(decisionBox!.y + decisionBox!.height).toBeLessThanOrEqual(navBox!.y);
+  await expect(page.getByRole('navigation', { name: '主导航', exact: true })).toBeHidden();
+  expect(decisionBox!.y + decisionBox!.height).toBeLessThanOrEqual(844);
+  expect(decisionBox!.y + decisionBox!.height).toBeGreaterThan(744);
   await page.screenshot({ path: info.outputPath('mobile-decision-above-navigation.png') });
 });

@@ -1,5 +1,5 @@
 import { useGameOverlayInset } from './useGameOverlayInset.js';
-import { Suspense, useEffect, type MouseEvent } from 'react';
+import { Suspense, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { PageFeedback } from '@boardgame/ui';
 import { followPageLink, usePageNavigation } from './navigation.js';
 import { PageBoundary } from './PageBoundary.js';
@@ -30,16 +30,32 @@ function AppShell({ path }: { path: string }) {
   }
   const labEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_LAB === 'true';
   const route = resolvePage(path);
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const navigationToggle = useRef<HTMLButtonElement>(null);
+  useEffect(() => setNavigationOpen(false), [path]);
   const header = useGameOverlayInset(!!route.game);
   useEffect(() => {
     document.title = route.documentTitle ?? `${route.title} · 桌游平台`;
   }, [route.title, route.documentTitle]);
   return <div className={`desktop-shell ${route.game ? 'desktop-shell--game' : ''}`} onClick={followLink}>
     <a className="skip-link" href="#main-content">跳到主要内容</a>
-    <header className="site-header" ref={header}>
+    <header className={`site-header ${navigationOpen ? 'site-header--navigation-open' : ''}`} ref={header} onKeyDown={event => {
+      if (event.key === 'Escape' && navigationOpen && !event.defaultPrevented &&
+        !(event.target instanceof Element && event.target.closest('.nav-tools[open]'))) {
+        setNavigationOpen(false);
+        navigationToggle.current?.focus();
+      }
+    }}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
       <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">PlayBoard<span>顶尖桌游联盟</span></span></a>
-      <nav className="platform-navigation" aria-label="主导航">
+      {route.game && <button
+        className="secondary mobile-game-navigation-toggle"
+        ref={navigationToggle}
+        aria-expanded={navigationOpen}
+        aria-controls="platform-navigation"
+        onClick={() => setNavigationOpen(open => !open)}
+      >{navigationOpen ? '收起导航' : '导航'}</button>}
+      <nav id="platform-navigation" className="platform-navigation" aria-label="主导航">
         <span className="nav-caption">游戏空间</span>
         <a href="/" aria-label="游戏大厅" aria-current={path === '/' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg><span className="nav-desktop-label">游戏大厅</span><span className="nav-mobile-label">首页</span></a>
         <a href="/friends" aria-current={(path === '/friends' || path.startsWith('/friends/')) ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a6 6 0 0 1 3 5" /></svg>好友</a>

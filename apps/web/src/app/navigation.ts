@@ -50,7 +50,8 @@ export function usePageNavigation() {
       const startTransition = (document as Document & {
         startViewTransition?: (update: () => void) => PageTransition;
       }).startViewTransition;
-      if (startTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Mobile tabs switch immediately; fading a whole page on every tap looks like a flash.
+      if (startTransition && !matchMedia('(max-width: 760px), (prefers-reduced-motion: reduce)').matches) {
         transition = startTransition.call(document, update);
         void transition.finished.catch(() => undefined);
       } else {
