@@ -1,5 +1,9 @@
 # 数据模型
 
+## 官方 AI token 计价（033，0.11.0）
+
+新增 `official_ai_offers.token_pricing` 可空 JSON（输入/输出基础点价、加价百分比）；为空时保持旧固定点价，不回填历史价格。`official_ai_reservations` 和 `ai_point_ledger` 增加 `token_billing` 用量/价格快照。预留点数允许 0，以支持有效零费用提案；零费用成功行动标记 released，无零额账本。token 档位先预留单次上限/余额/剩余预算最小值，ready 在 task → wallet 锁下冻结实际费用、释放多余额度；动作与消费账本继续原子提交，charged 仍引用唯一账本行。详见 [ADR-008](adr/008-official-ai-token-pricing.md)。
+
 ## 桌游币（032，2026-10-16）
 
 独立 `boardgame_coin_wallets` 保存账户余额（0–1,000,000,000）和 revision；首次调整创建，无行读取为 0。`boardgame_coin_ledger` 保存每次非零调整及余额、原因、管理员审计 UUID/requestId/时间，账户 revision 与管理员 requestId 分别唯一。管理员写入复用 `admin_command_receipts`，余额、流水、版本及回执原子提交；读取同一 SQL 快照。与 AI 点数无共享余额、兑换或扣费。完整契约见 [桌游币](coins.md)。

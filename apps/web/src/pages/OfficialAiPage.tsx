@@ -8,6 +8,7 @@ import type {
 import { PageFeedback } from '@boardgame/ui';
 import { api } from '../platform.js';
 import '../styles/official-ai.css';
+import { OfficialAiPrice, tokenSellingRates } from './OfficialAiPrice.js';
 
 export function OfficialAiPage() {
   const [offers, setOffers] = useState<OfficialAiOffer[]>([]);
@@ -172,13 +173,13 @@ export function OfficialAiPage() {
                   >
                     <h3>{offer.name}</h3>
                     <p>
-                      <strong>{offer.pointsPerAction} 点</strong> / 成功行动
+                      <OfficialAiPrice offer={offer} />
                     </p>
                     <label>
                       每席位单局上限（点）
                       <input
                         type="number"
-                        min={offer.pointsPerAction}
+                        min={offer.tokenPricing ? 1 : offer.pointsPerAction}
                         max={1000000}
                         step="1"
                         required
@@ -216,6 +217,14 @@ export function OfficialAiPage() {
                       <small>
                         {new Date(item.createdAt).toLocaleString()} · 余额 {item.balanceAfter}
                       </small>
+                      {item.tokenBilling && (
+                        <small>
+                          输入 {item.tokenBilling.inputTokens} / 输出{' '}
+                          {item.tokenBilling.outputTokens} token ·{' '}
+                          {tokenSellingRates(item.tokenBilling.pricing)} · 合计取整{' '}
+                          {item.tokenBilling.chargedPoints} 点
+                        </small>
+                      )}
                       {item.matchId && (
                         <a href={`/matches/${item.matchId}`}>查看对局（需参与权限）</a>
                       )}

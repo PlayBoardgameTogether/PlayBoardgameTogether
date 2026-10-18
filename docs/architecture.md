@@ -1,5 +1,9 @@
 # 架构
 
+## 官方 AI token 计价（2026-10-18，0.11.0）
+
+`official-ai/pricing.ts` 使用 BigInt 按输入/输出用量与管理员加价合计结算，`OfficialAiService` 拥有原预留和 ready 价格快照；正式扣费仍由 matches 原事务调用。protocol 增加可选价格/账单字段以兼容历史固定档位。Web 在原后台/玩家入口使用共用 `OfficialAiPrice` 展示售价，房间/控制选择器区分 token 和固定档位。没有增加支付服务、平行动作链路或新的运行单元。详见 [官方 AI](official-ai.md)。
+
 ## 桌游币（2026-10-16）
 
 `apps/api/src/coins/service.ts` 拥有独立钱包与审计流水，管理员调整复用 AdminService 原有授权、请求去重和事务，不创建平行认证或管理员命令链。AccountRoutes 只按会话读取本人钱包；Web 的 CoinWallet 共用本人/后台展示和未知结果恢复。协议与存储见 [桌游币](coins.md)。

@@ -13,10 +13,13 @@ import {
   officialAiStatusSchema,
   officialAiEnrollSchema,
   aiPointGrantSchema,
+  officialAiTokenBillingSchema,
+  type OfficialAiTokenPricing,
 } from '@boardgame/protocol';
 import type { AuthContext } from '../auth.js';
 import type { Database } from '../db/index.js';
 import { AppError } from '../errors.js';
+import { tokenCharge } from './pricing.js';
 
 type Reservation = {
   task_id: string;
@@ -24,11 +27,13 @@ type Reservation = {
   points: number;
   status: string;
   attempt_id: string;
+  token_billing: unknown;
 };
 type RuntimeProfile = {
   offer_id: string;
   name: string;
   points_per_action: number;
+  token_pricing: OfficialAiTokenPricing | null;
   official_match_budget: number;
   source_profile_id: string;
   source_owner: string;
@@ -50,7 +55,7 @@ export class OfficialAiService {
           `SELECT p.id,p.name,p.endpoint_id,
       '' AS base_url,'official' AS model_id,p.parameters,(p.enabled AND o.enabled) AS enabled,
       o.enabled AS has_credential,1 AS profile_version,p.official_offer_id,p.official_match_budget,
-      o.points_per_action AS official_points_per_action FROM model_profiles p
+      o.points_per_action AS official_points_per_action,o.token_pricing AS official_token_pricing FROM model_profiles p
       JOIN official_ai_offers o ON o.id=p.official_offer_id
       WHERE p.owner_account_id=$1 AND p.deleted_at IS NULL ORDER BY p.created_at`,
           [accountId],
@@ -79,7 +84,7 @@ export class OfficialAiService {
       (
         await this.db.query(
           `SELECT id,name,
-      points_per_action AS "pointsPerAction",enabled,revision FROM official_ai_offers
+      points_per_action AS "pointsPerAction",token_pricing AS "tokenPricing",enabled,revision FROM official_ai_offers
       WHERE ($1 OR enabled) ORDER BY created_at,id`,
           [admin],
         )
@@ -106,7 +111,7 @@ export class OfficialAiService {
     const rows = (
       await this.db.query(
         `SELECT id,delta,balance_after AS "balanceAfter",kind,note,
-      match_id AS "matchId",created_at FROM ai_point_ledger WHERE account_id=$1 AND
+      match_id AS "matchId",token_billing AS "tokenBilling",created_at FROM ai_point_ledger WHERE account_id=$1 AND
       ($2::uuid IS NULL OR (created_at,id)<(SELECT created_at,id FROM ai_point_ledger WHERE id=$2 AND account_id=$1))
       ORDER BY created_at DESC,id DESC LIMIT 21`,
         [accountId, before ?? null],
@@ -220,13 +225,14 @@ export class OfficialAiService {
           throw new AppError('RATE_LIMITED', '官方模型目录已达上限', 429);
         const id = randomUUID();
         await client.query(
-          'INSERT INTO official_ai_offers(id,name,source_profile_id,points_per_action) VALUES($1,$2,$3,$4)',
-          [id, input.name, input.profileId, input.pointsPerAction],
+          'INSERT INTO official_ai_offers(id,name,source_profile_id,points_per_action,token_pricing) VALUES($1,$2,$3,$4,$5)',
+          [id, input.name, input.profileId, input.pointsPerAction, input.tokenPricing ?? null],
         );
         return {
           id,
           name: input.name,
           pointsPerAction: input.pointsPerAction,
+          tokenPricing: input.tokenPricing ?? null,
           enabled: true,
           revision: 1,
         };
@@ -241,7 +247,7 @@ export class OfficialAiService {
       await this.command(current, input, `status:${id}`, true, async (client) => {
         const offer = await client.query(
           `UPDATE official_ai_offers SET enabled=$3,revision=revision+1 WHERE id=$1 AND revision=$2
-        RETURNING id,name,points_per_action AS "pointsPerAction",enabled,revision`,
+        RETURNING id,name,points_per_action AS "pointsPerAction",token_pricing AS "tokenPricing",enabled,revision`,
           [id, input.expectedRevision, input.enabled],
         );
         if (!offer.rowCount) throw new AppError('STATE_CONFLICT', '官方模型已更改，请刷新', 409);
@@ -295,13 +301,17 @@ export class OfficialAiService {
     const result = officialAiEnrollmentSchema.parse(
       await this.command(current, input, 'enroll', false, async (client) => {
         const offer = (
-          await client.query<{ name: string; points_per_action: number }>(
-            'SELECT name,points_per_action FROM official_ai_offers WHERE id=$1 AND enabled FOR SHARE',
+          await client.query<{
+            name: string;
+            points_per_action: number;
+            token_pricing: OfficialAiTokenPricing | null;
+          }>(
+            'SELECT name,points_per_action,token_pricing FROM official_ai_offers WHERE id=$1 AND enabled FOR SHARE',
             [input.offerId],
           )
         ).rows[0];
         if (!offer) throw new AppError('FORBIDDEN', '官方模型当前不可用', 403);
-        if (input.matchBudget < offer.points_per_action)
+        if (!offer.token_pricing && input.matchBudget < offer.points_per_action)
           throw new AppError('VALIDATION_ERROR', '单局上限不能低于一次行动的点数', 400);
         const previous = (
           await client.query<{ id: string; official_match_budget: number }>(
@@ -365,7 +375,7 @@ export class OfficialAiService {
     return (
       (
         await this.db.query<RuntimeProfile>(
-          `SELECT o.id AS offer_id,o.name,o.points_per_action,p.official_match_budget,
+          `SELECT o.id AS offer_id,o.name,o.points_per_action,o.token_pricing,p.official_match_budget,
       s.id AS source_profile_id,s.owner_account_id AS source_owner,s.model_id,e.protocol,e.base_url
       FROM model_profiles p JOIN official_ai_offers o ON o.id=p.official_offer_id
       JOIN model_profiles s ON s.id=o.source_profile_id JOIN provider_endpoints e ON e.id=s.endpoint_id
@@ -439,9 +449,14 @@ export class OfficialAiService {
           [accountId, task.match_id, task.seat_id],
         )
       ).rows[0]!;
-      if (wallet.balance - totals.reserved < profile.points_per_action)
+      const available = wallet.balance - totals.reserved;
+      const remaining = profile.official_match_budget - totals.used;
+      const reservedPoints = profile.token_pricing
+        ? Math.min(profile.points_per_action, available, remaining)
+        : profile.points_per_action;
+      if (available < reservedPoints || available < 1)
         throw new AppError('AI_BLOCKED', 'AI 点数不足，请补充点数后重试或收回控制', 409);
-      if (totals.used + profile.points_per_action > profile.official_match_budget)
+      if (remaining < reservedPoints || remaining < 1)
         throw new AppError('AI_BLOCKED', '此席位已达到单局 AI 点数上限', 409);
       const group = await client.query(
         `INSERT INTO ai_decision_groups(match_id,seat_id,controller_epoch,decision_key,external_attempts)
@@ -467,7 +482,7 @@ export class OfficialAiService {
           profile.offer_id,
           task.match_id,
           task.seat_id,
-          profile.points_per_action,
+          reservedPoints,
         ],
       );
       await client.query('COMMIT');
@@ -506,11 +521,54 @@ export class OfficialAiService {
   }
 
   async ready(taskId: string) {
-    const result = await this.db.query(
-      `UPDATE official_ai_reservations SET status='ready' WHERE task_id=$1 AND status='reserved' RETURNING task_id`,
-      [taskId],
-    );
-    if (!result.rowCount) throw new AppError('AI_TASK_STALE', '本次 AI 额度预留已释放', 409);
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
+      // Match commit, release and recovery all acquire task before wallet.
+      await client.query('SELECT id FROM ai_tasks WHERE id=$1 FOR UPDATE', [taskId]);
+      const row = (
+        await client.query<
+          Reservation & {
+            offer_id: string;
+            token_pricing: OfficialAiTokenPricing | null;
+            input_tokens: number | null;
+            output_tokens: number | null;
+          }
+        >(
+          `SELECT r.*,o.token_pricing,a.input_tokens,a.output_tokens
+        FROM official_ai_reservations r JOIN official_ai_offers o ON o.id=r.offer_id
+        JOIN model_attempts a ON a.id=r.attempt_id WHERE r.task_id=$1`,
+          [taskId],
+        )
+      ).rows[0];
+      if (!row || row.status !== 'reserved')
+        throw new AppError('AI_TASK_STALE', '本次 AI 额度预留已释放', 409);
+      await client.query('SELECT account_id FROM ai_point_wallets WHERE account_id=$1 FOR UPDATE', [
+        row.account_id,
+      ]);
+      const charge = row.token_pricing
+        ? tokenCharge(row.token_pricing, row.input_tokens, row.output_tokens, row.points)
+        : row.points;
+      const billing = row.token_pricing
+        ? officialAiTokenBillingSchema.parse({
+            offerId: row.offer_id,
+            pricing: row.token_pricing,
+            inputTokens: row.input_tokens,
+            outputTokens: row.output_tokens,
+            chargedPoints: charge,
+          })
+        : null;
+      await client.query(
+        `UPDATE official_ai_reservations SET status='ready',points=$2,token_billing=$3 WHERE task_id=$1`,
+        [taskId, charge, billing],
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async release(taskId: string, failed = false, recoverOnly = false) {
@@ -587,6 +645,13 @@ export class OfficialAiService {
     ).rows[0];
     if (!row || row.status === 'released' || row.status === 'charged') return;
     if (row.status !== 'ready') throw new AppError('AI_BLOCKED', '官方 AI 尚未完成有效决策', 409);
+    if (row.points === 0) {
+      // Zero usage (or usage only on a free token direction) creates no debit ledger entry.
+      await client.query("UPDATE official_ai_reservations SET status='released' WHERE task_id=$1", [
+        taskId,
+      ]);
+      return;
+    }
     const wallet = (
       await client.query<{ balance: number }>(
         `UPDATE ai_point_wallets SET balance=balance-$2
@@ -597,8 +662,9 @@ export class OfficialAiService {
     if (!wallet) throw new AppError('AI_BLOCKED', 'AI 点数余额不足', 409);
     const id = randomUUID();
     await client.query(
-      `INSERT INTO ai_point_ledger(id,account_id,delta,balance_after,kind,note,match_id)
-      SELECT $2,account_id,-points,$3,'action','官方 AI 成功行动',match_id FROM official_ai_reservations WHERE task_id=$1`,
+      `INSERT INTO ai_point_ledger(id,account_id,delta,balance_after,kind,note,match_id,token_billing)
+      SELECT $2,account_id,-points,$3,'action',CASE WHEN token_billing IS NULL THEN '官方 AI 成功行动'
+        ELSE '官方 AI token 用量' END,match_id,token_billing FROM official_ai_reservations WHERE task_id=$1`,
       [taskId, id, wallet.balance],
     );
     await client.query(

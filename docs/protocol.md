@@ -1,5 +1,9 @@
 # 协议
 
+## 官方 AI token 计价（0.11.0）
+
+发布官方 AI 的原请求新增可选 `tokenPricing: { inputPointsPerMillion, outputPointsPerMillion, markupPercent }`；输入/输出基础点价为 0–10 亿整数点/百万 token，不能同时为零，加价为 0–1000 整数百分比。目录返回可选同名字段；存在时 `pointsPerAction` 表示单次预留上限，无该字段仍为原固定行动点价。官方 profile 新增可选 `official_token_pricing`，本人账本可选 `tokenBilling` 包含档位 ID、价格/加价快照、输入/输出 token 与实际扣点。旧请求、响应与持久回执继续兼容；身份、CSRF、去重、预算及正式动作契约不变。调价发布新档位，详见 [官方 AI](official-ai.md)。
+
 ## 桌游币（2026-10-16）
 
 `GET /api/v1/profile/coins` 按 session 读取本人钱包；管理员通过 `GET/POST /api/v1/admin/accounts/:id/coins` 读取和调整。读取只接受可选正整数 `before`；写入严格 `{requestId,expectedRevision,delta,reason}`，不透支，不与 AI 点数兑换。共享 schema、字段、分页、权限及重试语义见 [桌游币](coins.md)。

@@ -5,6 +5,7 @@ import { ApiError } from '@boardgame/client-sdk';
 import { api } from '../../platform.js';
 import { AdminLayout, adminError, useAdminRequestId } from './AdminLayout.js';
 import '../../styles/official-ai.css';
+import { OfficialAiPrice, tokenSellingRates } from '../OfficialAiPrice.js';
 
 export function AdminOfficialAiPage() {
   return (
@@ -26,7 +27,15 @@ function OfficialAiAdmin() {
   const [stats, setStats] = useState<Awaited<ReturnType<typeof api.officialAiStats>>>();
   const [profileId, setProfileId] = useState('');
   const [name, setName] = useState('');
-  const [price, setPrice] = useState(1);
+  const [price, setPrice] = useState(100);
+  const [inputRate, setInputRate] = useState(0);
+  const [outputRate, setOutputRate] = useState(0);
+  const [markup, setMarkup] = useState(0);
+  const tokenPricing = {
+    inputPointsPerMillion: inputRate,
+    outputPointsPerMillion: outputRate,
+    markupPercent: markup,
+  };
   const [search, setSearch] = useState('');
   const [accountId, setAccountId] = useState('');
   const [amount, setAmount] = useState(100);
@@ -131,7 +140,8 @@ function OfficialAiAdmin() {
             {stats.missingUsageCalls} 次
           </p>
           <p className="muted">
-            点数售价按成功行动计算。供应商账单需另行核对；用量缺失不代表调用免费。
+            新档位按实际 token
+            用量结算成功行动。基础点价由管理员换算填写，供应商货币账单需另行核对。
           </p>
         </section>
       )}
@@ -139,7 +149,7 @@ function OfficialAiAdmin() {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            const input = { name, profileId, pointsPerAction: price };
+            const input = { name, profileId, pointsPerAction: price, tokenPricing };
             void run(
               () =>
                 api.publishOfficialAi({
@@ -179,7 +189,47 @@ function OfficialAiAdmin() {
             />
           </label>
           <label>
-            每次成功行动扣点
+            输入基础点价（点 / 百万 token）
+            <input
+              type="number"
+              required
+              min={0}
+              max={1000000000}
+              step="1"
+              value={inputRate}
+              onChange={(event) => setInputRate(event.target.valueAsNumber)}
+            />
+          </label>
+          <label>
+            输出基础点价（点 / 百万 token）
+            <input
+              type="number"
+              required
+              min={0}
+              max={1000000000}
+              step="1"
+              value={outputRate}
+              onChange={(event) => setOutputRate(event.target.valueAsNumber)}
+            />
+          </label>
+          <label>
+            加价比例（%）
+            <input
+              type="number"
+              required
+              min={0}
+              max={1000}
+              step="1"
+              value={markup}
+              onChange={(event) => setMarkup(event.target.valueAsNumber)}
+            />
+          </label>
+          <p className="muted" aria-live="polite">
+            售价预览：{tokenSellingRates(tokenPricing)}（加价 {markup}%）。
+            输入与输出基础点价至少一项大于 0；不自动获取供应商价格或汇率。
+          </p>
+          <label>
+            单次预留上限（点）
             <input
               type="number"
               required
@@ -191,9 +241,12 @@ function OfficialAiAdmin() {
             />
           </label>
           <p className="muted">
-            发布后锁定来源配置的模型和地址，密钥可轮换或撤销。玩家看不到平台密钥。
+            按售价与实际用量合计向上取整。缺少用量或费用超过预留时免费兜底。
+            发布后锁定点价、加价比例、模型和地址；调价需发布新档位。密钥可轮换或撤销。
           </p>
-          <button disabled={busy || !profileId}>发布官方 AI</button>
+          <button disabled={busy || !profileId || !(inputRate + outputRate > 0)}>
+            发布官方 AI
+          </button>
         </form>
         <form
           onSubmit={(event) => {
@@ -290,9 +343,16 @@ function OfficialAiAdmin() {
             <li key={offer.id}>
               <div>
                 <strong>{offer.name}</strong>
-                <small>
-                  {offer.pointsPerAction} 点 / 成功行动 · {offer.enabled ? '开放中' : '已停用'}
-                </small>
+                <div>
+                  <OfficialAiPrice offer={offer} /> · {offer.enabled ? '开放中' : '已停用'}
+                </div>
+                {offer.tokenPricing && (
+                  <small>
+                    基础点价：输入 {offer.tokenPricing.inputPointsPerMillion} / 输出{' '}
+                    {offer.tokenPricing.outputPointsPerMillion} 点 / 百万 token · 加价{' '}
+                    {offer.tokenPricing.markupPercent}%
+                  </small>
+                )}
               </div>
               <button
                 className="secondary"

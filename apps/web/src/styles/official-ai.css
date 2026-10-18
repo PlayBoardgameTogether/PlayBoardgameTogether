@@ -80,6 +80,10 @@
   .ai-ledger small {
     color: var(--muted);
   }
+  .ai-ledger button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
   .ai-ledger li > span {
     white-space: nowrap;
     font-weight: 700;

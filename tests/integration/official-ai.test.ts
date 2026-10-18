@@ -150,6 +150,41 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       [taskId, action],
     );
   }
+  async function tokenOffer(cap = 6, budget = 10) {
+    const input = {
+      requestId: randomUUID(),
+      name: 'Token 陪玩',
+      profileId: sourceId,
+      pointsPerAction: cap,
+      tokenPricing: {
+        inputPointsPerMillion: 1000,
+        outputPointsPerMillion: 2000,
+        markupPercent: 25,
+      },
+    };
+    expect((await write(alice, 'POST', '/admin/official-ai/offers', input)).statusCode).toBe(403);
+    const offer = await write(admin, 'POST', '/admin/official-ai/offers', input);
+    expect(offer.statusCode, offer.body).toBe(200);
+    expect((await write(admin, 'POST', '/admin/official-ai/offers', input)).json().data).toEqual(
+      offer.json().data,
+    );
+    expect(
+      (
+        await write(admin, 'POST', '/admin/official-ai/offers', {
+          ...input,
+          tokenPricing: { ...input.tokenPricing, markupPercent: 30 },
+        })
+      ).statusCode,
+    ).toBe(409);
+    offerId = offer.json().data.id;
+    const enrollment = await write(alice, 'POST', '/me/official-ai/enroll', {
+      requestId: randomUUID(),
+      offerId,
+      matchBudget: budget,
+    });
+    expect(enrollment.statusCode, enrollment.body).toBe(200);
+    profileId = enrollment.json().data.profileId;
+  }
   beforeAll(async () => {
     db = createDatabase(url!);
     service = new OfficialAiService(db, true);
@@ -276,76 +311,201 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     ).toBe(404);
   });
 
-  it('rolls back the action, RNG, receipt and point debit together if ledger persistence fails', async () => {
+  it.each(['fixed', 'token'])(
+    'rolls back the %s action, RNG, receipt and point debit together if ledger persistence fails',
+    async (mode) => {
+      if (mode === 'token') await tokenOffer();
+      await grant(20);
+      const match = await activeMatch();
+      const profile = await claim(match.taskId);
+      await service.reserve(match.taskId, 'official-test', 1, profile, alice.id, match.decisionKey);
+      if (mode === 'token')
+        await service.recordResponse(match.taskId, { inputTokens: 1000, outputTokens: 1000 }, 10);
+      await propose(match.taskId);
+      const before = (
+        await db.query('SELECT state,rng_state,revision FROM matches WHERE id=$1', [match.matchId])
+      ).rows[0];
+      await db.query(`CREATE FUNCTION official_ai_test_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+      IF NEW.kind='action' THEN RAISE EXCEPTION 'injected official AI ledger failure'; END IF; RETURN NEW; END $$`);
+      await db.query(
+        'CREATE TRIGGER official_ai_test_fail BEFORE INSERT ON ai_point_ledger FOR EACH ROW EXECUTE FUNCTION official_ai_test_fail()',
+      );
+      const matches = new MatchService(db, registry);
+      try {
+        await expect(matches.actAutomation(match.taskId, 'official-test', 1)).rejects.toThrow(
+          'injected',
+        );
+      } finally {
+        await db.query('DROP TRIGGER official_ai_test_fail ON ai_point_ledger');
+        await db.query('DROP FUNCTION official_ai_test_fail()');
+      }
+      expect(
+        (
+          await db.query('SELECT state,rng_state,revision FROM matches WHERE id=$1', [
+            match.matchId,
+          ])
+        ).rows[0],
+      ).toEqual(before);
+      expect(await service.wallet(alice.id)).toEqual({
+        balance: 20,
+        reserved: mode === 'token' ? 4 : 2,
+        available: mode === 'token' ? 16 : 18,
+      });
+      expect(
+        (
+          await db.query(
+            "SELECT 1 FROM command_receipts WHERE principal_key LIKE 'automation:%' AND operation=$1",
+            [`match.action:${match.matchId}`],
+          )
+        ).rowCount,
+      ).toBe(0);
+      await matches.actAutomation(match.taskId, 'official-test', 1);
+      expect((await service.wallet(alice.id)).balance).toBe(mode === 'token' ? 16 : 18);
+    },
+  );
+
+  it('settles actual token usage at the locked markup, releases excess and never charges recovery twice', async () => {
+    await tokenOffer();
     await grant(20);
     const match = await activeMatch();
     const profile = await claim(match.taskId);
     await service.reserve(match.taskId, 'official-test', 1, profile, alice.id, match.decisionKey);
+    expect(await service.wallet(alice.id)).toEqual({ balance: 20, reserved: 6, available: 14 });
+    await service.recordResponse(match.taskId, { inputTokens: 1000, outputTokens: 1000 }, 10);
     await propose(match.taskId);
-    const before = (
-      await db.query('SELECT state,rng_state,revision FROM matches WHERE id=$1', [match.matchId])
-    ).rows[0];
-    await db.query(`CREATE FUNCTION official_ai_test_fail() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-      IF NEW.kind='action' THEN RAISE EXCEPTION 'injected official AI ledger failure'; END IF; RETURN NEW; END $$`);
-    await db.query(
-      'CREATE TRIGGER official_ai_test_fail BEFORE INSERT ON ai_point_ledger FOR EACH ROW EXECUTE FUNCTION official_ai_test_fail()',
-    );
+    expect(await service.wallet(alice.id)).toEqual({ balance: 20, reserved: 4, available: 16 });
+    // A late report can update provider accounting but cannot reprice the frozen proposal.
+    await service.recordResponse(match.taskId, { inputTokens: 100000, outputTokens: 100000 }, 11);
+    // Publish a different price and disable the old offer while its frozen proposal is in flight.
+    const originalOffer = (await service.offers(true)).find((item) => item.id === offerId)!;
+    await write(admin, 'POST', '/admin/official-ai/offers', {
+      requestId: randomUUID(),
+      name: '新点价',
+      profileId: sourceId,
+      pointsPerAction: 6,
+      tokenPricing: { ...originalOffer.tokenPricing, markupPercent: 100 },
+    });
+    await write(admin, 'PUT', `/admin/official-ai/offers/${offerId}`, {
+      requestId: randomUUID(),
+      expectedRevision: originalOffer.revision,
+      enabled: false,
+    });
     const matches = new MatchService(db, registry);
-    try {
-      await expect(matches.actAutomation(match.taskId, 'official-test', 1)).rejects.toThrow(
-        'injected',
-      );
-    } finally {
-      await db.query('DROP TRIGGER official_ai_test_fail ON ai_point_ledger');
-      await db.query('DROP FUNCTION official_ai_test_fail()');
-    }
-    expect(
-      (await db.query('SELECT state,rng_state,revision FROM matches WHERE id=$1', [match.matchId]))
-        .rows[0],
-    ).toEqual(before);
-    expect(await service.wallet(alice.id)).toEqual({ balance: 20, reserved: 2, available: 18 });
-    expect(
-      (
-        await db.query(
-          "SELECT 1 FROM command_receipts WHERE principal_key LIKE 'automation:%' AND operation=$1",
-          [`match.action:${match.matchId}`],
-        )
-      ).rowCount,
-    ).toBe(0);
+    expect(await matches.actAutomation(match.taskId, 'official-test', 1)).toMatchObject({
+      revision: 2,
+    });
+    await db.query("UPDATE ai_tasks SET status='proposed' WHERE id=$1", [match.taskId]);
     await matches.actAutomation(match.taskId, 'official-test', 1);
-    expect((await service.wallet(alice.id)).balance).toBe(18);
+    expect(await service.wallet(alice.id)).toEqual({ balance: 16, reserved: 0, available: 16 });
+    const ledger = (await service.ledger(alice.id)).items.filter((item) => item.kind === 'action');
+    expect(ledger).toHaveLength(1);
+    expect(ledger[0]).toMatchObject({
+      delta: -4,
+      tokenBilling: {
+        offerId,
+        inputTokens: 1000,
+        outputTokens: 1000,
+        chargedPoints: 4,
+        pricing: { inputPointsPerMillion: 1000, outputPointsPerMillion: 2000, markupPercent: 25 },
+      },
+    });
   });
 
-  it('serializes concurrent reservations across matches and releases unknown calls after lease expiry', async () => {
-    await grant(2);
-    const first = await activeMatch();
-    // Close the first room while retaining its task record, then restore it only as a test interleaving fixture.
-    await write(alice, 'POST', `/rooms/${first.roomId}/close`, {
-      requestId: randomUUID(),
-      expectedRoomRevision: (await get(alice, `/rooms/${first.roomId}`)).roomRevision,
-    });
-    const second = await activeMatch();
-    await db.query("UPDATE matches SET status='active' WHERE id=$1", [first.matchId]);
-    const p1 = await claim(first.taskId);
-    const p2 = await claim(second.taskId);
-    const result = await Promise.allSettled([
-      service.reserve(first.taskId, 'official-test', 1, p1, alice.id, first.decisionKey),
-      service.reserve(second.taskId, 'official-test', 1, p2, alice.id, second.decisionKey),
-    ]);
-    expect(result.filter((item) => item.status === 'fulfilled')).toHaveLength(1);
-    expect(await service.wallet(alice.id)).toEqual({ balance: 2, reserved: 2, available: 0 });
-    await db.query(
-      "UPDATE ai_tasks SET lease_until=now()-interval '1 second' WHERE id=ANY($1::uuid[])",
-      [[first.taskId, second.taskId]],
-    );
-    await service.recover();
-    expect(await service.wallet(alice.id)).toEqual({ balance: 2, reserved: 0, available: 2 });
-    expect((await service.stats()).unknownCalls).toBe(1);
-    const reserved = (
-      await db.query<{ task_id: string }>('SELECT task_id FROM official_ai_reservations')
-    ).rows[0]!;
-    await expect(service.ready(reserved.task_id)).rejects.toThrow();
+  it('respects a remaining budget below the call cap and permits zero-cost usage without a debit', async () => {
+    await tokenOffer(6, 1);
+    await grant(1);
+    const match = await activeMatch();
+    const profile = await claim(match.taskId);
+    await service.reserve(match.taskId, 'official-test', 1, profile, alice.id, match.decisionKey);
+    expect((await service.wallet(alice.id)).reserved).toBe(1);
+    await service.recordResponse(match.taskId, { inputTokens: 0, outputTokens: 0 }, 10);
+    await propose(match.taskId);
+    expect(
+      await new MatchService(db, registry).actAutomation(match.taskId, 'official-test', 1),
+    ).toMatchObject({ revision: 2 });
+    expect(await service.wallet(alice.id)).toEqual({ balance: 1, reserved: 0, available: 1 });
+    expect(
+      (await service.ledger(alice.id)).items.filter((item) => item.kind === 'action'),
+    ).toHaveLength(0);
   });
+
+  it.each(['missing', 'partial', 'over-cap'] as const)(
+    'uses a free fallback for %s token billing without a second provider call',
+    async (mode) => {
+      await tokenOffer();
+      await grant(20);
+      const match = await activeMatch();
+      const reply = vi
+        .spyOn(MockModelAdapter.prototype, 'decide')
+        .mockImplementation(async (input) => ({
+          raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]!.id }),
+          inputTokens: mode === 'missing' ? null : mode === 'over-cap' ? 100000 : 1000,
+          outputTokens: mode === 'over-cap' ? 1000 : null,
+        }));
+      const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
+        ...config,
+        AI_GLOBAL_CONCURRENCY: 1,
+        AI_SCAN_INTERVAL_MS: 100,
+      });
+      scheduler.start();
+      try {
+        await expect
+          .poll(
+            async () =>
+              (await db.query('SELECT status FROM ai_tasks WHERE id=$1', [match.taskId])).rows[0]
+                ?.status,
+            { timeout: 5000 },
+          )
+          .toBe('succeeded');
+        expect(
+          reply.mock.calls.filter(([input]) => input.decisionId === match.taskId),
+        ).toHaveLength(1);
+        expect(await service.wallet(alice.id)).toEqual({ balance: 20, reserved: 0, available: 20 });
+        expect(
+          (await service.ledger(alice.id)).items.filter((item) => item.kind === 'action'),
+        ).toHaveLength(0);
+      } finally {
+        await scheduler.close();
+        reply.mockRestore();
+      }
+    },
+    15000,
+  );
+
+  it.each(['fixed', 'token'])(
+    'serializes %s reservations across matches and releases unknown calls after lease expiry',
+    async (mode) => {
+      if (mode === 'token') await tokenOffer();
+      await grant(2);
+      const first = await activeMatch();
+      // Close the first room while retaining its task record, then restore it only as a test interleaving fixture.
+      await write(alice, 'POST', `/rooms/${first.roomId}/close`, {
+        requestId: randomUUID(),
+        expectedRoomRevision: (await get(alice, `/rooms/${first.roomId}`)).roomRevision,
+      });
+      const second = await activeMatch();
+      await db.query("UPDATE matches SET status='active' WHERE id=$1", [first.matchId]);
+      const p1 = await claim(first.taskId);
+      const p2 = await claim(second.taskId);
+      const result = await Promise.allSettled([
+        service.reserve(first.taskId, 'official-test', 1, p1, alice.id, first.decisionKey),
+        service.reserve(second.taskId, 'official-test', 1, p2, alice.id, second.decisionKey),
+      ]);
+      expect(result.filter((item) => item.status === 'fulfilled')).toHaveLength(1);
+      expect(await service.wallet(alice.id)).toEqual({ balance: 2, reserved: 2, available: 0 });
+      await db.query(
+        "UPDATE ai_tasks SET lease_until=now()-interval '1 second' WHERE id=ANY($1::uuid[])",
+        [[first.taskId, second.taskId]],
+      );
+      await service.recover();
+      expect(await service.wallet(alice.id)).toEqual({ balance: 2, reserved: 0, available: 2 });
+      expect((await service.stats()).unknownCalls).toBe(1);
+      const reserved = (
+        await db.query<{ task_id: string }>('SELECT task_id FROM official_ai_reservations')
+      ).rows[0]!;
+      await expect(service.ready(reserved.task_id)).rejects.toThrow();
+    },
+  );
 
   it('does not charge failed or stale decisions and preserves a ready proposal during restart recovery', async () => {
     await grant(20);

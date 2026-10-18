@@ -195,9 +195,15 @@ export function MatchPage({ id }: { id: string }) {
                         onClick={() => void setController('model', profile.id)}
                       >
                         启用模型 · {profile.name}
-                        {profile.official_offer_id
-                          ? `（${profile.official_points_per_action} 点/行动，上限 ${profile.official_match_budget} 点/局）`
-                          : ''}
+                        {profile.official_offer_id && (
+                          <>
+                            （
+                            {profile.official_token_pricing
+                              ? `按 token 计费，单次最多 ${profile.official_points_per_action} 点`
+                              : `${profile.official_points_per_action} 点/行动`}
+                            ，上限 {profile.official_match_budget} 点/局）
+                          </>
+                        )}
                       </button>
                     ))}
                 </>

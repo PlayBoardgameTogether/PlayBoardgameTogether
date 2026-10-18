@@ -35,3 +35,4 @@
 - automation receipt 使用无账户 principal，不借用房主账户。成功动作、回执和任务完成尽量在统一动作事务中原子落库。
 
 - [ADR-007](adr/007-official-ai-points.md)：官方 AI 复用 model 控制器，钱包预留并在原动作事务按成功行动结算点数；来源/点价固定、每席位上限、失败不收费，不接支付。
+- [ADR-008](adr/008-official-ai-token-pricing.md)：在官方 AI 原链路加入输入/输出 token 基础点价与管理员加价比例，锁定档位并按实际用量取整结算；保留旧固定档位、预算、事务及失败免费约束。

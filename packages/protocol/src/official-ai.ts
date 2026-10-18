@@ -1,10 +1,28 @@
 import { z } from 'zod';
 
 const points = z.number().int().min(1).max(1000000);
+export const officialAiTokenPricingSchema = z
+  .object({
+    inputPointsPerMillion: z.number().int().min(0).max(1000000000),
+    outputPointsPerMillion: z.number().int().min(0).max(1000000000),
+    markupPercent: z.number().int().min(0).max(1000),
+  })
+  .strict()
+  .refine((value) => value.inputPointsPerMillion + value.outputPointsPerMillion > 0, {
+    message: '输入和输出基础点价不能同时为零',
+  });
+export const officialAiTokenBillingSchema = z.object({
+  offerId: z.string().uuid(),
+  pricing: officialAiTokenPricingSchema,
+  inputTokens: z.number().int().min(0).max(2147483647),
+  outputTokens: z.number().int().min(0).max(2147483647),
+  chargedPoints: z.number().int().min(0).max(10000),
+});
 export const officialAiOfferSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   pointsPerAction: z.number().int().positive(),
+  tokenPricing: officialAiTokenPricingSchema.nullable().optional(),
   enabled: z.boolean(),
   revision: z.number().int().positive(),
 });
@@ -15,6 +33,7 @@ export const officialAiPublishSchema = z
     name: z.string().trim().min(1).max(60),
     profileId: z.string().uuid(),
     pointsPerAction: z.number().int().min(1).max(10000),
+    tokenPricing: officialAiTokenPricingSchema.optional(),
   })
   .strict();
 export const officialAiStatusSchema = z
@@ -60,6 +79,7 @@ export const aiPointLedgerSchema = z.object({
       note: z.string(),
       matchId: z.string().uuid().nullable(),
       createdAt: z.string().datetime(),
+      tokenBilling: officialAiTokenBillingSchema.nullable().optional(),
     }),
   ),
   nextCursor: z.string().uuid().nullable(),
@@ -76,6 +96,7 @@ export const officialAiStatsSchema = z.object({
   missingUsageCalls: z.number().int().nonnegative(),
 });
 export type OfficialAiOffer = z.infer<typeof officialAiOfferSchema>;
+export type OfficialAiTokenPricing = z.infer<typeof officialAiTokenPricingSchema>;
 export type OfficialAiEnrollment = z.infer<typeof officialAiEnrollmentSchema>;
 export type AiPointWallet = z.infer<typeof aiPointWalletSchema>;
 export type AiPointLedger = z.infer<typeof aiPointLedgerSchema>;
