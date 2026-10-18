@@ -1,6 +1,7 @@
 import { routeContext } from './context.js';
 import { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
 import { matchReplayQuerySchema, matchReplaySchema } from '@boardgame/protocol';
 import { AppError } from '../errors.js';
 import { AuthService } from '../auth.js';
@@ -31,7 +32,7 @@ export function registerMatchRoutes(
       matchReplaySchema.parse(await matches.replay(account!.account.id, id, query.revision)),
     );
   });
-  app.get('/api/v1/matches/:id/view', async (request) => {
+  app.get('/api/v1/matches/:id/view', async (request, reply) => {
     const a = await requireAuth(request);
     const snapshot = await matches.view(
       a!.account.id,
@@ -42,6 +43,13 @@ export function registerMatchRoutes(
       ).id,
     );
     if (snapshot.status === 'active') await rooms.recordActivity(snapshot.roomId, a!.account.id);
+    // Validate the current authorized view, including controllers, AI status and
+    // names. Revision alone does not cover changes to those fields.
+    const validator = `W/"${createHash('sha256')
+      .update(JSON.stringify({ accountId: a!.account.id, snapshot }))
+      .digest('hex')}"`;
+    reply.header('etag', validator);
+    if (request.headers['if-none-match'] === validator) return reply.code(304).send();
     return ok(request, snapshot);
   });
   app.get('/api/v1/matches/:id/commands/:requestId', async (request) => {

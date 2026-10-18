@@ -1,8 +1,10 @@
-// Shared by room and match transport; never cache a completed authority read.
-export function singleFlight<T>(operation: () => Promise<T>): () => Promise<T> {
+// Shared by room and match transport; share only an in-flight authority read.
+export function singleFlight<T, Args extends unknown[]>(
+  operation: (...args: Args) => Promise<T>,
+): (...args: Args) => Promise<T> {
   let pending: Promise<T> | undefined;
-  return () => {
-    pending ??= operation().finally(() => {
+  return (...args) => {
+    pending ??= operation(...args).finally(() => {
       pending = undefined;
     });
     return pending;

@@ -533,7 +533,11 @@ export class ApiClient {
   readonly assets = new AssetClient((path, init) => this.request<unknown>(path, init));
   private csrfToken: string | null = null;
   constructor(private base = '/api/v1') {}
-  private async request<T>(path: string, init?: RequestInit): Promise<T> {
+  private async request<T>(
+    path: string,
+    init?: RequestInit,
+    observeResponse?: (response: Response) => void,
+  ): Promise<T> {
     const headers = new Headers(init?.headers);
     if (init?.body !== undefined && !headers.has('content-type'))
       headers.set('content-type', 'application/json');
@@ -557,6 +561,9 @@ export class ApiClient {
         headers,
         signal: controller.signal,
       });
+      observeResponse?.(response);
+      if (response.status === 304 && observeResponse && headers.has('if-none-match'))
+        return undefined as T;
       if (response.status === 204) return undefined as T;
       const body = apiEnvelopeSchema.parse(await response.json());
       if (!body.ok)
@@ -734,6 +741,30 @@ export class ApiClient {
           : AbortSignal.timeout(10000),
       }),
     );
+  }
+  async matchSnapshotIfChanged(id: string, validator?: string, signal?: AbortSignal) {
+    let nextValidator: string | undefined;
+    let notModified = false;
+    const raw = await this.request<unknown>(
+      `/matches/${encodeURIComponent(id)}/view`,
+      {
+        headers: validator ? { 'if-none-match': validator } : {},
+        cache: 'no-store',
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(10000)])
+          : AbortSignal.timeout(10000),
+      },
+      (response) => {
+        notModified = response.status === 304;
+        nextValidator = response.headers.get('etag') ?? undefined;
+      },
+    );
+    if (notModified && validator) return { changed: false as const, validator };
+    return {
+      changed: true as const,
+      validator: nextValidator,
+      snapshot: matchViewSchema.parse(raw),
+    };
   }
   async matchCommandReceipt(id: string, requestId: string) {
     return matchCommandReceiptSchema.parse(

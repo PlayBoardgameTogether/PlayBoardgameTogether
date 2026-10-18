@@ -4,6 +4,7 @@ import type { SocialMessage, SocialPerson } from '@boardgame/protocol';
 import { api, navigate } from '../platform.js';
 import { ChatText, ExpressionPicker } from './ChatExpressions.js';
 import { PersonAvatar } from './PersonAvatar.js';
+import { startAdaptivePolling, type AdaptivePolling } from '../network/polling.js';
 
 type ChatMessage = SocialMessage & { sender?: SocialPerson };
 
@@ -46,6 +47,7 @@ export function DirectChat({
   const loadedOlder = useRef(false);
   const sequence = useRef(0);
   const request = useRef<AbortController | undefined>(undefined);
+  const polling = useRef<AdaptivePolling | undefined>(undefined);
   const lastRead = useRef('');
   const latest = useRef<SocialMessage | undefined>(undefined);
   const readLock = useRef(false);
@@ -118,7 +120,8 @@ export function DirectChat({
     });
   }
   async function load(before?: string) {
-    if (request.current || !visibleNow.current) return;
+    if (!visibleNow.current) return;
+    if (request.current) return false;
     const version = sequence.current;
     const controller = new AbortController();
     request.current = controller;
@@ -132,6 +135,9 @@ export function DirectChat({
         ? await api.publicMessages(before, controller.signal, after)
         : await api.directMessages(peerId, before, controller.signal, after);
       if (!mounted.current || sequence.current !== version) return;
+      let changed = page.items.some(
+        (item) => !latest.current || BigInt(item.sequence) > BigInt(latest.current.sequence),
+      );
       if (before && historyList.current) {
         const list = historyList.current;
         const top = list.getBoundingClientRect().top;
@@ -156,10 +162,14 @@ export function DirectChat({
           ? await api.publicMessages(undefined, controller.signal, nextAfter)
           : await api.directMessages(peerId, undefined, controller.signal, nextAfter);
         if (!mounted.current || sequence.current !== version) return;
+        changed ||= catchup.items.some(
+          (item) => !latest.current || BigInt(item.sequence) > BigInt(latest.current.sequence),
+        );
         merge(catchup.items);
         nextAfter = catchup.nextCursor;
       }
       setLoadError('');
+      return changed;
     } catch (cause) {
       if (!mounted.current || controller.signal.aborted) return;
       if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') navigate('/login');
@@ -168,6 +178,7 @@ export function DirectChat({
         void refresh();
       }
       setLoadError(cause instanceof ApiError ? cause.message : '聊天同步失败，请检查网络或重试。');
+      return true;
     } finally {
       if (request.current === controller) request.current = undefined;
       if (mounted.current) {
@@ -178,22 +189,19 @@ export function DirectChat({
   }
   useEffect(() => {
     mounted.current = true;
-    const sync = () => {
-      if (visible && document.visibilityState === 'visible') void load();
-    };
-    sync();
-    const timer = window.setInterval(sync, 5000);
-    window.addEventListener('online', sync);
-    document.addEventListener('visibilitychange', sync);
+    const scheduler = startAdaptivePolling(() => load(), {
+      maximum: 10000,
+      visible: () => visibleNow.current,
+    });
+    polling.current = scheduler;
     return () => {
       mounted.current = false;
       sequence.current++;
       request.current?.abort();
       request.current = undefined;
-      clearInterval(timer);
+      scheduler.stop();
+      if (polling.current === scheduler) polling.current = undefined;
       if (focusFrame.current !== undefined) cancelAnimationFrame(focusFrame.current);
-      window.removeEventListener('online', sync);
-      document.removeEventListener('visibilitychange', sync);
     };
   }, [peerId, publicChat, visible]);
   useEffect(() => {
@@ -241,7 +249,7 @@ export function DirectChat({
         setHasNew(false);
         focusAfterSend.current = true;
         merge([message], false);
-        void load();
+        void polling.current?.refresh();
       }
     } catch (cause) {
       if (cause instanceof ApiError && !cause.retryable) pending.current = undefined;

@@ -231,3 +231,68 @@ test('a match finishing between HTTP initialization and room subscription is rec
   await expect(page).toHaveURL(`/rooms/${roomId}`, { timeout: 5000 });
   expect(reads).toBeGreaterThanOrEqual(2);
 });
+
+test('routine match polls use validators while focus recovery and revoked sessions remain authoritative', async ({
+  page,
+}) => {
+  await mockSession(page);
+  await page.clock.install();
+  let current = snapshot;
+  let tag = 'W/"initial"';
+  let revoked = false;
+  const requests: Array<string | undefined> = [];
+  let confirmations = 0;
+  await page.route(`**/api/v1/matches/${id}/view`, async (route) => {
+    const validator = route.request().headers()['if-none-match'];
+    requests.push(validator);
+    if (revoked)
+      return route.fulfill({
+        status: 401,
+        json: {
+          ok: false,
+          error: { code: 'UNAUTHENTICATED', message: 'revoked', retryable: false },
+          traceId: 'test',
+        },
+      });
+    if (validator === tag) {
+      confirmations++;
+      return route.fulfill({ status: 304, headers: { etag: tag } });
+    }
+    return route.fulfill({ json: envelope(current), headers: { etag: tag } });
+  });
+  await page.routeWebSocket('**/api/v1/ws/session', (socket) => {
+    socket.onMessage((message) => {
+      if (JSON.parse(String(message)).type !== 'room.subscribe') return;
+      socket.send(JSON.stringify({ type: 'room.snapshot', roomId, snapshot: room }));
+      socket.send(
+        JSON.stringify({
+          protocolVersion: 1,
+          type: 'match.snapshot',
+          matchId: id,
+          revision: 1,
+          snapshot,
+        }),
+      );
+    });
+  });
+  await page.goto(`/matches/${id}`);
+  await expect(page.getByText('实时同步', { exact: true })).toBeVisible();
+  await expect(page.getByText('你的私密提示：')).toContainText('7');
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  await page.clock.runFor(15000);
+  await expect.poll(() => confirmations).toBeGreaterThan(0);
+  expect(requests.at(-1)).toBe(tag);
+  await expect(page.getByText('你的私密提示：')).toContainText('7');
+  current = { ...snapshot, revision: 2, view: { ...(snapshot.view as object), myHint: 9 } };
+  tag = 'W/"changed"';
+  await page.clock.runFor(15000);
+  await expect(page.getByText('你的私密提示：')).toContainText('9');
+  const beforeFocus = requests.length;
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect.poll(() => requests.length).toBe(beforeFocus + 1);
+  expect(requests.at(-1)).toBeUndefined();
+  revoked = true;
+  await page.clock.runFor(15000);
+  await expect(page.getByRole('heading', { name: '会话已失效' })).toBeVisible();
+  await expect(page.getByText('你的私密提示：')).toHaveCount(0);
+});

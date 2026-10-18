@@ -82,7 +82,7 @@ export function useMatchSession(id: string) {
   const reads = useRef<
     | {
         token: number;
-        snapshot: () => Promise<MatchView>;
+        snapshot: (conditional?: boolean) => Promise<MatchView>;
       }
     | undefined
   >(undefined);
@@ -172,10 +172,10 @@ export function useMatchSession(id: string) {
     });
     if (fresh.length) setEvents((old) => [...old, ...fresh].slice(-20));
   }
-  async function refresh(token: number) {
+  async function refresh(token: number, conditional = false) {
     const current = reads.current;
     if (!current || current.token !== token) throw new DOMException('Page changed', 'AbortError');
-    const next = await current.snapshot();
+    const next = await current.snapshot(conditional);
     if (generation.current === token) merge(next);
     return next;
   }
@@ -269,7 +269,24 @@ export function useMatchSession(id: string) {
   useEffect(() => {
     const token = ++generation.current;
     const controller = new AbortController();
-    const readSnapshot = singleFlight(() => api.matchSnapshot(id, controller.signal));
+    // Keep a validator only for this page generation. Initialization, focus and
+    // recovery still request a full view; only routine polling is conditional.
+    let validated: { validator: string | undefined; snapshot: MatchView } | undefined;
+    const readSnapshot = singleFlight(async (conditional: boolean = false) => {
+      try {
+        const update = await api.matchSnapshotIfChanged(
+          id,
+          conditional ? validated?.validator : undefined,
+          controller.signal,
+        );
+        if (update.changed) validated = update;
+        if (!validated) throw new Error('Missing validated match view');
+        return validated.snapshot;
+      } catch (cause) {
+        validated = undefined;
+        throw cause;
+      }
+    });
     reads.current = {
       token,
       snapshot: readSnapshot,
@@ -307,7 +324,7 @@ export function useMatchSession(id: string) {
     let roomSubscriptionReady = false;
     let networkOnline = navigator.onLine;
     let releaseAudio: (() => void) | undefined;
-    const sync = singleFlight(async () => {
+    const sync = singleFlight(async (conditional: boolean = false) => {
       if (generation.current !== token || stopped) return;
       if (!networkOnline) {
         connected.current = false;
@@ -315,7 +332,7 @@ export function useMatchSession(id: string) {
         return;
       }
       try {
-        const view = await refresh(token);
+        const view = await refresh(token, conditional);
         if (generation.current !== token) return;
         roomId = view.roomId;
         setError('');
@@ -591,7 +608,7 @@ export function useMatchSession(id: string) {
     });
     void initialize();
     const pollTimer = window.setInterval(() => {
-      if (socket?.readyState === WebSocket.OPEN) void sync();
+      if (socket?.readyState === WebSocket.OPEN) void sync(true);
     }, 15000);
     const heartbeat = window.setInterval(() => {
       if (socket?.readyState !== WebSocket.OPEN) return;
@@ -603,6 +620,7 @@ export function useMatchSession(id: string) {
     }, 20000);
     return () => {
       generation.current++;
+      validated = undefined;
       controller.abort();
       if (reads.current?.token === token) reads.current = undefined;
       connected.current = false;

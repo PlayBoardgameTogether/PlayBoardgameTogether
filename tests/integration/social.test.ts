@@ -229,7 +229,8 @@ describe('friends, private messages and room invitations', () => {
       const result = await service.overview(context);
       expect(result.invitations.map(item => item.id)).toEqual(ids.slice(0, 50));
       expect(result.invitations.every(item => item.available && item.sender.id === aid && item.recipient.id === bid)).toBe(true);
-      expect(query.mock.calls.length).toBeLessThanOrEqual(8);
+      // BEGIN, current account/session, one overview projection, COMMIT.
+      expect(query.mock.calls.length).toBe(4);
     } finally {
       query.mockRestore();
       connect.mockRestore();

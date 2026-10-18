@@ -1,5 +1,9 @@
 # 协议
 
+## 可选的对局条件读取（2026-10-18，0.9.1）
+
+`GET /api/v1/matches/:id/view` 的完整响应附带弱 `ETag`；调用者可在后续请求发送 `If-None-Match`，只有当前账户授权视图完全相同时返回无正文 304，其他成功情况仍为原 JSON envelope。旧请求不带校验值时始终返回完整内容。每次仍检查会话、参与身份并读取当前一致性视图，响应继续 no-store。校验覆盖名称/控制者/AI/状态/资源等，不只使用 revision；校验值不是凭据。SDK 的 `matchSnapshotIfChanged` 区分完整与未变化，原 `matchSnapshot` 继续完整读取；只有页面内常规校对采用条件读取。HTTP/WS 业务 DTO、动作去重及错误码未改变。
+
 ## 桌游币（2026-10-16）
 
 `GET /api/v1/profile/coins` 按 session 读取本人钱包；管理员通过 `GET/POST /api/v1/admin/accounts/:id/coins` 读取和调整。读取只接受可选正整数 `before`；写入严格 `{requestId,expectedRevision,delta,reason}`，不透支，不与 AI 点数兑换。共享 schema、字段、分页、权限及重试语义见 [桌游币](coins.md)。

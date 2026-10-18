@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type pg from 'pg';
+import { z } from 'zod';
 import {
   socialPersonSchema, socialIdentitySchema, socialOverviewSchema, friendshipSchema,
   socialMessageSchema, messagePageSchema, friendInviteSchema, socialDoneSchema,
@@ -23,19 +24,53 @@ function canonical(value: unknown): string {
 }
 const fingerprint = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
 
-export class SocialService {
-  constructor(private db: Database, private rooms: RoomService) {}
-
-  private async identity(client: Client, accountId: string) {
-    const result = await client.query(`SELECT friend_id AS "friendId",social_revision AS revision,
+// Share these projections with direct reads so overview polling cannot drift
+// from invitation permissions, expiry or the friend-ID change policy.
+const identitySql = `SELECT friend_id AS "friendId",social_revision AS revision,
       s.friend_id_change_days AS "changeIntervalDays",
       CASE WHEN friend_id_changed_at IS NULL OR s.friend_id_change_days=0 THEN NULL
         ELSE friend_id_changed_at + s.friend_id_change_days * interval '24 hours' END AS next_change_at,
       (friend_id_changed_at IS NULL OR s.friend_id_change_days=0 OR
         clock_timestamp() >= friend_id_changed_at + s.friend_id_change_days * interval '24 hours') AS "canChange"
-      FROM accounts CROSS JOIN social_settings s WHERE id=$1`, [accountId]);
+      FROM accounts CROSS JOIN social_settings s WHERE id=$1`;
+const relationsSql = `SELECT a.id,a.friend_id AS "friendId",a.display_name AS "displayName",a.avatar,f.status,f.requested_by,f.revision,
+         (SELECT count(*)::int FROM direct_messages m WHERE m.sender_id=a.id AND m.recipient_id=$1
+          AND m.sequence>COALESCE((SELECT last_sequence FROM direct_message_reads WHERE account_id=$1 AND peer_id=a.id),0)) AS unread
+         FROM friendships f JOIN accounts a ON a.id=CASE WHEN f.account_low=$1 THEN f.account_high ELSE f.account_low END
+         WHERE (f.account_low=$1 OR f.account_high=$1) AND f.status IN ('pending','accepted') AND a.status='active'
+         ORDER BY a.display_name,a.id`;
+const invitationsSql = `SELECT i.id,i.room_id AS "roomId",r.name AS "roomName",(r.password_hash IS NOT NULL) AS "hasPassword",i.status,i.expires_at AS "expiresAt",
+      json_build_object('id',s.id,'friendId',s.friend_id,'displayName',s.display_name,'avatar',s.avatar) AS sender,
+      json_build_object('id',t.id,'friendId',t.friend_id,'displayName',t.display_name,'avatar',t.avatar) AS recipient,
+      (i.status='pending' AND i.expires_at>now() AND r.status='waiting' AND s.status='active' AND t.status='active'
+        AND EXISTS(SELECT 1 FROM room_members WHERE room_id=r.id AND account_id=s.id)
+        AND EXISTS(SELECT 1 FROM friendships WHERE account_low=LEAST(s.id,t.id) AND account_high=GREATEST(s.id,t.id) AND status='accepted')) AS available
+      FROM friend_room_invitations i JOIN rooms r ON r.id=i.room_id JOIN accounts s ON s.id=i.sender_id JOIN accounts t ON t.id=i.recipient_id
+      WHERE (i.sender_id=$1 OR i.recipient_id=$1) AND ($2::uuid IS NULL OR i.id=$2)
+      ORDER BY i.created_at DESC,i.id DESC LIMIT 50`;
+const overviewRowSchema = z.object({
+  identity: socialIdentitySchema.omit({ nextChangeAt: true }).extend({
+    next_change_at: z.string().nullable(),
+  }),
+  relations: z.array(
+    friendshipSchema.omit({ person: true, direction: true }).extend({
+      ...socialPersonSchema.shape,
+      requested_by: z.string().uuid(),
+    }),
+  ),
+  invitations: z.array(friendInviteSchema.extend({ expiresAt: z.string() })),
+});
+
+export class SocialService {
+  constructor(private db: Database, private rooms: RoomService) {}
+
+  private async identity(client: Client, accountId: string) {
+    const result = await client.query(identitySql, [accountId]);
     const row = result.rows[0];
-    return socialIdentitySchema.parse({ ...row, nextChangeAt: row.next_change_at?.toISOString() ?? null });
+    return socialIdentitySchema.parse({
+      ...row,
+      nextChangeAt: row.next_change_at?.toISOString() ?? null,
+    });
   }
 
   private async assertAdministrator(client: Client, current: AuthContext) {
@@ -65,15 +100,27 @@ export class SocialService {
   }
 
   private async assertSession(client: Client, current: AuthContext, write: boolean) {
+    if (!write) {
+      const result = await client.query(
+        `SELECT 1 FROM accounts a JOIN sessions s ON s.account_id=a.id
+         WHERE a.id=$1 AND a.status='active' AND s.id=$2 AND s.token_hash=$3
+           AND s.revoked_at IS NULL AND s.expires_at>now()`,
+        [current.account.id, current.sessionId, current.tokenHash],
+      );
+      if (!result.rowCount) throw new AppError('UNAUTHENTICATED', '请重新登录', 401);
+      return;
+    }
     const account = await client.query(
-      `SELECT 1 FROM accounts WHERE id=$1 AND status='active'${write ? ' FOR SHARE' : ''}`, [current.account.id],
+      `SELECT 1 FROM accounts WHERE id=$1 AND status='active'${write ? ' FOR SHARE' : ''}`,
+      [current.account.id],
     );
     const session = await client.query(
       `SELECT 1 FROM sessions WHERE id=$1 AND account_id=$2 AND token_hash=$3
        AND revoked_at IS NULL AND expires_at>now()${write ? ' FOR SHARE' : ''}`,
       [current.sessionId, current.account.id, current.tokenHash],
     );
-    if (!account.rowCount || !session.rowCount) throw new AppError('UNAUTHENTICATED', '请重新登录', 401);
+    if (!account.rowCount || !session.rowCount)
+      throw new AppError('UNAUTHENTICATED', '请重新登录', 401);
   }
 
   private async read<T>(current: AuthContext, fn: (client: Client) => Promise<T>) {
@@ -157,20 +204,38 @@ export class SocialService {
   }
 
   overview(current: AuthContext) {
-    return this.read(current, async client => {
+    return this.read(current, async (client) => {
       const accountId = current.account.id;
-      const identity = await this.identity(client, accountId);
-      const relations = await client.query<PersonRow & Relation & { unread: number }>(
-        `SELECT a.id,a.friend_id AS "friendId",a.display_name AS "displayName",a.avatar,f.status,f.requested_by,f.revision,
-         (SELECT count(*)::int FROM direct_messages m WHERE m.sender_id=a.id AND m.recipient_id=$1
-          AND m.sequence>COALESCE((SELECT last_sequence FROM direct_message_reads WHERE account_id=$1 AND peer_id=a.id),0)) AS unread
-         FROM friendships f JOIN accounts a ON a.id=CASE WHEN f.account_low=$1 THEN f.account_high ELSE f.account_low END
-         WHERE (f.account_low=$1 OR f.account_high=$1) AND f.status IN ('pending','accepted') AND a.status='active'
-         ORDER BY a.display_name,a.id`, [accountId],
+      const result = await client.query<Record<string, unknown>>(
+        `SELECT
+          (SELECT row_to_json(identity_row) FROM (${identitySql}) identity_row) AS identity,
+          COALESCE((SELECT json_agg(relation_row) FROM (${relationsSql}) relation_row), '[]'::json) AS relations,
+          COALESCE((SELECT json_agg(invitation_row) FROM (${invitationsSql}) invitation_row), '[]'::json) AS invitations`,
+        [accountId, null],
       );
-      const invites = await this.invitations(client, accountId);
-      const items = relations.rows.map(row => ({ person: socialPersonSchema.parse(row), status: row.status, revision: row.revision, direction: row.requested_by === accountId ? 'outgoing' : 'incoming', unread: row.unread }));
-      return socialOverviewSchema.parse({ identity, friends: items.filter(item => item.status === 'accepted'), requests: items.filter(item => item.status === 'pending'), invitations: invites });
+      const row = overviewRowSchema.parse(result.rows[0]);
+      const identity = socialIdentitySchema.parse({
+        ...row.identity,
+        nextChangeAt: row.identity.next_change_at
+          ? new Date(row.identity.next_change_at).toISOString()
+          : null,
+      });
+      const items = row.relations.map((item) => ({
+        person: socialPersonSchema.parse(item),
+        status: item.status,
+        revision: item.revision,
+        direction: item.requested_by === accountId ? 'outgoing' : 'incoming',
+        unread: item.unread,
+      }));
+      return socialOverviewSchema.parse({
+        identity,
+        friends: items.filter((item) => item.status === 'accepted'),
+        requests: items.filter((item) => item.status === 'pending'),
+        invitations: row.invitations.map((item) => ({
+          ...item,
+          expiresAt: new Date(item.expiresAt).toISOString(),
+        })),
+      });
     });
   }
 
@@ -327,18 +392,19 @@ export class SocialService {
 
   private async invitations(client: Client, accountId: string, id?: string) {
     const result = await client.query<{
-      id: string; roomId: string; roomName: string; hasPassword: boolean; status: string; expiresAt: Date;
-      sender: PersonRow; recipient: PersonRow; available: boolean;
-    }>(`SELECT i.id,i.room_id AS "roomId",r.name AS "roomName",(r.password_hash IS NOT NULL) AS "hasPassword",i.status,i.expires_at AS "expiresAt",
-      json_build_object('id',s.id,'friendId',s.friend_id,'displayName',s.display_name,'avatar',s.avatar) AS sender,
-      json_build_object('id',t.id,'friendId',t.friend_id,'displayName',t.display_name,'avatar',t.avatar) AS recipient,
-      (i.status='pending' AND i.expires_at>now() AND r.status='waiting' AND s.status='active' AND t.status='active'
-        AND EXISTS(SELECT 1 FROM room_members WHERE room_id=r.id AND account_id=s.id)
-        AND EXISTS(SELECT 1 FROM friendships WHERE account_low=LEAST(s.id,t.id) AND account_high=GREATEST(s.id,t.id) AND status='accepted')) AS available
-      FROM friend_room_invitations i JOIN rooms r ON r.id=i.room_id JOIN accounts s ON s.id=i.sender_id JOIN accounts t ON t.id=i.recipient_id
-      WHERE (i.sender_id=$1 OR i.recipient_id=$1) AND ($2::uuid IS NULL OR i.id=$2)
-      ORDER BY i.created_at DESC,i.id DESC LIMIT 50`, [accountId, id ?? null]);
-    return result.rows.map(row => friendInviteSchema.parse({ ...row, expiresAt: row.expiresAt.toISOString() }));
+      id: string;
+      roomId: string;
+      roomName: string;
+      hasPassword: boolean;
+      status: string;
+      expiresAt: Date;
+      sender: PersonRow;
+      recipient: PersonRow;
+      available: boolean;
+    }>(invitationsSql, [accountId, id ?? null]);
+    return result.rows.map((row) =>
+      friendInviteSchema.parse({ ...row, expiresAt: row.expiresAt.toISOString() }),
+    );
   }
 
   private async invitation(client: Client, id: string, accountId: string) {

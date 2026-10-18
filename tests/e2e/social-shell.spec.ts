@@ -2,6 +2,7 @@ import { sessionFixture } from '../fixtures/session.js';
 import { createHash } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import type { SocialOverview } from '@boardgame/protocol';
+import { observePolls } from './polling-observer.js';
 
 const me = '10000000-0000-4000-8000-000000000001';
 const friend = '10000000-0000-4000-8000-000000000002';
@@ -340,4 +341,44 @@ test('room invitations distinguish response states in light and dark themes', as
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
   }
+});
+
+test('idle overview polling slows down, pauses hidden tabs and resumes immediately with fresh notifications', async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  const completed = await observePolls(page, '/social/updates');
+  await page.clock.install();
+  await page.goto('/friends');
+  await expect(page.getByText('桌友小明', { exact: true }).first()).toBeVisible();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  state.avatar('leaf');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.locator('.social-avatar').first()).toHaveText('🌿');
+  const initialRequests = state.updates.length;
+  const initial = await completed.count();
+  for (const [index, delay] of [5000, 10000, 15000, 15000, 15000].entries()) {
+    await page.clock.runFor(delay);
+    await completed.wait(initial + index + 1);
+  }
+  expect(state.updates.length).toBe(initialRequests + 5);
+  state.arrive();
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByRole('button', { name: '通知，2 条未处理' })).toBeVisible();
+  const resumed = state.updates.length;
+  expect(state.updates.at(-1)?.changed).toBe(true);
+  await page.clock.runFor(5000);
+  await expect.poll(() => state.updates.length).toBe(resumed + 1);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const hidden = state.updates.length;
+  await page.clock.runFor(60000);
+  expect(state.updates.length).toBe(hidden);
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect.poll(() => state.updates.length).toBe(hidden + 1);
 });

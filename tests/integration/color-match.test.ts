@@ -128,6 +128,57 @@ it('reads the match and all controller metadata from one snapshot during a contr
     expect(launched.statusCode).toBe(200);
     return { alice, bob, carol, sessions, roomId, matchId: launched.json().data.matchId as string };
   }
+  it('conditionally reads the complete private view without skipping current authority or metadata', async () => {
+    const { alice, bob, carol, roomId, matchId } = await start();
+    const endpoint = `/api/v1/matches/${matchId}/view`;
+    const first = await read(endpoint, alice);
+    const firstTag = String(first.headers.etag);
+    expect(firstTag).toMatch(/^W\/"[a-f0-9]{64}"$/);
+    const conditional = (session: Session, tag = firstTag) => app.inject({
+      url: endpoint,
+      headers: { cookie: session.cookie, 'if-none-match': tag },
+    });
+    const unchanged = await conditional(alice);
+    expect(unchanged.statusCode).toBe(304);
+    expect(unchanged.payload).toBe('');
+    expect(unchanged.headers['cache-control']).toBe('no-store');
+    expect(unchanged.headers.etag).toBe(firstTag);
+    expect(first.rawPayload.length).toBeGreaterThan(1000);
+    const other = await conditional(bob);
+    expect(other.statusCode).toBe(200);
+    expect(other.headers.etag).not.toBe(firstTag);
+    expect(other.json().data.view).toEqual((await read(endpoint, bob)).json().data.view);
+    expect((await conditional(carol)).statusCode).toBe(404);
+    await db.query("UPDATE accounts SET display_name='Renamed player' WHERE username_canonical='bob'");
+    const renamed = await conditional(alice);
+    expect(renamed.statusCode).toBe(200);
+    expect(renamed.json().data.revision).toBe(0);
+    expect(renamed.headers.etag).not.toBe(firstTag);
+    expect(renamed.json().data.players[1].displayName).toBe('Renamed player');
+    await db.query('UPDATE match_participants SET controller_version=controller_version+1,ai_status_version=ai_status_version+1 WHERE match_id=$1 AND seat_index=1', [matchId]);
+    const metadata = await conditional(alice, String(renamed.headers.etag));
+    expect(metadata.statusCode).toBe(200);
+    expect(metadata.json().data.revision).toBe(0);
+    expect(metadata.json().data.controllers[1]).toMatchObject({ controllerVersion: 1, aiStatusVersion: 1 });
+    const action = await write(`/api/v1/matches/${matchId}/actions`, alice, {
+      requestId: 'conditional-draw', expectedRevision: 0, action: { type: 'draw_card' },
+    });
+    expect(action.statusCode).toBe(200);
+    const changed = await conditional(alice, String(metadata.headers.etag));
+    expect(changed.statusCode).toBe(200);
+    expect(changed.json().data.revision).toBe(1);
+    const room = (await read(`/api/v1/rooms/${roomId}`, alice)).json().data;
+    expect((await write(`/api/v1/rooms/${roomId}/close`, alice, {
+      requestId: 'conditional-close', expectedRoomRevision: room.roomRevision,
+    })).statusCode).toBe(200);
+    const closed = await conditional(alice, String(changed.headers.etag));
+    expect(closed.statusCode).toBe(200);
+    expect(closed.json().data).toMatchObject({ status: 'aborted', revision: 1 });
+    await db.query('UPDATE sessions SET revoked_at=now() WHERE account_id=(SELECT id FROM accounts WHERE username_canonical=$1)', ['alice']);
+    expect((await conditional(alice, String(closed.headers.etag))).statusCode).toBe(401);
+    await db.query("UPDATE accounts SET status='disabled' WHERE username_canonical='bob'");
+    expect((await conditional(bob, String(other.headers.etag))).statusCode).toBe(401);
+  });
   it('replays committed frames only to original participants without revealing opposing hands', async () => {
     const { alice, bob, carol, roomId, matchId } = await start();
     const endpoint = `/api/v1/matches/${matchId}`;

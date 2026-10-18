@@ -1,6 +1,7 @@
 import { sessionFixture } from '../fixtures/session.js';
 import { test, expect, type Page } from '@playwright/test';
 import type { PublicMessage, SocialOverview } from '@boardgame/protocol';
+import { observePolls } from './polling-observer.js';
 
 const me = '10000000-0000-4000-8000-000000000001';
 const other = '10000000-0000-4000-8000-000000000002';
@@ -328,4 +329,50 @@ test('reading older private messages does not mark an unseen new message read', 
   await page.getByRole('button', { name: '有新消息，回到最新', exact: true }).click();
   await expect(history).toBeFocused();
   await expect.poll(() => readIds.at(-1)).toBe(next.id);
+});
+
+test('idle chat polls less often and returning to the page immediately fetches new messages', async ({
+  page,
+}) => {
+  const state = await fixture(page);
+  const completed = await observePolls(page, '/social/public/messages');
+  let reads = 0;
+  page.on('request', (request) => {
+    if (
+      request.method() === 'GET' &&
+      new URL(request.url()).pathname.endsWith('/social/public/messages')
+    )
+      reads++;
+  });
+  await page.clock.install();
+  await page.goto('/chat');
+  await expect(page.getByRole('list', { name: '聊天记录' }).locator('li')).toHaveCount(1);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  state.messages.push({
+    ...state.messages[0]!,
+    id: crypto.randomUUID(),
+    sequence: '2',
+    text: '开始测量空闲轮询',
+  });
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByText('开始测量空闲轮询', { exact: true })).toBeVisible();
+  const initialRequests = reads;
+  const initial = await completed.count();
+  for (const [index, delay] of [5000, 10000, 10000, 10000, 10000, 10000].entries()) {
+    await page.clock.runFor(delay);
+    await completed.wait(initial + index + 1);
+  }
+  await page.clock.runFor(5000);
+  expect(reads).toBe(initialRequests + 6);
+  state.messages.push({
+    ...state.messages[0]!,
+    id: crypto.randomUUID(),
+    sequence: '3',
+    text: '回来后立刻收到的新消息',
+  });
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByText('回来后立刻收到的新消息', { exact: true })).toBeVisible();
+  const resumed = reads;
+  await page.clock.runFor(5000);
+  await expect.poll(() => reads).toBe(resumed + 1);
 });

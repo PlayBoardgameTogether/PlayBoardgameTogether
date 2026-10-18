@@ -1,5 +1,9 @@
 # 架构
 
+## 同步效率优化（2026-10-18）
+
+MatchRoutes 在原当前授权/一致性投影之后生成账户绑定弱 ETag，条件读取可返回无正文 304；client-sdk 复用原 HTTP 传输及协议解析，useMatchSession 只为常规校对保存页面内已验证 HTTP 视图。初始化、恢复与动作回执仍完整读取，无服务器私密视图缓存。SocialService 合并只读身份检查和概要 SQL，复用原身份/邀请投影，原写事务与锁序保持。Web network/polling 拥有完成后调度、有限空闲退避、可见性/聚焦/在线恢复和显式刷新合并；SocialProvider 与 DirectChat 保留各自授权、草稿、错误、水位及取消职责。详见 [同步效率报告](network-efficiency-2026-10-18.md)。
+
 ## 桌游币（2026-10-16）
 
 `apps/api/src/coins/service.ts` 拥有独立钱包与审计流水，管理员调整复用 AdminService 原有授权、请求去重和事务，不创建平行认证或管理员命令链。AccountRoutes 只按会话读取本人钱包；Web 的 CoinWallet 共用本人/后台展示和未知结果恢复。协议与存储见 [桌游币](coins.md)。
