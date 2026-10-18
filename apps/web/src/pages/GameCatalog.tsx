@@ -42,7 +42,7 @@ export function GameCatalog() {
       {featured && (
         <section className="discovery-spotlight" aria-label="先试一手">
           <div className="discovery-spotlight-copy">
-            <p className="eyebrow">不用等人 · 单人上手练习</p>
+            <p className="eyebrow">免登录单人练习</p>
             <h2>{gameDiscovery(featured)?.invitation ?? `从 ${featured.name} 的第一手开始。`}</h2>
             <p>{gameDiscovery(featured)?.hook ?? featured.description}</p>
             <div className="discovery-spotlight-actions">
@@ -51,7 +51,7 @@ export function GameCatalog() {
               </a>
               <a href={gamePath(featured)}>查看 {featured.name} 房间</a>
             </div>
-            <small>无需登录 · 在游戏桌面练习 · 不计入战绩</small>
+            <small>随时练手，不计入战绩</small>
           </div>
           <a
             className="discovery-spotlight-art"
@@ -70,12 +70,12 @@ export function GameCatalog() {
       )}
       <div className="catalog-section-heading">
         <div>
-          <p className="eyebrow">下一桌，玩点什么？</p>
-          <h2>发现好游戏</h2>
+          <p className="eyebrow">精选桌游</p>
+          <h2>全部游戏</h2>
         </div>
         <span>{games.length} 款可玩</span>
       </div>
-      {!games.length && <p role="status">暂无可用游戏，请稍后再来。</p>}
+      {!games.length && <p role="status">暂无可用游戏，请稍后重试。</p>}
       {!!games.length && (
         <div className="catalog-discovery">
           <label className="catalog-search">
@@ -125,13 +125,13 @@ export function GameCatalog() {
       )}
       <p className="discovery-result-count" role="status" aria-live="polite">
         {games.length > 0
-          ? `找到 ${visible.length} 款游戏${practiceOnly ? '，均可免登录练习' : ''}`
+          ? `共找到 ${visible.length} 款游戏${practiceOnly ? '（可先试玩）' : ''}`
           : ''}
       </p>
       {!!games.length && !visible.length && (
         <div className="discovery-empty">
           <h3>还没找到合适的游戏</h3>
-          <p className="muted">试试其他人数或关键词，也可以重新看看全部游戏。</p>
+          <p className="muted">换个关键词或筛选条件试试吧。</p>
           <button
             className="secondary"
             onClick={() => {
@@ -155,7 +155,7 @@ export function GameCatalog() {
             <div className="discovery-card-art">
               <GameCover game={game} />
               {clientTutorial(game.id, game.version) && (
-                <span className="discovery-practice-tag">可先试玩</span>
+                <span className="discovery-practice-tag">可练习</span>
               )}
             </div>
             <div className="game-card-info">

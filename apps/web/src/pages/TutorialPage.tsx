@@ -72,16 +72,16 @@ function TutorialPlayer({ tutorial, board, back }: { tutorial: GameTutorial; boa
 
   return <div className="tutorial-page">
     <div className="tutorial-toolbar"><a href={back}>← 返回游戏详情</a><button className="secondary" onClick={() => reset(0)}>重新开始教程</button></div>
-    <div className="tutorial-intro"><p className="eyebrow">交互教程 · 单人练习</p><h1>{tutorial.title}</h1><p className="muted">{tutorial.description}</p><p className="muted">练习不会创建房间或计入对局记录；刷新页面会从头开始。</p></div>
+    <div className="tutorial-intro"><p className="eyebrow">交互教程 · 单人练习</p><h1>{tutorial.title}</h1><p className="muted">{tutorial.description}</p><p className="muted">练习模式不计入战绩，可随时反复演练。</p></div>
     {finished ? <section className="panel tutorial-guide" role="status">
-      <h2>教程完成</h2><p>你已完成全部练习，可以进入房间开始游戏了。</p>
+      <h2>教程完成</h2><p>恭喜完成练习！快去大厅开一桌大展身手吧。</p>
       <div className="tutorial-actions"><a className="button-link" href={back}>返回游戏详情</a><button className="secondary" onClick={() => reset(0)}>再练一次</button></div>
     </section> : <>
       <section className="panel tutorial-guide" aria-label="教程指引">
         <p className="eyebrow">练习 {progress.stepIndex + 1} / {tutorial.steps.length}</p>
         <progress aria-label="教程进度" max={tutorial.steps.length} value={progress.stepIndex + (progress.complete ? 1 : 0)} />
         <h2 ref={heading} tabIndex={-1}>{step.title}</h2><p>{step.instruction}</p>
-        <p role="status" aria-live="polite" className="tutorial-feedback">{progress.feedback || '请在下方游戏桌面完成操作。'}</p>
+        <p role="status" aria-live="polite" className="tutorial-feedback">{progress.feedback || '在下方游戏桌面完成操作'}</p>
         <div className="tutorial-actions">
           <button disabled={!progress.complete} onClick={() => {
             if (progress.stepIndex === tutorial.steps.length - 1) setFinished(true);

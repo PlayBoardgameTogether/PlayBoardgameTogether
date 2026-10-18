@@ -5,7 +5,7 @@ export function RoomInviteEntry() {
     <details className="lobby-invite room-disclosure">
       <summary>
         <span>邀请码加入</span>
-        <small>朋友已经开好桌？直接输入邀请码</small>
+        <small>输入邀请码直接加入房间</small>
       </summary>
       <div className="lobby-invite-body">
         <RoomInviteForm embedded />

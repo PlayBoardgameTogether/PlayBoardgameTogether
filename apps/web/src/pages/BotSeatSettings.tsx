@@ -48,8 +48,8 @@ export function BotSeatSettings({ editing, policyId, profileId, profiles, loadin
             </option>
           ))}
         </select></label>
-        <p className="muted">使用房主的模型配置与额度；模型会收到此 AI 座位可见的游戏信息，并持续操作到对局结束。</p>
-        {available.find(profile => profile.id === selected)?.official_offer_id && <p className="muted">从房主的 AI 点数扣费，此席位单局上限 {available.find(profile => profile.id === selected)?.official_match_budget} 点。余额或上限不足时暂停付费 AI。</p>}
+        <p className="muted">消耗房主的 AI 额度，AI 将自动出牌至对局结束。</p>
+        {available.find(profile => profile.id === selected)?.official_offer_id && <p className="muted">单局上限 {available.find(profile => profile.id === selected)?.official_match_budget} 点，超出后暂停。</p>}
         <a href="/official-ai">选择官方 AI / 查看点数</a>
         {loading && <p role="status">正在读取模型配置…</p>}
         {error && <p role="alert">{error}</p>}

@@ -8,7 +8,7 @@ export function HomePage() {
         <div>
           <p className="eyebrow">PLAYBOARD · 和朋友，共享一张桌</p>
           <h1>游戏大厅</h1>
-          <p>还没决定玩什么？先试一手，再约朋友开一桌。</p>
+          <p>挑一款喜欢的桌游，随时开局。</p>
         </div>
       </section>
       <RoomInviteEntry />
@@ -16,14 +16,14 @@ export function HomePage() {
         <a href="/friends">
           <span aria-hidden="true">♧</span>
           <span>
-            好友一起玩<small>找到你的桌友</small>
+            好友<small>找桌友开黑</small>
           </span>
           <span aria-hidden="true">↗</span>
         </a>
         <a href="/friends/invitations">
           <span aria-hidden="true">✉</span>
           <span>
-            房间邀请<small>赴一场桌游之约</small>
+            房间邀请<small>赴好友之约</small>
           </span>
           <span aria-hidden="true">↗</span>
         </a>

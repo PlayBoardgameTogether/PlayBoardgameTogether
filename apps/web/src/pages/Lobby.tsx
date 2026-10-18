@@ -61,12 +61,12 @@ export function Lobby({gameId,showHeading=true}:{gameId?:string;showHeading?:boo
   function submitPassword(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();if(selected)void join(selected,String(new FormData(event.currentTarget).get('password')));
   }
-  return <section className="room-list">{showHeading&&<><h2>公开房间</h2><p className="muted">选择房间直接加入；私人房间请使用邀请码。</p></>}
+  return <section className="room-list">{showHeading&&<><h2>公开房间</h2><p className="muted">挑选感兴趣的房间加入，私密房间请使用邀请码。</p></>}
     {!needsLogin&&<div className="lobby-filters">
-      {!gameId&&<label>筛选游戏<select value={query.gameId??''} onChange={event=>setQuery(old=>({...old,gameId:event.target.value||undefined}))}><option value="">全部游戏</option>{games.filter(game=>!game.developmentOnly).map(game=><option key={`${game.id}@${game.version}`} value={game.id}>{game.name}</option>)}</select></label>}
-      <label>筛选房间类型<select value={query.roomType??''} onChange={event=>setQuery(old=>({...old,roomType:(event.target.value||undefined) as LobbyQuery['roomType']}))}><option value="">全部类型</option><option value="open">公开无密码</option><option value="password">公开密码房</option></select></label>
-      <label>筛选状态<select value={query.status??''} onChange={event=>setQuery(old=>({...old,status:(event.target.value||undefined) as LobbyQuery['status']}))}><option value="">全部状态</option>{Object.entries(statusNames).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></label>
-      <button className="secondary" disabled={busy} onClick={()=>setRefresh(value=>value+1)}>刷新大厅</button>
+      {!gameId&&<label>全部游戏<select value={query.gameId??''} onChange={event=>setQuery(old=>({...old,gameId:event.target.value||undefined}))}><option value="">全部游戏</option>{games.filter(game=>!game.developmentOnly).map(game=><option key={`${game.id}@${game.version}`} value={game.id}>{game.name}</option>)}</select></label>}
+      <label>房间类型<select value={query.roomType??''} onChange={event=>setQuery(old=>({...old,roomType:(event.target.value||undefined) as LobbyQuery['roomType']}))}><option value="">全部类型</option><option value="open">公开无密码</option><option value="password">公开密码房</option></select></label>
+      <label>房间状态<select value={query.status??''} onChange={event=>setQuery(old=>({...old,status:(event.target.value||undefined) as LobbyQuery['status']}))}><option value="">全部状态</option>{Object.entries(statusNames).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></label>
+      <button className="secondary" disabled={busy} onClick={()=>setRefresh(value=>value+1)}>刷新列表</button>
     </div>}
     {needsLogin&&<p className="panel">登录后查看并加入公开房间。 <a href="/login">前往登录 →</a></p>}
     {error&&!selected&&<p className="error-notice" role="alert">{error}</p>}
@@ -87,13 +87,13 @@ export function Lobby({gameId,showHeading=true}:{gameId?:string;showHeading?:boo
             setSelected(room);
           } else void join(room);
         }}>
-        {room.isMember ? '进入房间' : room.status !== 'waiting' ? '不可加入' : room.occupiedCount >= room.seatCount ? '已满' : '加入房间'}
+        {room.isMember ? '进入房间' : room.status !== 'waiting' ? '进行中' : room.occupiedCount >= room.seatCount ? '已满员' : '加入'}
       </button>
     </article>
       {selected?.id === room.id && <form className="panel form-stack lobby-password-form" aria-label={`加入 ${room.name}`} onSubmit={submitPassword}>
         <h3>加入 {room.name}</h3>
         <fieldset className="room-create-fields form-stack" disabled={busy}>
-          <label>加入房间密码<input ref={passwordInput} name="password" type="password" maxLength={128} required autoComplete="off" aria-describedby={error ? 'lobby-join-error' : undefined} /></label>
+          <label>房间密码<input ref={passwordInput} name="password" type="password" maxLength={128} required autoComplete="off" aria-describedby={error ? 'lobby-join-error' : undefined} /></label>
           <button>{busy ? '加入中…' : '确认加入'}</button>
           <button type="button" className="secondary" onClick={() => {
             setSelected(undefined);
@@ -104,8 +104,8 @@ export function Lobby({gameId,showHeading=true}:{gameId?:string;showHeading?:boo
         {error && <p className="error-notice" id="lobby-join-error" role="alert">{error}</p>}
       </form>}
     </div>)}
-    {!busy&&!error&&!needsLogin&&!rooms.length&&<p className="muted">没有符合筛选条件的房间。可以调整筛选，或创建自己的房间。</p>}
+    {!busy&&!error&&!needsLogin&&!rooms.length&&<p className="muted">暂无符合条件的房间，换个筛选或自己开一桌吧。</p>}
     {busy&&<p role="status">正在加载…</p>}
-    {cursor&&<button className="secondary" disabled={busy} onClick={()=>void more()}>加载更多大厅房间</button>}
+    {cursor&&<button className="secondary" disabled={busy} onClick={()=>void more()}>加载更多</button>}
   </section>;
 }

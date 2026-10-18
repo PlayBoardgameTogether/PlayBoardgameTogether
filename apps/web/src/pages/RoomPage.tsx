@@ -218,7 +218,7 @@ export function RoomPage({ id }: { id: string }) {
         </div>
         <div className="room-heading-actions">
           <span className={`status ${connected ? 'status--ok' : 'status--warn'}`}>
-            {connected ? '实时同步' : '连接中断，状态可能过期'}
+            {connected ? '实时同步' : '连接中断，重连中…'}
           </span>
           {!playing && (
             <button
@@ -237,10 +237,10 @@ export function RoomPage({ id }: { id: string }) {
         </p>
       )}
       {completedMatchId && (
-        <section className="round-complete" aria-label="本局已结束">
+        <section className="round-complete" aria-label="本局已结束，已返回房间">
           <div>
             <h2>本局已结束，已返回房间</h2>
-            <p>席位已保留，重新准备即可开始下一局。</p>
+            <p>席位已保留，准备后即可开启新一局。</p>
           </div>
           <a
             className="button-link secondary"
@@ -263,7 +263,7 @@ export function RoomPage({ id }: { id: string }) {
                 : '对局正在进行'}
             </h2>
             <p className="muted">
-              {waiting ? '席位、规则或资源包变更会取消真人准备。' : '返回此页不会退出对局。'}
+              {waiting ? '席位或规则变更将重置准备状态。' : '返回房间不会中断当前对局。'}
             </p>
             {waiting && room.startBlockers.length > 0 && (
               <ul className="room-blockers">
@@ -272,7 +272,7 @@ export function RoomPage({ id }: { id: string }) {
                 ))}
               </ul>
             )}
-            {busy && <p role="status">正在保存房间操作，请稍候…</p>}
+            {busy && <p role="status">正在保存…</p>}
           </div>
           <div className="room-ready-controls">
             {waiting && mine && (
@@ -402,7 +402,7 @@ export function RoomPage({ id }: { id: string }) {
                       !room.seats.some((seat) => seat.ownerAccountId === member.accountId),
                   )
                   .map((member) => (
-                    <p key={member.accountId}>{member.displayName} · 请先选择空座位</p>
+                    <p key={member.accountId}>{member.displayName} · 尚未入座</p>
                   ))}
               </div>
             )}
@@ -419,7 +419,7 @@ export function RoomPage({ id }: { id: string }) {
             <div className="room-support-body">
               {invite ? (
                 <div className="invite-box">
-                  <span>点击邀请码即可复制</span>
+                  <span>点击复制邀请码</span>
                   <button
                     type="button"
                     className="secondary"
@@ -430,7 +430,7 @@ export function RoomPage({ id }: { id: string }) {
                   </button>
                 </div>
               ) : (
-                <p className="muted">邀请码仅在创建或刷新时显示；也可直接邀请好友。</p>
+                <p className="muted">邀请码用于快速进房，也可直接在下方邀请好友。</p>
               )}
               {copyNotice && <p role="status">{copyNotice}</p>}
               {copyNotice.startsWith('复制失败') && (
@@ -472,7 +472,7 @@ export function RoomPage({ id }: { id: string }) {
                 <p>
                   当前：
                   {assetVersions.find((version) => version.id === room.assetVersionId)?.name ??
-                    (room.assetVersionId ? '已锁定版本（可能已归档）' : '历史 CSS 默认包')}
+                    (room.assetVersionId ? '已锁定版本' : '默认外观包')}
                 </p>
                 {waiting && room.permissions.isHost && (
                   <label className="form-stack">
@@ -496,7 +496,7 @@ export function RoomPage({ id }: { id: string }) {
                     </select>
                   </label>
                 )}
-                <p className="muted">更换会取消真人准备；开局后锁定本版本。</p>
+                <p className="muted">更换外观资源将重置准备状态；开局后锁定该版本。</p>
               </section>
             )}
             {room.permissions.isHost && waiting && (
@@ -535,7 +535,7 @@ export function RoomPage({ id }: { id: string }) {
             {room.permissions.isHost && waiting && room.members.length > 1 && (
               <details className="room-disclosure">
                 <summary>转让房主</summary>
-                <p className="muted">将房间管理交给另一位成员。</p>
+                <p className="muted">移交房主权限给另一位成员。</p>
                 {room.members
                   .filter((member) => member.accountId !== me.account.id)
                   .map((member) => (
@@ -556,8 +556,8 @@ export function RoomPage({ id }: { id: string }) {
               <div className="room-danger-zone">
                 <p className="muted">
                   {playing
-                    ? '关闭将终止当前对局，让所有玩家返回大厅。'
-                    : '关闭将让所有成员返回大厅，并释放建房名额。'}
+                    ? '关闭将终止当前对局并解散房间。'
+                    : '关闭后将解散房间，所有成员返回大厅。'}
                 </p>
                 <button
                   className="danger"
@@ -565,8 +565,8 @@ export function RoomPage({ id }: { id: string }) {
                     if (
                       confirm(
                         playing
-                          ? '强制关闭将终止当前对局，并让所有玩家返回首页。确定关闭吗？'
-                          : '确定关闭房间并返回首页吗？',
+                          ? '强制关闭将终止当前对局并解散房间，确定关闭吗？'
+                          : '确定关闭并解散房间吗？',
                       )
                     )
                       void run({ type: 'close' });

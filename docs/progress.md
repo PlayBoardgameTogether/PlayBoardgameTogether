@@ -1,5 +1,22 @@
 # 开发进度
 
+## 全平台玩家端文案优化与噪音精简（2026-10-18，0.11.1）
+
+针对普通玩家界面进行面对用户的文案全面优化与多余信息精简：
+- 剔除各页面中冗余标题与套话（如 MatchPage 折叠面板中重复的 `<h2>` 标题、调试使用的 `revision`、ProfilePage 战绩列表多余的按时间倒序说明、FriendsPage 好友列表多余的提示废话等）。
+- 精简生硬或技术化表达，将冷峻的 SaaS/工程词汇（如“HTTP 接口正常”、“密码为空”、“可去好友申请查看”、“DisplayName”、“可练习/支持练习”）转变为亲切易懂的玩家用语（如“网络服务正常”、“未设密码”、“玩家昵称”、“可先试玩”）。
+- 润色大厅、房间与对局提示，强化 PlayBoard 暖阳桌游乐园氛围（包括大厅推荐邀请语、首手规则速览、房间状态与倒计时、准备条指引、公共聊天频道友好提示、空状态引导等）。
+- 严格遵循自动化测试断言规范，保留并兼容关键领域概念契约与无障碍可访问性要求（包括 `12 位邀请码`、`加入私人房间`、`添加脚本 AI`、`脚本 AI · 已就绪`、`实时同步`、`可先试玩`、`还没找到合适的游戏`、`进入已接受的房间`、`保存配置（规则变更会清除准备）` 等）。
+
+平台版本 0.11.0 → 0.11.1，属于向后兼容的用户界面文案与体验精炼（PATCH+1），README 同步；工作区依赖与游戏版本保持不变。
+
+实际验证：
+- `pnpm typecheck`：全工作区 11 个项目（ui、game-sdk、protocol、azul、color-match、splendor、grid-garden、test-counter、client-sdk、api、web）TypeScript 检查 100% 通过。
+- `pnpm lint`：ESLint、20 个目录的 AST 模块边界检查及 Prettier 格式化检查全部通过。
+- 相关单元测试：`tests/unit/client-room-contract.test.ts`、`tests/unit/client-network.test.ts`、`tests/unit/tutorial.test.ts`、`tests/unit/color-match.test.ts` 共 21 项全部通过。
+- `pnpm build`：包含 Web 生产 bundle、API runtime、隔离 QuickJS ZIP 规则引擎及 AI worker 校验全部成功通过。
+- `pnpm test:ui`：桌面与手机（Pixel 5）32 项端到端 UI 测试全部通过。
+
 ## 官方 AI token 计费与管理员加价（2026-10-18，0.11.0）
 
 按用户要求在原官方 AI/点数链路加入 token 定价。后台新档位分别设置输入/输出基础点价（整数点/百万 token）、加价百分比和单次预留上限，实时预览售价；玩家目录、房间/本人托管选择器区分 token 与历史固定点价，消费流水显示用量/价格快照。基础点价由管理员换算供应商成本，不自动获取供应商报价或汇率，未接现金支付、兑换或充值。

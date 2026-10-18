@@ -37,8 +37,8 @@ export function ModelSettingsPage() {
             <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <div className="alert-content">
-            <strong>暂时无法保存外部服务密钥</strong>
-            <p>可以先使用内置模拟体验托管；接入外部服务需由管理员启用密钥保存。</p>
+            <strong>当前暂未启用外部密钥加密存储</strong>
+            <p>可使用内置模拟模型体验；如需接入第三方模型，请联系管理员启用安全存储。</p>
           </div>
         </div>
       )}
@@ -71,7 +71,7 @@ export function ModelSettingsPage() {
       {model.loading ? (
         <div className="model-loading-panel" role="status" aria-busy="true">
           <div className="loading-spinner-ring" aria-hidden="true" />
-          <p>正在同步您的模型配置与安全端点…</p>
+          <p>正在同步模型配置…</p>
         </div>
       ) : model.loadError ? (
         <div className="model-error-panel" role="alert">

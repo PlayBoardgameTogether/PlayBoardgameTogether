@@ -75,9 +75,7 @@ export function OfficialAiPage() {
       await api.enrollOfficialAi({ ...input, requestId: previous.current.id });
       previous.current = undefined;
       if (mounted.current) {
-        setNotice(
-          '已保存。可在房间添加此官方 AI，或在对局工具中启用本人托管；已有受阻决策会按新上限继续。',
-        );
+        setNotice('设置已保存，可在房间添加或在对局中开启托管。');
         retry();
       }
     } catch (cause) {
@@ -113,7 +111,7 @@ export function OfficialAiPage() {
         <div>
           <p className="eyebrow">PlayBoard 陪玩</p>
           <h1>官方 AI</h1>
-          <p>选好陪玩，给每一桌设一个安心的点数上限。</p>
+          <p>挑选官方 AI 陪玩，支持单局点数保护。</p>
         </div>
         <a href="/settings/models">自带模型配置</a>
       </header>
@@ -144,19 +142,17 @@ export function OfficialAiPage() {
               刷新余额与账单
             </button>
             <p className="muted">
-              点数由管理员发放。每次官方 AI 成功行动扣费，失败与脚本兜底免费。
+              官方 AI 成功行动时计费，失败或兜底不扣点。
             </p>
           </section>
           <section aria-labelledby="ai-catalog-title">
             <h2 id="ai-catalog-title">选择官方 AI</h2>
             <p className="muted">
-              单局上限按每个席位分别计算；多个 AI 共用你的余额。关闭页面不会停止托管。
-              修改将应用于此官方 AI
-              的所有进行中席位，进行中仅可提高上限；补点或提高上限会继续受阻决策，已消费点数不清零。
+              单局点数上限按席位独立计算。若对局因点数不足受阻，提高上限或充值后即可继续。
             </p>
             {!offers.length && (
               <p className="ai-feedback">
-                官方 AI 尚未开放，请稍后再来。基础脚本 AI 仍可在房间免费添加。
+                官方 AI 尚未开放，请稍后再来。经典 AI 仍可在房间中免费添加。
               </p>
             )}
             <div className="ai-offer-grid">

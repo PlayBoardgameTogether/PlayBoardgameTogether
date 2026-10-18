@@ -84,7 +84,7 @@ export function RegisterPage() {
       <div className="panel auth-card">
         <p className="eyebrow">账号注册</p>
         <h1>加入游戏桌</h1>
-        <p className="muted">选一个名字，让朋友找到你。</p>
+        <p className="muted">注册新账号，开启桌游之旅。</p>
         <form
           ref={form}
           className="form-stack"
@@ -101,7 +101,7 @@ export function RegisterPage() {
           <fieldset className="login-fields" disabled={busy}>
             <div className="auth-field">
               <label>
-                用户名
+                玩家昵称
                 <input
                   name="displayName"
                   aria-invalid={errorField === 'displayName' || undefined}
@@ -113,7 +113,7 @@ export function RegisterPage() {
                 />
               </label>
               <p className="muted" id="register-name-help">
-                1–32 字，支持中文，可在个人资料中修改。
+                你的桌游昵称，后续可随时修改。
               </p>
             </div>
             <div className="auth-field">
@@ -125,7 +125,7 @@ export function RegisterPage() {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder="@rst307"
+                  placeholder="@username"
                   minLength={3}
                   maxLength={33}
                   required
@@ -133,8 +133,7 @@ export function RegisterPage() {
                 />
               </label>
               <p className="muted" id="register-id-help">
-                3–32 位字母、数字或下划线，不区分大小写。用于登录和初始好友查找，@ 可省略；登录 ID
-                固定，好友 ID 可另行修改。
+                3–32 位字母、数字或下划线，用于登录与好友搜索。
               </p>
             </div>
             <div className="auth-field">
@@ -152,7 +151,7 @@ export function RegisterPage() {
                 />
               </label>
               <p className="muted" id="register-password-help">
-                6–128 位，至少包含一个字母和一个数字，支持符号。
+                至少 6 位，需包含字母和数字。
               </p>
             </div>
             <div className="auth-field">

@@ -9,10 +9,10 @@ import type { PresentationAudioPort } from '@boardgame/game-sdk/assets';
 import { GameErrorBoundary, PageFeedback } from '@boardgame/ui';
 const aiNames = {
   idle: '等待行动',
-  queued: '等待处理',
-  running: '正在思考',
-  submitting: '正在保存操作',
-  blocked: '暂时受阻，请收回控制或检查配置',
+  queued: '排队中',
+  running: '正在思考…',
+  submitting: '正在行动…',
+  blocked: '点数不足或受阻',
 };
 function GameSurface({
   render,
@@ -81,7 +81,7 @@ export function MatchPage({ id }: { id: string }) {
     <div className="match-page">
       <section className="page-heading match-heading">
         <div>
-          <p className="eyebrow">对局 · revision {data.revision}</p>
+          <p className="eyebrow">正在对局</p>
           <h1>{clientGame(data.gameId, data.gameVersion)?.name ?? '游戏版本不可用'}</h1>
           <p>
             你的座位 {data.seatIndex + 1} ·{' '}
@@ -97,7 +97,7 @@ export function MatchPage({ id }: { id: string }) {
             className={`status ${connection === 'online' ? 'status--ok' : 'status--warn'}`}
             role="status"
           >
-            {connection === 'online' ? '实时同步' : '正在恢复连接'}
+            {connection === 'online' ? '实时同步' : '网络重连中…'}
           </span>
           <button
             className="secondary"
@@ -112,8 +112,8 @@ export function MatchPage({ id }: { id: string }) {
       {connection !== 'online' && (
         <p className="error-notice" role="status">
           {connection === 'recovery-blocked'
-            ? '此对局的存档或版本暂不可恢复。'
-            : '连接中断或正在同步，操作已暂停。'}
+            ? '对局存档暂时无法恢复。'
+            : '网络重连中，操作已暂停。'}
         </p>
       )}
       {pending && pendingPhase === 'uncertain' && (
@@ -167,13 +167,12 @@ export function MatchPage({ id }: { id: string }) {
               查看回放
             </a>
           )}
-          <p className="muted">返回房间不会退出对局。规则、声音与托管设置可按需展开。</p>
+          <p className="muted">返回房间不影响当前对局。</p>
           {data.status === 'active' && (
             <details className="panel controller-panel">
               <summary>
                 控制方式 · {data.controller.type === 'human' ? '由你操作' : '托管中'}
               </summary>
-              <h2>控制方式</h2>
               <a href="/official-ai">官方 AI / 我的点数</a>
               <p>
                 {data.controller.type === 'script' || data.controller.type === 'model'
@@ -182,9 +181,7 @@ export function MatchPage({ id }: { id: string }) {
               </p>
               {data.controller.type === 'human' ? (
                 <>
-                  <p className="muted">
-                    真人座位不能开启脚本托管；脚本 AI 请在开局前添加至专用座位。
-                  </p>
+                  <p className="muted">支持模型 AI 托管当前席位。</p>
                   {modelProfiles
                     .filter((profile) => profile.has_credential || profile.endpoint_id === 'mock')
                     .map((profile) => (
@@ -215,16 +212,14 @@ export function MatchPage({ id }: { id: string }) {
                   收回控制
                 </button>
               )}
-              <p className="muted">
-                托管会持续到主动收回，关闭页面不会停止。外部模型会收到此座位可见的游戏信息。
-              </p>
+              <p className="muted">托管期间 AI 将代为出牌，可随时收回控制。</p>
             </details>
           )}
           <GameRules gameId={data.gameId} version={data.gameVersion} />
           <AudioControls />
           {assetError && (
             <p role="status" className="error-notice">
-              {assetError} 图片使用语义占位，操作仍可继续。
+              {assetError} 外观资源未就绪，使用占位显示。
             </p>
           )}
           {data.controllers && (
@@ -233,8 +228,8 @@ export function MatchPage({ id }: { id: string }) {
                 <span key={item.seatIndex}>
                   座位 {item.seatIndex + 1} ·{' '}
                   {item.type === 'human'
-                    ? '真人'
-                    : `${item.type === 'script' ? '脚本 AI' : '模型 AI'} · ${item.safeErrorCode === 'AI_FALLBACK_USED' ? '本次由脚本兜底完成' : aiNames[item.aiStatus]}`}
+                    ? '玩家'
+                    : `${item.type === 'script' ? '脚本 AI' : '模型 AI'} · ${item.safeErrorCode === 'AI_FALLBACK_USED' ? '由脚本 AI 兜底完成' : aiNames[item.aiStatus]}`}
                 </span>
               ))}
             </section>

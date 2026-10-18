@@ -31,7 +31,7 @@ export function ChatDock() {
     <div className="chat-dock-toolbar">
       <button className="secondary chat-dock-title" ref={toggle} aria-label={`${minimized ? '展开' : '最小化'}${label}`} aria-expanded={!minimized} aria-controls="desktop-chat-body" onClick={() => setMinimized(!minimized)}>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5" /></svg>
-        <span>{minimized ? '聊天' : '和桌友聊聊'}</span>{unread > 0 && <span className="unread-count">{unread > 99 ? '99+' : unread}</span>}
+        <span>聊天</span>{unread > 0 && <span className="unread-count">{unread > 99 ? '99+' : unread}</span>}
       </button>
       <button className="secondary chat-dock-collapse" aria-label={minimized ? '展开聊天' : '最小化聊天'} onClick={() => { setMinimized(!minimized); toggle.current?.focus(); }}>{minimized ? '⌃' : '−'}</button>
     </div>
@@ -69,7 +69,7 @@ export function ChatDock() {
               <span>{item.person.displayName}</span>
               {item.unread > 0 && <span className="unread-count">{item.unread}</span>}
             </button>)}
-            {data.friends.length === 0 && <p className="muted">还没有好友，去认识一起玩桌游的人。</p>}
+            {data.friends.length === 0 && <p className="muted">暂无好友，去大厅认识新桌友吧。</p>}
             <a className="chat-dock-manage" href="/friends">管理好友</a>
           </>}
         </div>}

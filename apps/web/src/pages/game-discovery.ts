@@ -23,6 +23,26 @@ const discovery: Record<string, { invitation: string; hook: string; firstMove: s
     hook: '收获眼前的分数，还是为下一轮扩建？一起秘密选择，揭晓各自的打算。',
     firstMove: '秘密选择收获或建造，把骨牌放进自己的花园，争取最高分。',
   },
+  'gomoku@1.0.0': {
+    invitation: '黑白交错，方寸之间见真章。',
+    hook: '连珠成线，攻守瞬息万变。开局抢占先手，步步为营。',
+    firstMove: '黑白双方轮流落子，率先在横、竖或斜向连成五子获胜。',
+  },
+  'uno@1.0.0': {
+    invitation: '喊出 UNO，好友聚会的欢乐焦点。',
+    hook: '跟色、跟数字，善用反转与加牌卡，给对手一个措手不及！',
+    firstMove: '打出相同颜色或数字的手牌，最后一张牌时记得喊出 UNO。',
+  },
+  'catan@1.0.0': {
+    invitation: '扬帆起航，开拓你的卡坦岛。',
+    hook: '掷骰产出资源，修路建房，与邻桌展开智慧的交易博弈。',
+    firstMove: '收集资源建设定居点与道路，率先达到 10 分夺得胜利。',
+  },
+  'rummikub@1.0.0': {
+    invitation: '数字重组，桌面上的脑力风暴。',
+    hook: '顺子还是同号？拆分公共牌池，拼接出让人惊叹的全新牌组。',
+    firstMove: '30分破冰入场，将手中的数字牌拼成顺子或同数套牌，最快清空手牌获胜。',
+  },
 };
 
 export function gameDiscovery(game: AvailableGame) {

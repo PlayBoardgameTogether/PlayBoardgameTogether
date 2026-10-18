@@ -223,7 +223,7 @@ export function ReplayPage({ id }: { id: string }) {
           <h1>{frame ? clientGame(frame.gameId, frame.gameVersion).name : '回放'}</h1>
           {frame && (
             <p className="muted">
-              只读回放 · 你的视角 · 座位 {frame.seatIndex + 1} ·{' '}
+              你的视角 · 座位 {frame.seatIndex + 1} ·{' '}
               {frame.status === 'aborted' ? '已中止' : '已结束'}
             </p>
           )}
@@ -253,7 +253,7 @@ export function ReplayPage({ id }: { id: string }) {
         <>
           {frame.firstRevision > 0 && (
             <p className="muted" role="status">
-              这局开始于回放功能上线前，仅保存第 {frame.firstRevision} 步起的局面。
+              早期对局记录，从第 {frame.firstRevision} 步起保存。
             </p>
           )}
           <section className="replay-table" aria-label="回放棋桌" aria-busy={busy}>
@@ -299,7 +299,7 @@ export function ReplayPage({ id }: { id: string }) {
                 disabled={controlsBusy || frame.revision <= frame.firstRevision}
                 onClick={() => seek(frame.firstRevision)}
               >
-                开头
+                第一步
               </button>
               <button
                 className="secondary"
@@ -332,7 +332,7 @@ export function ReplayPage({ id }: { id: string }) {
                 disabled={controlsBusy || frame.revision >= frame.lastRevision}
                 onClick={() => seek(frame.lastRevision)}
               >
-                末尾
+                最后一步
               </button>
               <label>
                 速度{' '}

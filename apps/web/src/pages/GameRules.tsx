@@ -14,7 +14,7 @@ export function GameRules({gameId,version}:{gameId:string;version:string}) {
     return()=>{disposed=true;};
   },[gameId,version,attempt]);
   async function copy() {
-    try {await navigator.clipboard.writeText(rules);setNotice('规则已复制，可用于模型提示词。');}
+    try {await navigator.clipboard.writeText(rules);setNotice('规则已复制');}
     catch {setNotice('复制失败，请选择下方规则文字手动复制。');}
   }
   return <details className="game-rules panel detail-support-card">
@@ -28,8 +28,8 @@ export function GameRules({gameId,version}:{gameId:string;version:string}) {
           </svg>
         </span>
         <div className="detail-support-meta">
-          <span className="detail-support-title">游戏规则与 AI 提示词</span>
-          <span className="detail-support-desc">查阅胜负规则、流程说明，或复制用于模型对弈</span>
+          <span className="detail-support-title">游戏规则</span>
+          <span className="detail-support-desc">查阅胜负规则与流程说明</span>
         </div>
       </div>
       <span className="detail-support-chevron" aria-hidden="true">

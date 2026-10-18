@@ -46,11 +46,11 @@ export function LoginPage() {
     <div className="panel auth-card">
       <p className="eyebrow">账户登录</p>
       <h1>回到游戏桌</h1>
-      <p className="muted">使用注册时的用户 ID 登录；原有账户继续使用原用户名。</p>
+      <p className="muted">输入你的用户 ID 或账号登录。</p>
       {registeredUserId && <p className="success-notice" role="status">注册成功，请输入密码登录。</p>}
       <form className="form-stack" onSubmit={submit} aria-busy={busy} aria-describedby={error ? 'login-error' : undefined}>
         <fieldset className="login-fields" disabled={busy}>
-          <label>用户 ID<input name="username" aria-label="用户名" placeholder="@rst307 或原用户名" defaultValue={registeredUserId ? `@${registeredUserId}` : ''} autoComplete="username" autoCapitalize="none" spellCheck={false} minLength={3} maxLength={33} required /></label>
+          <label>用户 ID<input name="username" aria-label="用户名" placeholder="@username" defaultValue={registeredUserId ? `@${registeredUserId}` : ''} autoComplete="username" autoCapitalize="none" spellCheck={false} minLength={3} maxLength={33} required /></label>
           <label>密码<input name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" minLength={6} maxLength={128} required /></label>
           <button type="button" className="secondary password-toggle" aria-pressed={showPassword} onClick={() => setShowPassword(value => !value)}>
             {showPassword ? '隐藏密码' : '显示密码'}
@@ -59,9 +59,9 @@ export function LoginPage() {
         {error && <p id="login-error" className="error-notice" role="alert">{error}</p>}
         <button type="submit" disabled={busy}>{busy ? '登录中…' : '登录'}</button>
       </form>
-      <a className="auth-back" href="/register">没有账号？注册账号</a>
+      <a className="auth-back" href="/register">还没有账号？立即注册</a>
       <br />
-      <a className="auth-back" href="/">返回大厅</a>
+      <a className="auth-back" href="/">暂不登录，回大厅逛逛</a>
     </div>
   </section>;
 }

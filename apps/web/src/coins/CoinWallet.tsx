@@ -126,7 +126,7 @@ export function CoinWallet({ accountId }: { accountId?: string }) {
   return (
     <div className="coin-wallet">
       <p className="muted">
-        桌游币是 PlayBoard 的通用货币。AI 点数仅用于 AI，两者独立记账，不互相兑换。
+        桌游币是平台的通用货币，用于参与各类互动。
       </p>
       {error && (
         <p className="error-notice" role="alert">
@@ -216,7 +216,7 @@ export function CoinWallet({ accountId }: { accountId?: string }) {
           <section aria-labelledby="coin-history-title">
             <h2 id="coin-history-title">桌游币流水</h2>
             {wallet.entries.length === 0 ? (
-              <p className="panel">暂无流水。初始余额为 0，管理员发放或扣回后会显示记录。</p>
+              <p className="panel">暂无收支明细。</p>
             ) : (
               <ol className="coin-ledger">
                 {wallet.entries.map((entry) => (
@@ -244,7 +244,7 @@ export function CoinWallet({ accountId }: { accountId?: string }) {
                 disabled={busy || !!pending}
                 onClick={() => void refresh(wallet.nextCursor!)}
               >
-                加载更多流水
+                加载更多
               </button>
             )}
           </section>

@@ -38,7 +38,7 @@ export function PublicChatPage({ compact = false, visible = true }: { compact?: 
       await api.requestFriend(pending.current);
       if (active.current && selectionVersion.current === version) {
         pending.current = undefined;
-        setNotice('好友申请已提交，可在好友申请页查看进度。');
+        setNotice('好友申请已发送');
       }
       if (active.current) await social.refresh();
     } catch (cause) {
@@ -51,7 +51,7 @@ export function PublicChatPage({ compact = false, visible = true }: { compact?: 
       if (active.current) setBusy(false);
     }
   }
-  if (social.guest) return <section className="panel"><h1>公共聊天</h1><p>登录后和大家聊天，认识一起玩桌游的朋友。</p><a className="button-link" href="/login">登录参与聊天</a></section>;
+  if (social.guest) return <section className="panel"><h1>公共聊天</h1><p>登录后即可参与公共聊天，结识更多桌友。</p><a className="button-link" href="/login">前往登录</a></section>;
   if (!social.data) return <section className="panel"><h1>公共聊天</h1><p role={social.error ? 'alert' : 'status'}>{social.error || '正在加载…'}</p>
     {social.error && <button onClick={() => void social.refresh()}>重试加载</button>}</section>;
   const own = selected?.friendId === social.data.identity.friendId;
@@ -69,7 +69,7 @@ export function PublicChatPage({ compact = false, visible = true }: { compact?: 
         <BadgeShelf key={selected.id} accountId={selected.id} />
         {notice && <p role="status">{notice}</p>}{error && <p className="error-notice" role="alert">{error}</p>}
         {own ? <a href="/profile">查看我的资料</a> : friend ? <a className="button-link" href={`/friends/chat/${selected.id}`} onClick={() => setSelected(undefined)}>私聊</a> :
-          request ? <><p>{request.direction === 'incoming' ? '对方已向你发送好友申请' : '好友申请等待对方确认'}</p><a href="/friends/requests">查看好友申请</a></> :
+          request ? <><p>{request.direction === 'incoming' ? '对方已向你发送好友申请' : '等待对方确认申请'}</p><a href="/friends/requests">查看好友申请</a></> :
           !notice && <button disabled={busy} onClick={() => void add()}>{busy ? '发送中…' : pending.current ? '重试好友申请' : '发送好友申请'}</button>}
       </>}
     </dialog>

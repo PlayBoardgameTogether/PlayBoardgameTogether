@@ -53,8 +53,8 @@ export function GameDetailPage({ id, version }: { id: string; version: string })
             </div>
             <p className="discovery-detail-note">
               {tutorial
-                ? '还不会玩？教程可免登录练习。正式联机需登录后入座。'
-                : '登录后创建房间，邀请朋友入座，准备后开局。'}
+                ? '免登录即可体验单人练习，随时上手。'
+                : '创建房间邀请好友，也可加入已有桌局。'}
             </p>
           </div>
         </div>
@@ -66,7 +66,7 @@ export function GameDetailPage({ id, version }: { id: string; version: string })
       <section className="game-rooms-heading">
         <div>
           <h2>公开房间</h2>
-          <p className="muted">找一张有空位的桌，和同好一起玩。</p>
+          <p className="muted">找一张有空位的桌，和桌友一起玩。</p>
         </div>
       </section>
       <Lobby gameId={id} showHeading={false} />
@@ -90,7 +90,7 @@ export function GameDetailPage({ id, version }: { id: string; version: string })
               </span>
               <div className="detail-support-meta">
                 <span className="detail-support-title">使用邀请码加入私人房间</span>
-                <span className="detail-support-desc">输入好友分享的 12 位邀请码快速入座</span>
+                <span className="detail-support-desc">输入好友分享的邀请码快速入座</span>
               </div>
             </div>
             <span className="detail-support-chevron" aria-hidden="true">

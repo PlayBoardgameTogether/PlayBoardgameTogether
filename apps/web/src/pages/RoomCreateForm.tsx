@@ -150,8 +150,8 @@ export function RoomCreateForm({
           <label>
             房间类型
             <select name="visibility" defaultValue="public">
-              <option value="public">公开房间（展示在大厅）</option>
-              <option value="private">私人邀请房间（不展示在大厅）</option>
+              <option value="public">公开房间（大厅可见）</option>
+              <option value="private">私密房间（仅凭邀请码）</option>
             </select>
           </label>
 
@@ -160,12 +160,12 @@ export function RoomCreateForm({
             <input name="password" type="password" autoComplete="new-password" maxLength={128} />
           </label>
           <p className="muted">
-            设置密码后，大厅和邀请码加入都需要密码。每人最多创建一个未关闭房间。
+            设置密码后需凭密码进入。每位玩家最多同时主持一个房间。
           </p>
 
           <details className="room-disclosure room-advanced" ref={optionsPanel}>
             <summary>高级设置</summary>
-            <p className="muted">默认规则即可开局；仅在需要自定义规则时修改。</p>
+            <p className="muted">按需自定义规则配置（默认留空即可）。</p>
             <label>
               游戏选项（JSON）
               <textarea
@@ -195,7 +195,7 @@ export function RoomCreateForm({
           </p>
         )}
         {loading && <p role="status">正在加载可用游戏…</p>}
-        {!loading && !games.length && <p role="status">暂无可用游戏，请联系管理员安装游戏扩展。</p>}
+        {!loading && !games.length && <p role="status">暂无可用游戏，请稍后重试。</p>}
         {!loading && error && !games.length && (
           <button
             type="button"

@@ -40,7 +40,7 @@ export function RoomInviteForm({ embedded = false }: { embedded?: boolean } = {}
         setNeedsLogin(unauthenticated);
         setError(
           unauthenticated
-            ? '请先登录，再使用邀请码加入朋友的房间。'
+            ? '请先登录，再使用邀请码加入房间。'
             : cause instanceof Error
               ? cause.message
               : '加入失败',
@@ -55,7 +55,7 @@ export function RoomInviteForm({ embedded = false }: { embedded?: boolean } = {}
   const formBody = (
     <>
       {!embedded && <h3>邀请码加入</h3>}
-      <p className="muted invite-form-lead">朋友发来了邀请？输入邀请码进入对应房间。</p>
+      <p className="muted invite-form-lead">输入好友分享的邀请码快速进入房间。</p>
       <form className="form-stack" onSubmit={join}>
         <fieldset className="room-create-fields form-stack" disabled={joining}>
           <label>
@@ -71,7 +71,7 @@ export function RoomInviteForm({ embedded = false }: { embedded?: boolean } = {}
             />
           </label>
           <label>
-            邀请码房间密码（如有）
+            房间密码（如有）
             <input name="password" type="password" maxLength={128} autoComplete="off" />
           </label>
         </fieldset>

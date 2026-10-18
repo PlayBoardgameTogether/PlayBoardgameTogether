@@ -15,10 +15,10 @@ export function StatusPage() {
   const [api, setApi] = useState<Check>({
     state: 'idle',
     label: '未检查',
-    detail: 'HTTP 进程状态',
+    detail: '服务接口状态',
   });
-  const [db, setDb] = useState<Check>({ state: 'idle', label: '未检查', detail: '数据库与注册表' });
-  const [ws, setWs] = useState<Check>({ state: 'idle', label: '未检查', detail: '实时 ping/pong' });
+  const [db, setDb] = useState<Check>({ state: 'idle', label: '未检查', detail: '数据库状态' });
+  const [ws, setWs] = useState<Check>({ state: 'idle', label: '未检查', detail: '网络延迟' });
   const [time, setTime] = useState('—');
   const [checking, setChecking] = useState(false);
 
@@ -32,9 +32,9 @@ export function StatusPage() {
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]);
     const current = () => !controller.signal.aborted;
     setChecking(true);
-    setApi({ state: 'idle', label: '检查中', detail: 'HTTP 进程状态' });
-    setDb({ state: 'idle', label: '检查中', detail: '数据库与注册表' });
-    setWs({ state: 'idle', label: '检查中', detail: '实时 ping/pong' });
+    setApi({ state: 'idle', label: '检查中', detail: '服务接口状态' });
+    setDb({ state: 'idle', label: '检查中', detail: '数据库状态' });
+    setWs({ state: 'idle', label: '检查中', detail: '网络延迟' });
     const started = performance.now();
     const healthSchema = z.object({
       data: z
@@ -118,7 +118,7 @@ export function StatusPage() {
         <div>
           <p className="eyebrow">运行诊断</p>
           <h1>系统状态</h1>
-          <p>分别检查服务、数据与实时连接，帮助排查无法进入或同步游戏的问题。</p>
+          <p>检查平台各服务的实时连通性。</p>
         </div>
         <Button onClick={check} disabled={checking}>
           {checking ? '正在检查…' : '立即检查'}

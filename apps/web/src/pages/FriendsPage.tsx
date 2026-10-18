@@ -111,11 +111,11 @@ function Invitation({
 export type FriendsSection = 'list' | 'add' | 'requests' | 'invitations' | 'chat';
 
 const headings: Record<FriendsSection, [string, string]> = {
-  list: ['好友', '找一位朋友，聊聊下一局。'],
-  add: ['添加好友', '通过对方的好友 ID 找到朋友。'],
-  requests: ['好友申请', '处理收到的申请，或查看已发送的申请。'],
-  invitations: ['房间邀请', '查看朋友的开桌邀请和你发出的邀请。'],
-  chat: ['好友私聊', '约个时间，一起开桌。'],
+  list: ['我的好友', '查看好友列表，随时约局私聊。'],
+  add: ['添加好友', '输入好友专属 ID 精准添加。'],
+  requests: ['好友申请', '处理收到的好友申请。'],
+  invitations: ['房间邀请', '查收来自朋友的开桌邀请。'],
+  chat: ['私聊', '和桌友在线沟通。'],
 };
 
 export function FriendsPage({
@@ -230,7 +230,7 @@ export function FriendsPage({
           {data.friends.length === 0 && (
             <div className="social-empty">
               <h3>还没有好友</h3>
-              <p className="muted">添加一位朋友，私聊约时间，也能在房间里邀请对方。</p>
+              <p className="muted">添加朋友一起开黑，随时私聊约局。</p>
               <a className="button-link" href="/friends/add">
                 去添加好友
               </a>
@@ -256,7 +256,7 @@ export function FriendsPage({
               </div>
               <div className="social-actions">
                 <a className="button-link secondary" href={`/friends/chat/${item.person.id}`}>
-                  私聊 {item.person.displayName}
+                  发消息
                 </a>
                 <FriendOptions
                   name={item.person.displayName}
@@ -292,7 +292,7 @@ export function FriendsPage({
           <div className="social-add-layout">
             <section className="panel">
               <h2>搜索朋友</h2>
-              <p className="muted">输入完整的好友 ID，搜索后确认昵称再发送申请。</p>
+              <p className="muted">输入好友 ID（如 @username）精准搜索。</p>
               <form className="form-stack" onSubmit={find}>
                 <label>
                   搜索好友 ID
@@ -301,7 +301,7 @@ export function FriendsPage({
                     minLength={3}
                     maxLength={37}
                     pattern="@?[A-Za-z0-9_]{3,36}"
-                    placeholder="@rst307"
+                    placeholder="@username"
                     autoCapitalize="none"
                     autoCorrect="off"
                     spellCheck={false}
@@ -313,7 +313,7 @@ export function FriendsPage({
                     }}
                   />
                 </label>
-                <button disabled={action.busy}>{action.busy ? '处理中…' : '搜索用户'}</button>
+                <button disabled={action.busy}>{action.busy ? '搜索中…' : '搜索'}</button>
               </form>
               {result === null && <p role="status">没有找到这个好友 ID。</p>}
               {result && (
@@ -343,7 +343,7 @@ export function FriendsPage({
                               friendId: result.friendId,
                               expectedAccountId: result.id,
                             }),
-                          '好友申请已提交，请等待对方确认',
+                          '好友申请已发送',
                           () => void refresh(),
                         )
                       }
@@ -353,9 +353,6 @@ export function FriendsPage({
                   )}
                 </article>
               )}
-              <p className="muted">
-                申请进度可在 <a href="/friends/requests">好友申请</a> 中查看。
-              </p>
             </section>
             <FriendIdCard />
           </div>
@@ -412,7 +409,7 @@ export function FriendsPage({
                                 action: operation,
                               }),
                             operation === 'accept'
-                              ? '已成为好友，可返回好友列表开始私聊'
+                              ? '已添加为好友'
                               : '申请已处理',
                             () => void refresh(),
                           )
@@ -437,7 +434,7 @@ export function FriendsPage({
         <section className="panel social-invitations">
           <h2>开桌邀请</h2>
           <p className="muted invitation-help">
-            在等待中的房间点击「邀请好友」。接受邀请后，选择座位即可准备。
+            好友接受邀请后即可直接进入房间。
           </p>
           {data.invitations.length === 0 && <p className="social-empty muted">暂无房间邀请。</p>}
           {data.invitations.map((invite) => (
@@ -466,8 +463,8 @@ export function FriendsPage({
             <DirectChat key={selected.id} person={selected} refresh={refresh} />
           ) : (
             <section className="panel">
-              <h2>无法打开这段私聊</h2>
-              <p className="muted">对方不在当前好友列表中。返回列表选择好友，或检查好友关系。</p>
+              <h2>未找到对话</h2>
+              <p className="muted">该用户不在你的好友列表中。</p>
             </section>
           )}
         </div>

@@ -80,7 +80,7 @@ export function ModelProfileDirectory({
                 {profiles.length}
               </span>
             </div>
-            <p className="model-directory-subtitle">管理用于对局博弈与测试的 AI 模型库</p>
+            <p className="model-directory-subtitle">管理自定义 AI 模型与密钥配置</p>
           </div>
         </div>
 

@@ -314,7 +314,7 @@ export function ProfilePage({
                 </svg>
                 PlayBoard 桌游名片
               </span>
-              <span className="profile-player-role">正式玩家</span>
+              <span className="profile-player-role">正式桌友</span>
             </div>
             <div className="profile-card-content">
               <div className="profile-avatar-container">
@@ -377,9 +377,9 @@ export function ProfilePage({
                       ✍️
                     </span>
                     <div className="bio-empty-details">
-                      <p className="profile-bio">还没有填写个人简介。</p>
+                      <p className="profile-bio">还没有个人简介。</p>
                       <span className="bio-empty-prompt" aria-hidden="true">
-                        添加常玩的桌游和对局宣言，让桌友更快认识你～
+                        写写常玩的桌游和对局宣言，让桌友认识你～
                       </span>
                     </div>
                     <a href="/profile/edit" className="bio-empty-cta">
@@ -414,7 +414,7 @@ export function ProfilePage({
             <a href="/profile/coins" className="profile-feature-card">
               <div className="profile-feature-text">
                 <span className="profile-feature-title">我的桌游币</span>
-                <span className="profile-feature-desc">查看平台通用货币余额与流水</span>
+                <span className="profile-feature-desc">查看余额与明细</span>
               </div>
               <span aria-hidden="true">→</span>
             </a>
@@ -441,7 +441,7 @@ export function ProfilePage({
                 <div className="profile-feature-text">
                   <span className="profile-feature-title">对局记录</span>
                   <span className="profile-feature-desc" aria-hidden="true">
-                    查看全部对局胜负、得分记录与历史回放
+                    查看往期战绩与精彩回放
                   </span>
                 </div>
               </div>
@@ -484,7 +484,7 @@ export function ProfilePage({
                 <div className="profile-feature-text">
                   <span className="profile-feature-title">管理好友 ID</span>
                   <span className="profile-feature-desc" aria-hidden="true">
-                    自定义个人专属 @ID，方便好友搜索与开黑
+                    专属 @ID，方便朋友精准找到你
                   </span>
                 </div>
               </div>
@@ -511,7 +511,7 @@ export function ProfilePage({
         <section className="panel profile-editor-card">
           <header className="profile-editor-header">
             <h2>修改个人名片</h2>
-            <p className="muted">定制你的桌游昵称、喜爱的头像与宣言，展现你的桌友风采。</p>
+            <p className="muted">定制你的昵称、头像与个性宣言。</p>
           </header>
           <form className="form-stack profile-editor" onSubmit={save}>
             <fieldset className="room-fieldset form-stack" disabled={busy}>
@@ -583,16 +583,13 @@ export function ProfilePage({
 
       {section === 'history' && history && (
         <section className="room-list">
-          <header className="history-header">
-            <p className="muted">按开局时间排列，包含已结束与中止的对局记录。</p>
-          </header>
           {history.items.length === 0 ? (
             <div className="profile-empty-history panel">
               <div className="empty-history-icon" aria-hidden="true">
                 🎲
               </div>
               <p className="muted">
-                还没有对局记录。<a href="/">去游戏大厅开始第一局</a>
+                暂无对局记录。<a href="/">去大厅开始第一局</a>
               </p>
             </div>
           ) : (
@@ -622,7 +619,7 @@ export function ProfilePage({
               disabled={loadingMore}
               onClick={() => void more()}
             >
-              {loadingMore ? '加载中…' : '加载更多对局'}
+              {loadingMore ? '加载中…' : '加载更多'}
             </button>
           )}
         </section>

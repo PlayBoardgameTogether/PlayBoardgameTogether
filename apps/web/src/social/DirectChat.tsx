@@ -247,7 +247,7 @@ export function DirectChat({
       if (cause instanceof ApiError && !cause.retryable) pending.current = undefined;
       if (mounted.current) {
         setRetry(!!pending.current);
-        setError(cause instanceof ApiError ? cause.message : '发送结果未知，请点击重试发送。');
+        setError(cause instanceof ApiError ? cause.message : '发送失败，请点击重试。');
       }
     } finally {
       sending.current = false;
@@ -259,9 +259,9 @@ export function DirectChat({
       className={`panel direct-chat ${publicChat ? 'public-chat' : ''}`}
       aria-label={publicChat ? '公共聊天' : `与 ${person?.displayName} 的私聊`}
     >
-      {!compact && <h1>{publicChat ? '公共聊天' : `与 ${person?.displayName} 私聊`}</h1>}
+      {!compact && <h1>{publicChat ? '公共聊天' : `与 ${person?.displayName} 对话`}</h1>}
       <p className="muted">
-        {publicChat ? '所有登录玩家可见 · 点击头像认识桌友' : '仅你们双方可见'}
+        {publicChat ? '公共频道 · 友善交流' : '仅你们双方可见'}
       </p>
       {loadError && (
         <p role="alert" className="error-notice">
@@ -279,7 +279,7 @@ export function DirectChat({
       {loading && <p role="status">正在加载聊天记录…</p>}
       {cursor && (
         <button className="secondary" disabled={moreBusy} onClick={() => void load(cursor)}>
-          加载更早消息
+          查看更早消息
         </button>
       )}
       <ol
@@ -327,7 +327,7 @@ export function DirectChat({
         </button>
       )}
       {!loading && !loadError && messages.length === 0 && (
-        <p className="muted">还没有消息，打个招呼吧。</p>
+        <p className="muted">暂无消息，打个招呼吧～</p>
       )}
       <form className="form-stack" onSubmit={send}>
         <label htmlFor={inputId}>{publicChat ? '公共消息' : '私聊消息'}</label>

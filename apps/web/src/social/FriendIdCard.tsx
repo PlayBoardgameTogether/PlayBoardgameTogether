@@ -49,7 +49,7 @@ export function FriendIdCard() {
             复制好友 ID
           </button>
           <p className="muted">
-            把这个 ID 发给朋友，对方可在「好友」中搜索你。修改后已有好友和聊天记录仍保留。
+            好友可通过此 ID 搜索并添加你。修改后好友关系与聊天记录均不受影响。
           </p>
           <form className="form-stack" onSubmit={save}>
             <label>
@@ -59,15 +59,14 @@ export function FriendIdCard() {
                 pattern="@?[A-Za-z0-9_]{3,36}"
                 minLength={3}
                 maxLength={37}
-                placeholder="@rst307"
+                placeholder="@username"
                 value={value}
                 disabled={action.busy}
                 onChange={(event) => setValue(event.target.value)}
               />
             </label>
             <small className="muted">
-              自定义你的 @ID，例如 @rst307。名字为 3–36
-              位字母、数字或下划线，不区分大小写，登录用户名不变。
+              支持 3–36 位字母、数字或下划线，不区分大小写。
             </small>
             <p className="muted">
               {data.identity.changeIntervalDays === 0

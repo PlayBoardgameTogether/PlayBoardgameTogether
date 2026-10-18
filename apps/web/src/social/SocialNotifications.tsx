@@ -56,7 +56,7 @@ export function SocialNotifications() {
     {open && <section id="notification-list" className="notification-list" aria-label="消息与邀请通知">
       <h2>通知</h2>
       {error && <p role="alert">{error}<button className="secondary" onClick={() => void refresh()}>重试同步</button></p>}
-      {count === 0 && <p className="muted">暂无未读消息或待处理邀请。</p>}
+      {count === 0 && <p className="muted">暂无新通知</p>}
       {messages.map(item => <a className="notification-row" key={item.person.id} href={`/friends/chat/${item.person.id}`} onClick={event => {
         setOpen(false);
         if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && matchMedia('(min-width: 761px)').matches) {
@@ -67,6 +67,6 @@ export function SocialNotifications() {
       {requests.length > 0 && <a className="notification-row" href="/friends/requests" onClick={() => setOpen(false)}><strong>{requests.length} 条好友申请</strong><small>查看并处理</small></a>}
       <a className="notification-all" href="/friends" onClick={() => setOpen(false)}>查看好友</a>
     </section>}
-    {toast && createPortal(<div className="notification-toast" role="status"><span>你有新的好友消息或邀请</span><button className="secondary" onClick={() => { setOpen(true); setToast(false); trigger.current?.focus(); }}>查看通知</button><button className="secondary" aria-label="关闭通知提示" onClick={() => setToast(false)}>×</button></div>, document.body)}
+    {toast && createPortal(<div className="notification-toast" role="status"><span>收到新消息或房间邀请</span><button className="secondary" onClick={() => { setOpen(true); setToast(false); trigger.current?.focus(); }}>查看通知</button><button className="secondary" aria-label="关闭通知提示" onClick={() => setToast(false)}>×</button></div>, document.body)}
   </div>;
 }

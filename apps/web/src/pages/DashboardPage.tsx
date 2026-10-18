@@ -89,9 +89,7 @@ export function DashboardPage() {
     );
   if (!me)
     return (
-      <PageFeedback title="正在验证会话…" loading>
-        正在加载你可以访问的房间。
-      </PageFeedback>
+      <PageFeedback title="正在进入大厅…" loading />
     );
   return (
     <>
@@ -99,7 +97,7 @@ export function DashboardPage() {
         <div>
           <p className="eyebrow">你好，{me.account.displayName}</p>
           <h1>游戏大厅</h1>
-          <p>回到熟悉的那一桌，或试一款新的桌游。</p>
+          <p>回到进行中的对局，或挑选新桌游。</p>
         </div>
       </section>
       <RoomInviteEntry />
@@ -115,7 +113,7 @@ export function DashboardPage() {
         >
           <h2>继续游戏</h2>
           {rooms.filter((room) => room.status !== 'closed').length === 0 ? (
-            <p className="muted">暂时没有正在参与的房间。可以加入公开房间，或创建自己的房间。</p>
+            <p className="muted">暂无进行中的房间，去大厅挑一桌或新建房间吧。</p>
           ) : (
             rooms
               .filter((room) => room.status !== 'closed')
@@ -137,7 +135,7 @@ export function DashboardPage() {
           )}
           {cursor && (
             <button className="secondary" disabled={loadingMore} onClick={() => void more()}>
-              {loadingMore ? '正在加载房间…' : '加载更多参与房间'}
+              {loadingMore ? '正在加载…' : '加载更多'}
             </button>
           )}
         </section>

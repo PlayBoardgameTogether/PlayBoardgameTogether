@@ -18,20 +18,20 @@ export default function RootPage() {
     });
     return () => { disposed = true; };
   }, [attempt]);
-  if (state === 'loading') return <PageFeedback title="正在检查登录状态…" loading />;
-  if (state === 'error') return <PageFeedback title="暂时无法连接" retry={() => setAttempt(value => value + 1)}>检查连接后重新加载。</PageFeedback>;
+  if (state === 'loading') return <PageFeedback title="正在加载…" loading />;
+  if (state === 'error') return <PageFeedback title="暂时无法连接" retry={() => setAttempt(value => value + 1)}>请检查网络后重试。</PageFeedback>;
   if (state === 'member') return <DashboardPage />;
   return (
     <>
       <HomePage />
       <section className="panel guest-welcome-banner" aria-label="登录指引">
         <div className="guest-banner-info">
-          <h3>加入这张桌，与好友实时对战</h3>
-          <p className="muted">支持 2–4 人在线联机、开房组桌、智能托管与多款经典桌游。</p>
+          <h3>和朋友一起在线玩桌游</h3>
+          <p className="muted">实时联机对战，支持好友组局与智能陪玩。</p>
         </div>
         <p>
           <a className="login-link button-link" href="/login">
-            登录后创建或加入私人房间 →
+            登录开启对局 →
           </a>
           <a className="auth-back" href="/register">注册账号</a>
         </p>
