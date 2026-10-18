@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { sessionFixture } from '../fixtures/session.js';
 
 const games = [
   { id: 'azul.base', name: '花砖物语', description: '花砖拼图', players: { min: 2, max: 4 } },
@@ -164,4 +165,80 @@ test('light mobile game chrome retains readable text around the immersive table'
   expect(decisionBox!.y + decisionBox!.height).toBeLessThanOrEqual(844);
   expect(decisionBox!.y + decisionBox!.height).toBeGreaterThan(744);
   await page.screenshot({ path: info.outputPath('mobile-decision-above-navigation.png') });
+});
+
+test('game notifications stay reachable and incoming alerts do not cover the table', async ({ page, isMobile }, info) => {
+  let unread = 0;
+  await page.route('**/api/v1/auth/me', route => route.fulfill({ json: {
+    ok: true, traceId: 'game-notifications', data: sessionFixture({ role: 'administrator' }),
+  } }));
+  await page.route('**/api/v1/social/updates**', route => route.fulfill({ json: {
+    ok: true, traceId: 'game-notifications', data: {
+      changed: true, version: (unread ? 'b' : 'a').repeat(64), overview: {
+        identity: { friendId: 'alice', revision: 1, changeIntervalDays: 30, nextChangeAt: null, canChange: true },
+        friends: [{
+          person: { id: '10000000-0000-4000-8000-000000000002', friendId: 'bob', displayName: '桌友小明', avatar: 'cat' },
+          status: 'accepted', direction: 'incoming', revision: 1, unread,
+        }], requests: [], invitations: [],
+      },
+    },
+  } }));
+  await page.goto('/games/azul.base/1.0.0/tutorial');
+  await expect(page.locator('.az-table')).toBeVisible();
+  const bell = page.getByRole('button', { name: /^通知(?:，.*)?$/ });
+  await expect(bell).toBeVisible();
+  unread = 100;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  const toast = page.getByRole('status').filter({ hasText: '收到新消息或房间邀请' });
+  await expect(toast).toBeVisible();
+  const sizes = isMobile
+    ? [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 700, height: 390 }, { width: 844, height: 390 }]
+    : [{ width: 768, height: 900 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }];
+  for (const viewport of sizes) {
+    await page.setViewportSize(viewport);
+    const box = await toast.boundingBox();
+    expect(box!.height).toBeLessThan(150);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+    await expect(bell).toBeInViewport();
+    const brand = await page.locator('.brand').boundingBox();
+    const tools = await page.locator('.game-header-tools').boundingBox();
+    expect(tools!.x).toBeGreaterThanOrEqual(brand!.x + brand!.width);
+    if (isMobile && viewport.width === 844) {
+      await expect(page.getByRole('region', { name: '聊天浮窗' })).toHaveCount(0);
+      await expect(page.locator('.shell-help')).toBeHidden();
+      await expect(page.getByRole('navigation', { name: '主导航', exact: true }).getByRole('link', { name: '公共聊天', exact: true })).toBeVisible();
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: info.outputPath(`game-alert-${viewport.width}.png`) });
+  }
+  if (isMobile) await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.az-table').scrollIntoViewIfNeeded();
+  await toast.getByRole('button', { name: '查看通知', exact: true }).click();
+  await expect(page.getByRole('region', { name: '消息与邀请通知' })).toBeInViewport();
+  await expect(page.getByRole('link', { name: /桌友小明.*100 条未读/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('region', { name: '消息与邀请通知' })).toHaveCount(0);
+  await expect(bell).toBeFocused();
+  if (isMobile) {
+    await page.setViewportSize({ width: 844, height: 390 });
+    await bell.click();
+    await page.getByRole('link', { name: /桌友小明.*100 条未读/ }).click();
+    await expect(page).toHaveURL('/friends/chat/10000000-0000-4000-8000-000000000002');
+    await expect(page.getByRole('region', { name: '聊天浮窗' })).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+  }
+  // Non-game pages still leave room for the fixed bottom navigation.
+  unread = 0;
+  await page.goto('/developers');
+  await expect(bell).toBeVisible();
+  unread = 1;
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(toast).toBeVisible();
+  expect((await toast.boundingBox())!.height).toBeLessThan(150);
+  if (isMobile) {
+    const bar = await page.getByRole('navigation', { name: '主导航', exact: true }).boundingBox();
+    const alert = await toast.boundingBox();
+    expect(alert!.y + alert!.height).toBeLessThanOrEqual(bar!.y);
+  }
 });

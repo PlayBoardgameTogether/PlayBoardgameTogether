@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { DirectChat } from './DirectChat.js';
 import { PersonAvatar } from './PersonAvatar.js';
 import { useSocialContext } from './SocialProvider.js';
+import { desktopChatMedia } from './chat-layout.js';
 
 const PublicChatPage = lazy(() => import('../pages/PublicChatPage.js').then(module => ({ default: module.PublicChatPage })));
 
@@ -10,11 +11,11 @@ export function ChatDock() {
     data, guest, error, chatId, minimized, setMinimized,
     openChat, closeChat, refresh, chatTab: tab, setChatTab: setTab,
   } = useSocialContext();
-  const [desktop, setDesktop] = useState(() => matchMedia('(min-width: 761px)').matches);
+  const [desktop, setDesktop] = useState(() => matchMedia(desktopChatMedia).matches);
   const [opened, setOpened] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    const media = matchMedia('(min-width: 761px)');
+    const media = matchMedia(desktopChatMedia);
     const change = () => setDesktop(media.matches);
     media.addEventListener('change', change);
     return () => media.removeEventListener('change', change);

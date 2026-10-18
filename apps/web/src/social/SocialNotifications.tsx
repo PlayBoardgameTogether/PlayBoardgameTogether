@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { SocialOverview } from '@boardgame/protocol';
 import { useSocialContext } from './SocialProvider.js';
+import { desktopChatMedia } from './chat-layout.js';
 import '../styles/social.css';
 
 const receivedInvites = (data: SocialOverview) => data.invitations.filter(item =>
   item.recipient.friendId === data.identity.friendId && item.status === 'pending' && item.available);
 
-export function SocialNotifications() {
+export function SocialNotifications({ game = false }: { game?: boolean }) {
   const { data, error, refresh, openChat } = useSocialContext();
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState(false);
@@ -50,7 +51,7 @@ export function SocialNotifications() {
   return <div className="social-notifications" ref={container}>
     <button ref={trigger} className="secondary notification-trigger" aria-label={count ? `通知，${count} 条未处理` : '通知'} aria-expanded={open} aria-controls="notification-list" onClick={() => { setOpen(value => !value); setToast(false); }}>
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M9 21h6" /></svg>
-      <span>通知</span>{count > 0 && <span className="unread-count" aria-hidden="true">{count > 99 ? '99+' : count}</span>}
+      <span className="notification-label">通知</span>{count > 0 && <span className="unread-count" aria-hidden="true">{count > 99 ? '99+' : count}</span>}
       {error && <span aria-label="同步失败">!</span>}
     </button>
     {open && <section id="notification-list" className="notification-list" aria-label="消息与邀请通知">
@@ -59,7 +60,7 @@ export function SocialNotifications() {
       {count === 0 && <p className="muted">暂无新通知</p>}
       {messages.map(item => <a className="notification-row" key={item.person.id} href={`/friends/chat/${item.person.id}`} onClick={event => {
         setOpen(false);
-        if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && matchMedia('(min-width: 761px)').matches) {
+        if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && matchMedia(desktopChatMedia).matches) {
           event.preventDefault(); openChat(item.person.id);
         }
       }}><strong>{item.person.displayName}</strong><small>{item.unread} 条未读消息</small></a>)}
@@ -67,6 +68,17 @@ export function SocialNotifications() {
       {requests.length > 0 && <a className="notification-row" href="/friends/requests" onClick={() => setOpen(false)}><strong>{requests.length} 条好友申请</strong><small>查看并处理</small></a>}
       <a className="notification-all" href="/friends" onClick={() => setOpen(false)}>查看好友</a>
     </section>}
-    {toast && createPortal(<div className="notification-toast" role="status"><span>收到新消息或房间邀请</span><button className="secondary" onClick={() => { setOpen(true); setToast(false); trigger.current?.focus(); }}>查看通知</button><button className="secondary" aria-label="关闭通知提示" onClick={() => setToast(false)}>×</button></div>, document.body)}
+    {toast && createPortal(
+      <div className={`notification-toast${game ? ' notification-toast--game' : ''}`} role="status">
+        <span>收到新消息或房间邀请</span>
+        <button className="secondary" onClick={() => {
+          setOpen(true);
+          setToast(false);
+          trigger.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+          trigger.current?.focus({ preventScroll: true });
+        }}>查看通知</button>
+        <button className="secondary" aria-label="关闭通知提示" onClick={() => setToast(false)}>×</button>
+      </div>, document.body,
+    )}
   </div>;
 }

@@ -1,5 +1,13 @@
 # 开发进度
 
+## 手机导航关联缺陷复查（2026-10-18，0.11.3）
+
+本轮复现并修复三项遮挡/可达性问题：手机通知条同时继承 top:80px 和 bottom:88px，在 390×844 中被拉伸至 676px 高；游戏通知按钮和列表位于隐藏工具栏，「查看通知」打开后不可见；844×390 触屏横屏会重新启用桌面聊天浮窗和左下帮助入口。通知条现在为自然内容高度（同视口实测 70px），非游戏页避让底栏，游戏页仅避让设备安全区；棋桌通知入口移到页头，与导航并排，点击通知条先滚动到入口再聚焦，通知列表和 Escape 焦点可用。触屏、无悬停、宽度 761–1000px 且高度不超过 500px 时，聊天改走页面，保留聊天导航并隐藏帮助浮层；真正桌面继续使用浮窗。App、ChatDock、SocialNotifications 共用 desktopChatMedia，CSS 保持互补条件。平台 0.11.2 → 0.11.3，兼容缺陷修复，未改认证、消息读取/已读、动作或数据库契约。
+
+实际检查：Chromium 手机模拟 320×568、390×844、700×390、844×390，桌面 768×900、1280×800、1440×900；花砖教程、正常页面及真实 Color Match 开局/动作，亮暗主题、99+ 未读标识、旋转、收起后再次展开、更多菜单、通知弹层与 Escape。未复现导航收起后设置残留；旋转时浏览器将已隐藏控件的焦点移回 body，没有保留不可见焦点。截图/跟踪保存在忽略目录 `.data/mobile-navigation-review/`。没有物理手机、iOS Safari 或全游戏终局验收，历史 Color Match 完整流程的旧文案定位问题仍见上一条记录。
+
+验证：`pnpm typecheck`、`pnpm lint`、`pnpm build` 通过；横屏补充后再次执行 typecheck/lint，并执行 `pnpm --filter @boardgame/web build` 与 `node scripts/check-production-bundle.mjs`，均通过。最终 `pnpm test:ui tests/e2e/mobile-discovery.spec.ts tests/e2e/navigation-menu.spec.ts --output=.data/mobile-navigation-review/final-ui-results`：21 项通过、5 项按设备条件跳过。最终 `pnpm test:e2e tests/e2e/navigation.spec.ts -g 'game navigation preserves' --output=.data/mobile-navigation-review/final-real-results`：2 项通过；经独立测试库准备脚本运行，已确认测试库与开发库不同，真实登录、开局、动作 200 和离开返回后局面保留。本轮未改 API/存储，不追加集成或全库测试。下一步在实际手机核对通知、浏览器地址栏及系统安全区表现。
+
 ## 手机导航闪烁与棋桌遮挡修复（2026-10-18，0.11.2）
 
 手机底栏点击前仍应用浏览器默认触摸高亮（Chromium 模拟读取为 rgba(51, 181, 229, 0.4)）和桌面导航过渡；站内切页同时启用 View Transition 与 main 淡入。现在 760px 及以下即时切页，移除导航触摸高亮、悬停位移和过渡，保留当前页标识及键盘焦点。手机正式棋桌、回放、教程默认收起平台导航，从页头「导航」按钮展开；展开区域进入正常文档流，Escape 逐层关闭，换页收起。底部 inset 只保留设备安全区，让游戏确认栏与回放控件释放原底栏空间。大厅底栏和桌面导航保留。平台由 0.11.1 递增为 0.11.2，属于兼容的交互缺陷修复。

@@ -8,6 +8,7 @@ import { SocialProvider, useSocialContext } from '../social/SocialProvider.js';
 import { SocialNotifications } from '../social/SocialNotifications.js';
 import { ChatDock } from '../social/ChatDock.js';
 import { NavigationTools } from './NavigationTools.js';
+import { desktopChatMedia } from '../social/chat-layout.js';
 
 export function App() {
   const path = usePageNavigation();
@@ -20,7 +21,7 @@ function AppShell({ path }: { path: string }) {
     const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
     if (!event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey &&
       link instanceof HTMLAnchorElement && link.origin === location.origin && !link.search && !link.hash &&
-      !link.hasAttribute('download') && (!link.target || link.target === '_self') && matchMedia('(min-width: 761px)').matches) {
+      !link.hasAttribute('download') && (!link.target || link.target === '_self') && matchMedia(desktopChatMedia).matches) {
       const chat = /^\/friends\/chat\/([0-9a-f-]{36})$/i.exec(link.pathname);
       if (chat && social.data?.friends.some(item => item.person.id === chat[1])) {
         event.preventDefault(); social.openChat(chat[1]!); return;
@@ -48,13 +49,18 @@ function AppShell({ path }: { path: string }) {
     }}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
       <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">PlayBoard<span>顶尖桌游联盟</span></span></a>
-      {route.game && <button
-        className="secondary mobile-game-navigation-toggle"
-        ref={navigationToggle}
-        aria-expanded={navigationOpen}
-        aria-controls="platform-navigation"
-        onClick={() => setNavigationOpen(open => !open)}
-      >{navigationOpen ? '收起导航' : '导航'}</button>}
+      {route.game && (
+        <div className="game-header-tools">
+          <button
+            className="secondary mobile-game-navigation-toggle"
+            ref={navigationToggle}
+            aria-expanded={navigationOpen}
+            aria-controls="platform-navigation"
+            onClick={() => setNavigationOpen(open => !open)}
+          >{navigationOpen ? '收起导航' : '导航'}</button>
+          <SocialNotifications game />
+        </div>
+      )}
       <nav id="platform-navigation" className="platform-navigation" aria-label="主导航">
         <span className="nav-caption">游戏空间</span>
         <a href="/" aria-label="游戏大厅" aria-current={path === '/' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg><span className="nav-desktop-label">游戏大厅</span><span className="nav-mobile-label">首页</span></a>
@@ -66,7 +72,7 @@ function AppShell({ path }: { path: string }) {
       <div className="sidebar-note"><span>和朋友，共享一张桌</span><small>私人房间 · 实时对局</small></div>
     </header>
     <div className="workspace">
-      <div className="workspace-toolbar"><span>桌游平台 <span aria-hidden="true">/</span> <strong>{route.title}</strong></span><SocialNotifications /></div>
+      <div className="workspace-toolbar"><span>桌游平台 <span aria-hidden="true">/</span> <strong>{route.title}</strong></span>{!route.game && <SocialNotifications />}</div>
       <main key={path} id="main-content" tabIndex={-1} aria-label={route.title}>
         <PageBoundary>
           <Suspense fallback={<PageFeedback title={`正在加载${route.title}…`} loading />}>
