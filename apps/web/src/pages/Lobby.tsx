@@ -75,6 +75,9 @@ export function Lobby({gameId,showHeading=true}:{gameId?:string;showHeading?:boo
         <strong>{room.name}</strong>
         <small>房主：{room.hostDisplayName} · {formatFriendId(room.hostFriendId)}</small>
         <small>{games.find(game => game.id === room.gameId)?.name ?? room.gameId} · {room.occupiedCount}/{room.seatCount} 人 · {room.hasPassword ? '密码房' : '无密码'} · {statusNames[room.status]}</small>
+        {room.status === 'waiting' && room.occupiedCount < room.seatCount && (
+          <small className="discovery-room-openings">还有 {room.seatCount - room.occupiedCount} 个空位</small>
+        )}
       </span>
       <button disabled={busy || (!room.isMember && (room.status !== 'waiting' || room.occupiedCount >= room.seatCount))}
         onClick={event => {

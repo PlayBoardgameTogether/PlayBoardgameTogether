@@ -29,7 +29,8 @@ test('catalog opens details, preserves selected game and supports history and re
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: '创建房间', exact: true })).toHaveCount(0);
-  await expect(page.getByLabel('12 位邀请码')).toHaveCount(0);
+  await expect(page.getByLabel('12 位邀请码')).toHaveCount(1);
+  await expect(page.getByLabel('12 位邀请码')).toBeHidden();
   await expectInstalledCatalog(page);
   await page.evaluate(() => {
     document.body.dataset.catalogMarker = 'same-document';
@@ -66,9 +67,58 @@ test('catalog opens details, preserves selected game and supports history and re
   await expect(page.getByRole('button', { name: '创建并生成邀请码' })).toBeDisabled();
 });
 
-test('guest can browse games and catalog failures offer retry', async ({ page }) => {
+test('guest can filter games and catalog failures offer retry', async ({ page }, info) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
+  await expectInstalledCatalog(page);
+  const total = await page.locator('a.game-card').count();
+  await page.getByRole('button', { name: '可先试玩', exact: true }).click();
+  await expect(page.locator('a.game-card[href="/games/grid-garden/1.0.0"]')).toHaveCount(0);
+  await expect(page.locator('a.game-card[href="/games/color-match/1.0.0"]')).toBeVisible();
+  await page.getByLabel('搜索游戏', { exact: true }).fill('不存在的游戏');
+  await expect(page.locator('a.game-card')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '还没找到合适的游戏' })).toBeVisible();
+  await page.getByRole('button', { name: '清除筛选', exact: true }).click();
+  await expect(page.locator('a.game-card')).toHaveCount(total);
+  await page.getByRole('button', { name: '多人聚会', exact: true }).click();
+  const response = await page.request.get('/api/v1/games');
+  const catalog = z
+    .object({
+      data: z.array(
+        z.object({
+          players: z.object({ min: z.number(), max: z.number() }),
+          developmentOnly: z.boolean(),
+        }),
+      ),
+    })
+    .parse(await response.json());
+  await expect(page.locator('a.game-card')).toHaveCount(
+    catalog.data.filter((game) => !game.developmentOnly && game.players.max >= 3).length,
+  );
+  await page.getByRole('button', { name: '全部游戏', exact: true }).click();
+  await page.getByLabel('搜索游戏', { exact: true }).fill('花园');
+  await expect(page.locator('a.game-card')).toHaveCount(1);
+  await page.getByLabel('搜索游戏', { exact: true }).fill('');
+  if (info.project.name === 'desktop') {
+    for (const width of [1440, 1280, 390, 320]) {
+      await page.setViewportSize({ width, height: width < 700 ? 844 : 900 });
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate((value) => (document.documentElement.dataset.theme = value), theme);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+          true,
+        );
+        await page.getByRole('link', { name: '先试一手', exact: true }).focus();
+        await expect(page.getByRole('link', { name: '先试一手', exact: true })).toBeFocused();
+        await page.screenshot({
+          path: info.outputPath(`discovery-${theme}-${width}.png`),
+          fullPage: true,
+          animations: 'disabled',
+        });
+      }
+    }
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('.discovery-spotlight-art')).toHaveCSS('transform', 'none');
+  }
   await page.locator('a.game-card[href="/games/grid-garden/1.0.0"]').click();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Grid Garden', exact: true })).toBeVisible();

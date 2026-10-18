@@ -95,11 +95,11 @@ export function DashboardPage() {
     );
   return (
     <>
-      <section className="page-heading">
+      <section className="page-heading discovery-heading">
         <div>
           <p className="eyebrow">你好，{me.account.displayName}</p>
           <h1>游戏大厅</h1>
-          <p>先选择游戏，再创建房间或加入朋友的游戏桌。</p>
+          <p>回到熟悉的那一桌，或试一款新的桌游。</p>
         </div>
       </section>
       <RoomInviteEntry />
@@ -111,7 +111,7 @@ export function DashboardPage() {
       <div className="lobby-content">
         <GameCatalog />
         <section
-          className={`panel continue-games${rooms.some((room) => room.status !== 'closed') ? '' : ' continue-games--empty'}`}
+          className={`panel discovery-resume continue-games${rooms.some((room) => room.status !== 'closed') ? '' : ' continue-games--empty'}`}
         >
           <h2>继续游戏</h2>
           {rooms.filter((room) => room.status !== 'closed').length === 0 ? (

@@ -31,6 +31,8 @@ test('quick creation opens the room, copies invite, and exposes password rooms t
     await a.getByRole('button',{name:'复制规则'}).click();
     await expect(a.getByText('规则已复制，可用于模型提示词。',{exact:true})).toBeVisible();
     await a.getByRole('link',{name:'游戏大厅',exact:true}).click();
+    await expect(a.getByRole('heading',{name:'继续游戏',exact:true})).toBeVisible();
+    await expect(a.locator('.discovery-resume')).toContainText('周五密码桌');
     await openRoomCreation(a);
     await a.getByRole('button',{name:'创建并生成邀请码'}).click();
     await expect(a.getByRole('alert')).toContainText('已创建一个有效房间');
@@ -41,6 +43,7 @@ test('quick creation opens the room, copies invite, and exposes password rooms t
     const row=b.locator('article.room-row').filter({hasText:'周五密码桌'});
     await expect(row).toBeVisible();
     await expect(row).toContainText('1/3 人');
+    await expect(row).toContainText('还有 2 个空位');
     await expect(row).toContainText('房主：玩家 D · @stage3_a');
     await row.getByRole('button',{name:'加入房间'}).click();
     await expect(b.getByLabel('加入房间密码',{exact:true})).toBeFocused();

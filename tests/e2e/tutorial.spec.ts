@@ -1,16 +1,24 @@
 import { test, expect } from './fixtures.js';
 
-test('guest completes the real board tutorial, retries and returns to game details', async ({ page }, info) => {
+test('guest completes the real board tutorial, retries and returns to game details', async ({
+  page,
+}, info) => {
   const writes: string[] = [];
-  page.on('request', request => {
+  page.on('request', (request) => {
     if (request.method() !== 'GET' && /\/api\//.test(request.url())) writes.push(request.url());
   });
-  await page.goto('/games/color-match/1.0.0');
-  await page.evaluate(() => { document.body.dataset.tutorialMarker = 'same-document'; });
-  await page.getByRole('link', { name: '进入教程', exact: true }).click();
+  await page.goto('/');
+  await page.evaluate(() => {
+    document.body.dataset.tutorialMarker = 'same-document';
+  });
+  await page.getByRole('link', { name: '先试一手', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Color Match 上手教程' })).toBeVisible();
   expect(await page.evaluate(() => document.body.dataset.tutorialMarker)).toBe('same-document');
-  expect(await page.locator('.tutorial-intro h1').evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThan(280);
+  expect(
+    await page
+      .locator('.tutorial-intro h1')
+      .evaluate((element) => element.getBoundingClientRect().width),
+  ).toBeGreaterThan(280);
   await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '摸牌或跳过并结束回合' }).click();
   await expect(page.getByRole('status').filter({ hasText: '暂时不用摸牌' })).toBeVisible();
@@ -64,7 +72,7 @@ test('tutorial entry is optional and exact-version; failed loading can retry', a
   await expect(page.getByRole('heading', { name: '该游戏暂未提供交互教程' })).toBeVisible();
   await page.goto('/games/color-match/9.9.9/tutorial');
   await expect(page.getByRole('heading', { name: '游戏暂不可用' })).toBeVisible();
-  await page.route('**/games/color-match/src/client/index.tsx*', route => route.abort());
+  await page.route('**/games/color-match/src/client/index.tsx*', (route) => route.abort());
   await page.goto('/games/color-match/1.0.0/tutorial');
   await expect(page.getByRole('heading', { name: '教程加载失败', exact: true })).toBeVisible();
   await page.unroute('**/games/color-match/src/client/index.tsx*');
