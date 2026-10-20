@@ -86,5 +86,8 @@ describe.skipIf(!url)('stage 5 script AI and delegation',()=>{
     expect(recovered).toMatchObject({status:'succeeded',request_id:requestId,proposed_action:win.action,applied_revision:saved.revision+1});expect((await db.query<{count:string}>('SELECT count(*) FROM match_actions WHERE match_id=$1 AND revision=$2',[matchId,saved.revision+1])).rows[0]!.count).toBe('1');
     expect((await read(`/api/v1/rooms/${roomId}`,alice)).json().data).toMatchObject({status:'waiting',activeMatchId:null});
     expect((await read(`/api/v1/matches/${matchId}/view`,alice)).json().data.status).toBe('finished');
+    const finalResult = (await read(`/api/v1/matches/${matchId}/view`, alice)).json().data.result;
+    expect(finalResult.players.find((player: { seatId: string }) => player.seatId === botSeat.seatId)).toEqual({ seatId: botSeat.seatId, winner: true });
+    expect((await read('/api/v1/profile/matches', alice)).json().data.items[0].result).toEqual({ winner: false, sharedWin: false });
   },10000);
 });

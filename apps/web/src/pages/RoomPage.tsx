@@ -1,3 +1,4 @@
+import { CompletedMatchResult } from '../matches/MatchResultPanel.js';
 import { useRoomSession } from '../rooms/useRoomSession.js';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, command, navigate } from '../platform.js';
@@ -237,17 +238,10 @@ export function RoomPage({ id }: { id: string }) {
         </p>
       )}
       {completedMatchId && (
-        <section className="round-complete" aria-label="本局已结束，已返回房间">
-          <div>
-            <h2>本局已结束，已返回房间</h2>
-            <p>席位已保留，准备后即可开启新一局。</p>
-          </div>
-          <a
-            className="button-link secondary"
-            href={`/matches/${encodeURIComponent(completedMatchId)}`}
-          >
-            查看本局结果
-          </a>
+        <section className="completed-match" aria-label="本局已结束，已返回房间">
+          <h2>本局已结束，已返回房间</h2>
+          <p className="muted">席位已保留，准备后即可开启新一局。</p>
+          <CompletedMatchResult id={completedMatchId} roomId={id} />
         </section>
       )}
       <fieldset className="room-fieldset" disabled={disabled}>

@@ -14,6 +14,7 @@ const RegisterPage = lazy(() => import('../pages/RegisterPage.js').then(module =
 const ProfilePage = lazy(() => import('../pages/ProfilePage.js').then(module => ({ default: module.ProfilePage })));
 const FriendsPage = lazy(() => import('../pages/FriendsPage.js').then(module => ({ default: module.FriendsPage })));
 const PublicChatPage = lazy(() => import('../pages/PublicChatPage.js').then(module => ({ default: module.PublicChatPage })));
+const ComputerGamePage = lazy(() => import('../pages/ComputerGamePage.js').then(module => ({ default: module.ComputerGamePage })));
 const NewRoomPage = lazy(() => import('../pages/NewRoomPage.js').then(module => ({ default: module.NewRoomPage })));
 const GameDetailPage = lazy(() => import('../pages/GameDetailPage.js').then(module => ({ default: module.GameDetailPage })));
 const TutorialPage = lazy(() => import('../pages/TutorialPage.js').then(module => ({ default: module.TutorialPage })));
@@ -49,9 +50,10 @@ export function resolvePage(path: string): PageRoute {
   if (accountCoins) return { title: '桌游币管理', page: <AdminCoinsPage accountId={accountCoins[1]!} /> };
   const accountBadges = /^\/admin\/accounts\/([0-9a-f-]{36})\/badges$/i.exec(path);
   if (accountBadges) return { title: '徽章管理', page: <AdminBadgesPage accountId={accountBadges[1]!} /> };
-  const game = /^\/games\/([a-z0-9._-]+)\/([a-z0-9._-]+)(\/(?:new|tutorial))?$/i.exec(path);
+  const game = /^\/games\/([a-z0-9._-]+)\/([a-z0-9._-]+)(\/(?:new|tutorial|computer))?$/i.exec(path);
   if (game) {
     const selectedGame = { id: game[1]!, version: game[2]! };
+    if (game[3] === '/computer') return { title: '和电脑开一局', page: <ComputerGamePage key={`${selectedGame.id}@${selectedGame.version}`} {...selectedGame} /> };
     if (game[3] === '/tutorial') return {
       title: '上手教程', game: true,
       page: <TutorialPage key={`${selectedGame.id}@${selectedGame.version}`} {...selectedGame} />,

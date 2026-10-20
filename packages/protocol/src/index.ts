@@ -1,3 +1,5 @@
+import { matchResultSchema } from './match-result.js';
+export * from './match-result.js';
 import { z } from 'zod';
 import { officialAiTokenPricingSchema } from './official-ai.js';
 export * from './official-ai.js';
@@ -191,6 +193,7 @@ export const createRoomInputSchema = z
     seatCount: z.number().int().positive().max(20),
     visibility: z.enum(['public', 'private']).optional(),
     password: roomPasswordSchema.optional(),
+    computerOpponents: z.literal(true).optional(),
   })
   .strict();
 export const createRoomResultSchema = z.object({
@@ -427,6 +430,7 @@ export const matchViewSchema = z
           .strict(),
       )
       .optional(),
+    result: matchResultSchema.nullable().optional(),
     view: z.unknown(),
     delivery: z.enum(['snapshot', 'live']),
     events: z.array(z.unknown()).optional(),

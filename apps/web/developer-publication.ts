@@ -18,6 +18,7 @@ export const publicSdkFiles = [
   'packages/protocol/src/auth.ts',
   'packages/protocol/src/assets.ts',
   'packages/protocol/src/profile.ts',
+  'packages/protocol/src/match-result.ts',
   'packages/protocol/src/badges.ts',
   'packages/protocol/src/official-ai.ts',
   'packages/protocol/src/coins.ts',

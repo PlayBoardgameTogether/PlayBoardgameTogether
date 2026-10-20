@@ -233,7 +233,14 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
         503,
         true,
       );
-    return ok(request, await listInstalledGames(deps.db, config.NODE_ENV === 'production'));
+    const games = await listInstalledGames(deps.db, config.NODE_ENV === 'production');
+    return ok(
+      request,
+      games.map((game) => ({
+        ...game,
+        supportsScriptAi: !!deps.registry.get(game.id, game.version)?.getDecisionContext,
+      })),
+    );
   });
   app.get('/api/v1/games/:id/versions/:version', async (request) => {
     const p = request.params as {

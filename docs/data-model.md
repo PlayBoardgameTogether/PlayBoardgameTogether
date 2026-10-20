@@ -1,5 +1,11 @@
 # 数据模型
 
+## 公开终局摘要（034，0.12.0）
+
+新增 `matches.result_summary`（可空 JSONB），数据库约束要求非空时对局为 finished 且值为对象。原真人/自动动作事务在规则确认终局后，用 registry 中按精确版本显式登记的投影生成仅含 seatId/winner/可选 score 的公开摘要；与 State、RNG、revision、回放帧、动作、回执和房间复位原子提交或共同回滚。重复成功请求不生成新结果。不是完整 outcome 或额外权威规则来源，不参与随机与规则摘要计算。
+
+历史行保留 NULL，不重写 State、锁定版本或历史成绩；未接入结果投影的游戏仍为 NULL。个人历史通过固定 match_participants 查询本人参与的记录与本人摘要，不依据后续房间座位推断身份。电脑建房只使用原 seats 的 bot/policy 字段，无新钱包或 AI 计费记录。
+
 ## 官方 AI token 计价（033，0.11.0）
 
 新增 `official_ai_offers.token_pricing` 可空 JSON（输入/输出基础点价、加价百分比）；为空时保持旧固定点价，不回填历史价格。`official_ai_reservations` 和 `ai_point_ledger` 增加 `token_billing` 用量/价格快照。预留点数允许 0，以支持有效零费用提案；零费用成功行动标记 released，无零额账本。token 档位先预留单次上限/余额/剩余预算最小值，ready 在 task → wallet 锁下冻结实际费用、释放多余额度；动作与消费账本继续原子提交，charged 仍引用唯一账本行。详见 [ADR-008](adr/008-official-ai-token-pricing.md)。

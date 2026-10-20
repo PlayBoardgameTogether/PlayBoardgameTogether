@@ -1,3 +1,5 @@
+import type { MatchResult } from '@boardgame/protocol';
+import { publicResult } from './public-results.js';
 import { azulExtension, azulAssetManifest } from '@boardgame/azul/server';
 import { publicRules as azulRules } from '@boardgame/azul/rules';
 import { azulAssetContract, azulPresentationCues } from '@boardgame/azul/assets';
@@ -20,6 +22,7 @@ import type { AssetContract, PresentationCue } from '@boardgame/game-sdk/assets'
 
 export type AnyExtension = GameExtension<any, any, any, any, any, any> & { getDecisionRequests?(state: any): Array<{ seatId: string; decisionKey: string }> };
 export class GameRegistry {
+  readonly resultSummaries = new Map<string, (outcome: unknown, seats: string[]) => MatchResult | null>();
   readonly assetContracts = new Map<string, AssetContract>();
   readonly presentation = new Map<string, (events: Array<Record<string, unknown>>, view: unknown) => PresentationCue[]>();
   readonly entries = new Map<string, AnyExtension>();
@@ -34,6 +37,15 @@ export class GameRegistry {
 }
 export function createRegistry(includeDevelopment: boolean) {
   const registry = new GameRegistry();
+  for (const key of [
+    'azul.base@1.0.0',
+    'splendor.base@1.0.0',
+    'color-match@1.0.0',
+    'grid-garden@1.0.0',
+    'demo.counter-room@1.0.0',
+  ]) {
+    registry.resultSummaries.set(key, publicResult);
+  }
   registry.assetContracts.set('azul.base', azulAssetContract);
   registry.presentation.set('azul.base', azulPresentationCues);
   registry.rules.set('azul.base@1.0.0', azulRules);

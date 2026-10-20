@@ -79,3 +79,8 @@ Color Match 的 decision context 只由该座位 View 派生出 `play_card`、`d
 games/splendor 的 splendor.base@1.0.0 是轮流行动的宝石引擎构筑扩展。动作由 take/reserve/reserve_deck/buy/return/noble/pass 描述；支付使用严格代币数量对象，退币和贵族选择作为持久化阶段。本人 View 仅含自己的预留卡，其他座位仅含预留数量；牌堆只提供数量。公开事件不含预留/盲抽牌身份。合法候选枚举所有精确支付（含主动黄金替代），脚本和模型沿用统一命令链路。原创客户端 SVG 使用空的不可变默认资源清单，不依赖管理员上传或外链。详见 [规则与维护](games/splendor.md)。
 
 璀璨宝石另提供独立 `@boardgame/splendor/tutorial` 导出，Web 的精确版本 loader 直接加载此入口，避免正式桌面同时加载练习数据。十一个固定练习由真实规则生成合成公开投影，按字段差异存储后经 shared schema 还原；浏览器没有 server 依赖。生成入口为 `scripts/generate-splendor-tutorial.ts`，参考状态只在测试目录，规则对照覆盖完整 View、legalActions、投影事件和多操作中间阶段。
+
+
+## 平台公开结果摘要（0.12.0）
+
+平台通过 API registry 中的 resultSummaries 按精确版本选择性接入胜者/得分摘要，不新增或修改 GameExtension 必需方法、不修改既有规则摘要。接入前必须确认 getOutcome 的 winners/scores 是公开信息；投影只允许 seatId、winner、可选 score，额外 outcome 字段全部丢弃，且校验获胜席位/分数键与固定参与者一致。不得按未知游戏的字段名自动认定信息可公开，也不按分数推断排名或同分规则。在线 ZIP 暂不接入，继续使用游戏自身的最终 View 和本人回放。

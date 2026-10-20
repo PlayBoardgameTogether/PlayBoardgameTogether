@@ -1,5 +1,15 @@
 # 协议
 
+## 电脑开局与公开结果（0.12.0）
+
+公开 `GET /api/v1/games` 为每个已启用的精确版本增加 `supportsScriptAi`，按 registry 的真实 `getDecisionContext` 能力计算，不改 manifest 或规则摘要。`POST /api/v1/rooms` 新增可选 `computerOpponents: true`：仅用于私密房间，游戏必须支持脚本 AI；原建房事务将首席绑定本人，其他席位设置为无账户 basic-v1 bot。本人仍未准备。配额、身份/CSRF、安装版本、请求回执与失败回滚沿用原接口。
+
+Web `/games/:id/:version/computer` 由玩家确认总人数和默认规则后，按原接口依次创建、本人准备、开始对局。三条命令分别使用固定 requestId 与原 expectedRoomRevision（0、1），发送前保存绑定账户/精确游戏版本的会话进度；刷新后手动继续，离页不继续发送后续命令，未知结果不另建请求。房间被其他操作改变时保留冲突和已建房间入口，不覆盖他人的修改。该模式使用免费脚本 AI，属于正式对局，计入对局记录。
+
+MatchView 增加可选 `result: null | {players: [{seatId,winner,score?}]}`。仅在 finished 时返回，来自明确登记的公开结果投影；只保留胜者与可选得分，不暴露完整 outcome、秘密 State 或原始事件，不按分数推断名次/破同分规则。Color Match、Grid Garden、璀璨宝石、花砖物语与正式计数验收扩展按精确版本接入；在线 ZIP 默认无结果摘要。Color Match 不合成分数；多胜者标记共同胜出。active/aborted、旧局与未接入版本返回 null，最终身份化棋桌及原本人回放仍可使用。
+
+`GET /api/v1/profile/matches` 新增可选 gameId 筛选，游标必须属于本人及当前筛选游戏。每条记录增加可选 `result: null | {winner,sharedWin,score?}`，仅投影当前固定参与者的结果。查询使用同一条 SQL，保留身份、过滤、游标及元数据的一致快照。SDK `matchHistory(before?, gameId?)` 保留原调用兼容。公开 SDK 源码白名单增加 match-result.ts。
+
 ## 官方 AI token 计价（0.11.0）
 
 发布官方 AI 的原请求新增可选 `tokenPricing: { inputPointsPerMillion, outputPointsPerMillion, markupPercent }`；输入/输出基础点价为 0–10 亿整数点/百万 token，不能同时为零，加价为 0–1000 整数百分比。目录返回可选同名字段；存在时 `pointsPerAction` 表示单次预留上限，无该字段仍为原固定行动点价。官方 profile 新增可选 `official_token_pricing`，本人账本可选 `tokenBilling` 包含档位 ID、价格/加价快照、输入/输出 token 与实际扣点。旧请求、响应与持久回执继续兼容；身份、CSRF、去重、预算及正式动作契约不变。调价发布新档位，详见 [官方 AI](official-ai.md)。

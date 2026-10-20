@@ -49,6 +49,7 @@ export function GameDetailPage({ id, version }: { id: string; version: string })
               <a className="button-link" href={`${gamePath(game)}/new`}>
                 <span aria-hidden="true">＋</span> 创建房间
               </a>
+              {game.supportsScriptAi && <a className="button-link secondary" href={`${gamePath(game)}/computer`}>和电脑开一局</a>}
               {tutorial && <a href={`${gamePath(game)}/tutorial`}>进入教程</a>}
             </div>
             <p className="discovery-detail-note">

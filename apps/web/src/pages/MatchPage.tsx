@@ -1,3 +1,4 @@
+import { MatchResultPanel } from '../matches/MatchResultPanel.js';
 import { useMatchSession } from '../matches/useMatchSession.js';
 import { GameRules } from './GameRules.js';
 import { type MatchView } from '@boardgame/protocol';
@@ -81,7 +82,7 @@ export function MatchPage({ id }: { id: string }) {
     <div className="match-page">
       <section className="page-heading match-heading">
         <div>
-          <p className="eyebrow">正在对局</p>
+          <p className="eyebrow">{data.status === 'active' ? '正在对局' : '对局已结束'}</p>
           <h1>{clientGame(data.gameId, data.gameVersion)?.name ?? '游戏版本不可用'}</h1>
           <p>
             你的座位 {data.seatIndex + 1} ·{' '}
@@ -136,6 +137,7 @@ export function MatchPage({ id }: { id: string }) {
             : '正在保存操作…'
           : notice || '\u00a0'}
       </div>
+      {data.status === 'finished' && <MatchResultPanel data={data} />}
       <div className="match-layout">
         <section className="match-table" aria-label="游戏桌">
           <GameErrorBoundary key={id}>
@@ -162,12 +164,12 @@ export function MatchPage({ id }: { id: string }) {
         </section>
         <aside className="match-support" aria-label="对局辅助">
           <h2>对局工具</h2>
-          {data.status !== 'active' && (
+          {data.status === 'aborted' && (
             <a className="button-link secondary" href={`/matches/${id}/replay`}>
               查看回放
             </a>
           )}
-          <p className="muted">返回房间不影响当前对局。</p>
+          {data.status === 'active' && <p className="muted">返回房间不影响当前对局。</p>}
           {data.status === 'active' && (
             <details className="panel controller-panel">
               <summary>

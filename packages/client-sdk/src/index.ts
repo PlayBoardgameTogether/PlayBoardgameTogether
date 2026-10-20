@@ -523,10 +523,13 @@ export class ApiClient {
       }),
     );
   }
-  async matchHistory(before?: string) {
+  async matchHistory(before?: string, gameId?: string) {
+    const params = new URLSearchParams();
+    if (before) params.set('before', before);
+    if (gameId) params.set('gameId', gameId);
     return matchHistorySchema.parse(
       await this.request<unknown>(
-        `/profile/matches${before ? `?before=${encodeURIComponent(before)}` : ''}`,
+        `/profile/matches${params.size ? `?${params}` : ''}`,
       ),
     );
   }
@@ -591,7 +594,7 @@ export class ApiClient {
       this.csrfToken = null;
       if (typeof sessionStorage !== 'undefined')
         for (const key of Object.keys(sessionStorage)) {
-          if (key.startsWith('boardgame:pending-match:')) sessionStorage.removeItem(key);
+          if (key.startsWith('boardgame:pending-match:') || key.startsWith('boardgame:computer-game:')) sessionStorage.removeItem(key);
         }
     }
   }

@@ -91,7 +91,7 @@ export function registerAccountRoutes(
   app.get('/api/v1/profile/matches', async (request) => {
     const current = await requireAuth(request);
     const query = matchHistoryQuerySchema.parse(request.query);
-    return ok(request, await profiles.history(current!.account.id, query.before));
+    return ok(request, await profiles.history(current!.account.id, query.before, query.gameId));
   });
   app.get('/api/v1/me/model-settings', async (request) => {
     await requireAuth(request);
