@@ -6,7 +6,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { setTimeout, clearTimeout, setInterval, clearInterval } from 'node:timers';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
-import { createUpdateControl } from './update-control.mjs';
+import { createUpdateControl, updateStatusForClient } from './update-control.mjs';
 import { buildRelease, runUpdateCommand } from './update-command.mjs';
 import { backupUpdate, migrationPolicy } from './update-backup.mjs';
 const { fetch, AbortSignal } = globalThis;
@@ -30,6 +30,15 @@ export async function ensureReleaseEnvironment(path) {
   // inherited. Supply an empty ignored file; never copy secrets into releases.
   try { await writeFile(resolve(path, '.env'), '# Configuration inherited from update supervisor.\n', { flag: 'wx' }); }
   catch (error) { if (error.code !== 'EEXIST') throw error; }
+}
+
+export async function releaseVersion(path) {
+  try {
+    const { version } = JSON.parse(await readFile(resolve(path, 'package.json'), 'utf8'));
+    return typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version) ? version : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function applyPrepared(deps, candidate) {
@@ -75,7 +84,7 @@ async function main() {
   const port = Number(env.UPDATE_PORT || 8080);
   const interval = Number(env.UPDATE_INTERVAL_MS || 300000);
   if (![port, apiPort].every(n => Number.isInteger(n) && n > 0 && n <= 65535) || port === apiPort ||
-      !Number.isFinite(interval) || interval < 10000) {
+      !Number.isInteger(interval) || interval < 10000) {
     await lock.close(); await unlink(lockPath); throw new Error('Invalid update port/interval configuration');
   }
   const log = (event, sha) => console.log(`[online-update] ${event}${sha ? ` ${sha.slice(0, 12)}` : ''}`);
@@ -109,7 +118,8 @@ async function main() {
           !/^[a-f0-9-]{36}:[a-f0-9-]{36}$/i.test(message.requestId))) return;
       const status = message.action === 'check'
         ? updates.check(message.requestId) : updates.snapshot();
-      if (target.connected) target.send({ type: 'update.control.result', id: message.id, status }, () => {});
+      if (target.connected) target.send({ type: 'update.control.result', id: message.id,
+        status: updateStatusForClient(status, message.statusVersion) }, () => {});
     });
     target.on('error', () => { log('API process error'); });
     for (let attempt = 0; attempt < 100; attempt++) {
@@ -226,34 +236,40 @@ async function main() {
       if (closed || busy) return;
       busy = true;
       let stage = 'fetch';
+      const setStage = value => {
+        stage = value;
+        updates.patch({ stage: value });
+      };
       try {
         if (!child || child.exitCode !== null || child.signalCode !== null) {
-          stage = 'restart';
+          setStage('restart');
           await start(current); log('restarted current release', current.sha);
         }
         if (!pending) {
-          stage = 'fetch';
+          setStage('fetch');
           try { await stat(cache); } catch { await command('git', ['clone', '--bare', remote, cache]); }
           await command('git', ['--git-dir', cache, 'fetch', remote, `+refs/heads/${branch}:refs/remotes/update/current`], root, 120000);
           const sha = await command('git', ['--git-dir', cache, 'rev-parse', 'refs/remotes/update/current']);
-          updates.patch({ candidateSha: sha });
-          if (sha === current.sha) { updates.patch({ phase: 'current', candidateSha: null }); return; }
+          updates.patch({ candidateSha: sha,
+            ...(updates.snapshot().candidateSha !== sha ? { candidateVersion: null } : {}) });
+          if (sha === current.sha) { updates.patch({ phase: 'current', stage: null, candidateSha: null, candidateVersion: null }); return; }
           if (sha === blockedSha) { updates.patch({ phase: 'maintenance' }); return; }
-          stage = 'history';
+          setStage('history');
           try {
             await command('git', ['--git-dir', cache, 'merge-base', '--is-ancestor', current.sha, sha]);
           } catch (error) {
             if (error.exitCode === 1) error.reason = 'history_diverged';
             throw error;
           }
-          stage = 'checkout';
+          setStage('checkout');
           const release = resolve(stateRoot, 'releases', sha);
           try { await stat(release); } catch { await command('git', ['--git-dir', cache, 'worktree', 'add', '--detach', release, sha]); }
           await ensureReleaseEnvironment(release);
+          updates.patch({ candidateVersion: await releaseVersion(release) });
           log('preparing', sha);
           updates.patch({ phase: 'building' });
-          await buildRelease(command, release, value => { stage = value; });
-          stage = 'history';
+          await buildRelease(command, release, setStage);
+          setStage('history');
           // Additive migration history can roll forward after a verified backup.
           const changed = await command('git', ['--git-dir', cache, 'diff', '--name-status', '--no-renames', current.sha, sha, '--', 'apps/api/src/db/migrations']);
           if (!migrationPolicy(changed, env.UPDATE_ALLOW_MIGRATIONS)) {
@@ -263,30 +279,31 @@ async function main() {
           }
           pending = { sha, path: release };
         }
-        stage = 'drain';
+        setStage('drain');
         updates.patch({ phase: 'waiting' });
         const applied = await applyPrepared({
           drain, current: () => current,
-          stop: async () => { if (stage === 'drain') stage = 'stop'; await stop(); },
-          start: async release => { if (release === pending) stage = 'start'; await start(release); },
+          stop: async () => { if (stage === 'drain') setStage('stop'); await stop(); },
+          start: async release => { if (release === pending) setStage('start'); await start(release); },
           backup: async (previous, candidate) => {
             updates.patch({ phase: 'applying' });
-            // Keep the existing public diagnostic schema: backup is the first
-            // migration step; private logs distinguish backup start/completion.
+            // Keep the existing failure schema while exposing backup as a
+            // separate live stage; backup failures still use failure.stage=migrate.
             stage = 'migrate';
+            updates.patch({ stage: 'backup' });
             log('backup started', candidate.sha);
             await backupUpdate({ stateRoot, env, previous, candidate });
             log('backup verified', candidate.sha);
           },
           prepareDatabase: async release => {
             updates.patch({ phase: 'applying' });
-            stage = 'migrate';
+            setStage('migrate');
             await command('pnpm', ['db:migrate'], release);
-            stage = 'sync';
+            setStage('sync');
             await command('pnpm', ['games:sync'], release);
           },
           persist: async release => {
-            stage = 'persist';
+            setStage('persist');
             await writeFile(`${statePath}.tmp`, JSON.stringify(release));
             await rename(`${statePath}.tmp`, statePath);
           },
@@ -295,7 +312,8 @@ async function main() {
         }, pending);
         if (applied) {
           log('updated', pending.sha); pending = undefined;
-          updates.patch({ phase: 'updated', currentSha: current.sha, candidateSha: null });
+          updates.patch({ phase: 'updated', stage: null, currentSha: current.sha,
+            currentVersion: await releaseVersion(current.path), candidateSha: null, candidateVersion: null });
         }
       } catch (error) {
         const reasons = new Set(['disk_full', 'permission', 'authentication', 'network', 'lockfile',
@@ -313,7 +331,7 @@ async function main() {
       finally { busy = false; }
     }
     updates = createUpdateControl({ enabled: env.UPDATE_ENABLED !== 'false', branch,
-      currentSha: current.sha, run: cycle });
+      currentSha: current.sha, currentVersion: await releaseVersion(current.path), checkIntervalMs: interval, run: cycle });
     if (env.UPDATE_ENABLED !== 'false') timer = setInterval(() => { updates.check(randomUUID()); }, interval);
     if (env.UPDATE_ENABLED !== 'false') updates.check(randomUUID());
     let stopping = false;

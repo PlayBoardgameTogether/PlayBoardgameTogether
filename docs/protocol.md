@@ -76,6 +76,8 @@ POST `/social/requests` 新增可选 expectedAccountId UUID，作为预期接收
 
 GET `/api/v1/admin/updates` 返回严格 `adminUpdateStatusSchema`：enabled、branch、currentSha、candidateSha、lastCheckedAt、phase。phase 为 unavailable/disabled/idle/checking/building/current/waiting/maintenance/applying/updated/failed；提交为完整 SHA 或 null，不包含环境、日志、凭据或文件路径。仅管理员可读，响应 no-store。
 
+0.13.0 增加可选的 currentVersion/candidateVersion（对应运行/候选目录根 package.json 的纯数字平台版本或 null）、stage、stageStartedAt（当前步骤开始时间或 null）及 checkIntervalMs（至少 10000 的整数毫秒）。stage 为 fetch/history/checkout/install/build/drain/stop/backup/migrate/sync/start/persist/restart；不提供估算百分比、命令输出或私有路径。backup 细分自动备份，但失败 DTO 继续沿用 migrate 阶段以兼容原诊断契约。父子 IPC 通过 statusVersion=2 请求扩展元数据；旧 API 未声明能力时监督进程过滤这些新增字段，旧监督进程返回原 DTO 时新版页面显示信息未提供。
+
 本轮 waiting 表示等待已接收请求完成，最多 30 秒；不再等待 active matches、常驻连接或连续静默。排空超时转 failed，恢复接收请求；切换维护期间新 HTTP 请求收到 Retry-After: 3 的 503，WS 使用 1012 服务重启码后沿用既有重连与快照恢复。DTO 字段、动作事务和回执语义保持。
 
 POST `/api/v1/admin/updates/check` 严格接收 `{requestId: UUID}`，验证 session、管理员、Origin、CSRF 后经本地 IPC 触发既有监督流程，返回 202 和同一状态 DTO；表示受理而非更新成功。拒绝额外执行参数。进程内最近 256 个受理 ID 去重；同时进行的触发合并，重启或淘汰后可再次检查。没有监督进程或配置停用时返回 unavailable/disabled，旧监督进程/IPC 超时返回 SERVICE_UNAVAILABLE。没有数据库、对局或规则协议变更。

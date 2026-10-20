@@ -12,6 +12,7 @@
 - [添加游戏](/developers/add-game)：目前的可信扩展流程及后续接口边界。
 - [在线游戏 ZIP](/developers/game-packages)：独立规则和桌面打包、管理员即时安装。
 - [AI 开发指南](/developers/ai)：编码代理和游戏内 AI 的不同契约。
+- [在线更新与恢复](/developers/online-update)：接通后台更新、跟踪状态与处理失败。
 
 ## 当前公开能力
 

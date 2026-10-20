@@ -9,16 +9,65 @@ export const adminUpdateFailureSchema = z.object({
   exitCode: z.number().int().nullable(),
   occurredAt: z.string().datetime(),
 }).strict();
-export const adminUpdateStatusSchema = z.object({
-  enabled: z.boolean(),
-  branch: z.string().min(1).max(255).nullable(),
-  currentSha: z.string().regex(/^[a-f0-9]{40}$/).nullable(),
-  candidateSha: z.string().regex(/^[a-f0-9]{40}$/).nullable(),
-  lastCheckedAt: z.string().datetime().nullable(),
-  failure: adminUpdateFailureSchema.nullable().optional(),
-  phase: z.enum(['unavailable', 'disabled', 'idle', 'checking', 'building', 'current',
-    'waiting', 'maintenance', 'applying', 'updated', 'failed']),
-}).strict();
+export const adminUpdateStatusSchema = z
+  .object({
+    enabled: z.boolean(),
+    branch: z.string().min(1).max(255).nullable(),
+    currentSha: z
+      .string()
+      .regex(/^[a-f0-9]{40}$/)
+      .nullable(),
+    candidateSha: z
+      .string()
+      .regex(/^[a-f0-9]{40}$/)
+      .nullable(),
+    lastCheckedAt: z.string().datetime().nullable(),
+    failure: adminUpdateFailureSchema.nullable().optional(),
+    currentVersion: z
+      .string()
+      .regex(/^\d+\.\d+\.\d+$/)
+      .nullable()
+      .optional(),
+    candidateVersion: z
+      .string()
+      .regex(/^\d+\.\d+\.\d+$/)
+      .nullable()
+      .optional(),
+    stage: z
+      .enum([
+        'fetch',
+        'history',
+        'checkout',
+        'install',
+        'build',
+        'drain',
+        'stop',
+        'backup',
+        'migrate',
+        'sync',
+        'start',
+        'persist',
+        'restart',
+      ])
+      .nullable()
+      .optional(),
+    stageStartedAt: z.string().datetime().nullable().optional(),
+    checkIntervalMs: z.number().int().min(10000).optional(),
+    phase: z.enum([
+      'unavailable',
+      'disabled',
+      'idle',
+      'checking',
+      'building',
+      'current',
+      'waiting',
+      'maintenance',
+      'applying',
+      'updated',
+      'failed',
+    ]),
+  })
+  .strict();
 export type AdminUpdateStatus = z.infer<typeof adminUpdateStatusSchema>;
 
 export const adminAccountSchema = z

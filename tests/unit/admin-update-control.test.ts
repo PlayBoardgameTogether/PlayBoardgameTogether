@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UpdateControl } from '../../apps/api/src/admin/update-control.js';
-import { createUpdateControl } from '../../scripts/update-control.mjs';
+import { createUpdateControl, updateStatusForClient } from '../../scripts/update-control.mjs';
 import { adminUpdateCommandSchema, adminUpdateStatusSchema } from '../../packages/protocol/src/admin.js';
 
 afterEach(() => vi.useRealTimers());
@@ -82,5 +82,27 @@ describe('administrator update controls', () => {
     const control = createUpdateControl({ enabled: true, branch: 'main', currentSha: initial.currentSha, run: async () => {} });
     control.patch(failed);
     expect(control.check('retry')).toMatchObject({ phase: 'checking', failure: null });
+  });
+  it('reports actual versions and timestamps only stage transitions, accepting older status DTOs', () => {
+    vi.useFakeTimers();
+    const control = createUpdateControl({ enabled: true, branch: 'main', currentSha: initial.currentSha,
+      currentVersion: '0.12.0', checkIntervalMs: 60000, run: async () => {} });
+    control.check('request');
+    const started = control.snapshot().stageStartedAt;
+    vi.advanceTimersByTime(2000);
+    control.patch({ stage: 'fetch' });
+    expect(control.snapshot().stageStartedAt).toBe(started);
+    control.patch({ phase: 'applying', stage: 'backup', candidateVersion: '0.13.0' });
+    expect(control.snapshot().stageStartedAt).not.toBe(started);
+    expect(adminUpdateStatusSchema.parse(control.snapshot())).toMatchObject({
+      currentVersion: '0.12.0', candidateVersion: '0.13.0', stage: 'backup', checkIntervalMs: 60000,
+    });
+    expect(adminUpdateStatusSchema.safeParse(initial).success).toBe(true);
+    expect(adminUpdateStatusSchema.safeParse({ ...initial, currentVersion: 'secret' }).success).toBe(false);
+    expect(updateStatusForClient(control.snapshot(), undefined)).toEqual({
+      enabled: true, branch: 'main', currentSha: initial.currentSha, candidateSha: null,
+      lastCheckedAt: expect.any(String), phase: 'applying', failure: null,
+    });
+    expect(updateStatusForClient(control.snapshot(), 2)).toMatchObject({ stage: 'backup', currentVersion: '0.12.0' });
   });
 });
