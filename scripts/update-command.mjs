@@ -74,3 +74,10 @@ export async function buildRelease(command, path, stage = () => {}) {
   stage('build');
   await command('pnpm', ['build'], path);
 }
+
+export async function prepareReleaseDatabase(command, release, stage = () => {}) {
+  stage('migrate');
+  await command('pnpm', ['db:migrate'], release.path);
+  stage('sync');
+  await command('pnpm', ['games:sync'], release.path);
+}

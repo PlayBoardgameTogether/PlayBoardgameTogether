@@ -1,14 +1,44 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, writeFile, access, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, access, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, basename } from 'node:path';
 import { delimiter } from 'node:path';
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { buildRelease, runUpdateCommand } from '../../scripts/update-command.mjs';
+import { buildRelease, prepareReleaseDatabase, runUpdateCommand } from '../../scripts/update-command.mjs';
 
 describe('online update production build', () => {
+  it.each([false, true])('runs maintenance in the candidate directory and stops on migration failure=%s', async fail => {
+    const path = await mkdtemp(join(tmpdir(), 'boardgame-update-maintenance-'));
+    const pnpm = process.env.npm_execpath || (process.env.PATH || '').split(delimiter)
+      .flatMap(path => ['pnpm.mjs', 'pnpm.cjs'].map(name => join(path, 'node_modules/pnpm/bin', name))).find(path => existsSync(path));
+    const env = { ...process.env, UPDATE_PNPM_CLI: pnpm, FAIL_MIGRATION: String(fail) };
+    try {
+      expect(pnpm).toMatch(/pnpm/i);
+      await writeFile(join(path, 'package.json'), JSON.stringify({
+        name: 'maintenance-fixture', private: true,
+        scripts: { 'db:migrate': 'node record.cjs migrate', 'games:sync': 'node record.cjs sync' },
+      }));
+      await writeFile(join(path, 'record.cjs'), `
+        const { appendFileSync } = require('node:fs');
+        const step = process.argv[2];
+        appendFileSync('maintenance.jsonl', JSON.stringify({ step, cwd: process.cwd() }) + '\\n');
+        if (step === 'migrate' && process.env.FAIL_MIGRATION === 'true') process.exit(1);
+      `);
+      const result = prepareReleaseDatabase(
+        (executable: string, args: string[], cwd: string) => runUpdateCommand(executable, args, { cwd, env, timeout: 30000 }),
+        { sha: 'candidate', path },
+      );
+      if (fail) await expect(result).rejects.toMatchObject({ exitCode: 1 });
+      else await result;
+      const records = (await readFile(join(path, 'maintenance.jsonl'), 'utf8')).trim().split('\n').map(line => JSON.parse(line));
+      expect(records).toEqual((fail ? ['migrate'] : ['migrate', 'sync']).map(step => ({ step, cwd: path })));
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  }, 60000);
+
   it('installs build tools even with production-only deployment configuration', async () => {
     const path = await mkdtemp(join(tmpdir(), 'boardgame-update-build-'));
     if (dirname(path) !== resolve(tmpdir()) || !basename(path).startsWith('boardgame-update-build-')) throw new Error('Unexpected cleanup target');
