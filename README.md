@@ -2,7 +2,7 @@
 
 顶尖桌游联盟的桌游平台，支持多人实时对局、脚本与模型 AI、在线游戏扩展。先选游戏，再开一桌，让朋友在浏览器里一起玩。
 
-**平台版本 `0.13.1`** · TypeScript · React / Vite · Fastify · PostgreSQL
+**平台版本 `0.14.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
 
 [快速开始](#快速开始) · [游戏列表](#游戏列表) · [部署与更新](#部署与更新) · [开发者文档](#开发者文档) · [开发进度](docs/progress.md)
 

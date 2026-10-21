@@ -120,7 +120,7 @@ test('administrator publishes and grants points; player enrolls and authorizes a
   await expect(empty.getByLabel('模型配置')).toContainText(
     '官方 AI · 标准陪玩 · 按 token 计费，单次最多 6 点',
   );
-  await expect(empty).toContainText('此席位单局上限 20 点');
+  await expect(empty).toContainText('单局上限 20 点，超出后暂停。');
   await empty.getByRole('button', { name: '添加模型 AI', exact: true }).click();
   await expect(empty.getByText('模型 AI · 已就绪', { exact: true })).toBeVisible();
   await page.reload();

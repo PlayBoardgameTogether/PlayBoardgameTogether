@@ -8,15 +8,25 @@ async function login(page: Page, username: string) {
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
 }
 
-test('admin configures ID cooldown while compact more navigation preserves the shell', async ({ page, browser }, info) => {
+test('admin configures ID cooldown while compact more navigation preserves the shell', async ({
+  page,
+  browser,
+}, info) => {
   test.setTimeout(60000);
-  const context = await browser.newContext({ viewport: info.project.name === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 } });
+  const context = await browser.newContext({
+    viewport:
+      info.project.name === 'mobile' ? { width: 390, height: 844 } : { width: 1440, height: 900 },
+  });
   const user = await context.newPage();
   try {
     await login(page, 'stage7_admin');
-    await page.evaluate(() => { document.body.dataset.navigationMarker = 'same-document'; });
+    await page.evaluate(() => {
+      document.body.dataset.navigationMarker = 'same-document';
+    });
     const documents: string[] = [];
-    page.on('request', request => { if (request.isNavigationRequest()) documents.push(request.url()); });
+    page.on('request', (request) => {
+      if (request.isNavigationRequest()) documents.push(request.url());
+    });
     const more = page.locator('.nav-tools');
     await more.locator('summary').click();
     await expect(more.getByRole('link', { name: '资源管理' })).toHaveCount(0);
@@ -26,6 +36,7 @@ test('admin configures ID cooldown while compact more navigation preserves the s
     await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', { name: '管理员后台', exact: true })).toBeVisible();
     await expect(more).not.toHaveAttribute('open');
+    await page.locator('.admin-settings > summary').click();
     await expect(page.getByLabel('好友 ID 修改间隔（天）')).toHaveValue('30');
     await page.getByLabel('好友 ID 修改间隔（天）').fill('7');
     await page.getByRole('button', { name: '保存修改间隔' }).click();
@@ -34,6 +45,7 @@ test('admin configures ID cooldown while compact more navigation preserves the s
     await expect(page.getByRole('heading', { name: '账户管理', exact: true })).toBeVisible();
     await expect(more).not.toHaveAttribute('open');
     await page.goBack();
+    await page.locator('.admin-settings > summary').click();
     await expect(page.getByLabel('好友 ID 修改间隔（天）')).toHaveValue('7');
     expect(documents).toEqual([]);
     expect(await page.evaluate(() => document.body.dataset.navigationMarker)).toBe('same-document');
@@ -55,9 +67,16 @@ test('admin configures ID cooldown while compact more navigation preserves the s
     await user.getByRole('button', { name: '保存好友 ID', exact: true }).click();
     await expect(user.locator('.friend-id-card code')).toHaveText('@policy_second');
     await page.reload();
+    await page.locator('.admin-settings > summary').click();
     await expect(page.getByLabel('好友 ID 修改间隔（天）')).toHaveValue('0');
     await page.screenshot({ path: info.outputPath('admin-id-policy.png'), fullPage: true });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    expect(await user.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  } finally { await context.close(); }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    expect(await user.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  } finally {
+    await context.close();
+  }
 });
