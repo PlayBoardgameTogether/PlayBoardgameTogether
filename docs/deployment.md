@@ -34,6 +34,8 @@ bash deploy.sh admin
 
 ## 更新、日志和备份
 
+希望后续在网页后台一键更新时，首次部署后按 [在线更新](online-update.md) 接通 systemd 在线托管与 Caddy 全路径代理；网站内也提供 `/developers/online-update` 指南。`deploy.sh` 默认仍是下述维护部署方式，运行脚本本身不会启用网页更新。
+
 ```bash
 # 自行检出/拉取审查后的版本，然后部署；脚本不会自行 git pull
 bash deploy.sh

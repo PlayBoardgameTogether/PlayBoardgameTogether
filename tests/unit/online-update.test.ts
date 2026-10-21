@@ -2,9 +2,21 @@ import { describe, expect, it, vi } from 'vitest';
 import { resolve, join, dirname, basename } from 'node:path';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { githubRemote, safeStaticPath, applyPrepared, ensureReleaseEnvironment } from '../../scripts/online-update.mjs';
+import { githubRemote, safeStaticPath, applyPrepared, ensureReleaseEnvironment, releaseVersion } from '../../scripts/online-update.mjs';
 
 describe('production online updates', () => {
+  it('reads the release platform version and never substitutes malformed metadata', async () => {
+    const path = await mkdtemp(join(tmpdir(), 'boardgame-release-version-'));
+    try {
+      expect(await releaseVersion(path)).toBeNull();
+      for (const version of ['0.13.0', 'secret=value', '1.2.3-beta', 123]) {
+        await writeFile(join(path, 'package.json'), JSON.stringify({ version }));
+        expect(await releaseVersion(path)).toBe(version === '0.13.0' ? version : null);
+      }
+    } finally {
+      await rm(path, { recursive: true, force: true });
+    }
+  });
   it('supplies the maintenance env-file without copying secrets or overwriting local settings', async () => {
     const path = await mkdtemp(join(tmpdir(), 'boardgame-update-env-'));
     if (dirname(path) !== resolve(tmpdir()) || !basename(path).startsWith('boardgame-update-env-')) throw new Error('Unexpected cleanup target');

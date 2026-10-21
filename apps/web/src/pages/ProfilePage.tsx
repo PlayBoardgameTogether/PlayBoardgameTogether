@@ -1,3 +1,5 @@
+import { loadGames, type AvailableGame } from './game-catalog.js';
+import '../styles/match-results.css';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import { formatFriendId, type Profile, type MatchHistory } from '@boardgame/protocol';
@@ -21,6 +23,10 @@ export function ProfilePage({
   const social = useSocialContext();
   const [profile, setProfile] = useState<Profile>();
   const [history, setHistory] = useState<MatchHistory>();
+  const [historyGames, setHistoryGames] = useState<AvailableGame[]>([]);
+  const [gameFilter, setGameFilter] = useState('');
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const historyEpoch = useRef(0);
   const [draft, setDraft] = useState<Profile>();
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -40,17 +46,11 @@ export function ProfilePage({
     setError('');
     void api
       .me()
-      .then(() =>
-        Promise.all([
-          api.profile(),
-          section === 'history' ? api.matchHistory() : Promise.resolve(undefined),
-        ]),
-      )
-      .then(([account, records]) => {
+      .then(() => api.profile())
+      .then((account) => {
         if (!disposed) {
           setProfile(account);
           setDraft(account);
-          setHistory(records);
         }
       })
       .catch((cause) => {
@@ -64,6 +64,43 @@ export function ProfilePage({
       clearTimeout(copyTimer.current);
     };
   }, [attempt, section]);
+
+  useEffect(() => {
+    if (section !== 'history') return;
+    let disposed = false;
+    void loadGames()
+      .then((items) => {
+        if (!disposed) setHistoryGames(items);
+      })
+      .catch(() => undefined);
+    return () => {
+      disposed = true;
+    };
+  }, [section]);
+
+  useEffect(() => {
+    if (section !== 'history') return;
+    const epoch = ++historyEpoch.current;
+    setHistoryLoading(true);
+    setError('');
+    void api
+      .matchHistory(undefined, gameFilter || undefined)
+      .then((records) => {
+        if (epoch === historyEpoch.current) setHistory(records);
+      })
+      .catch((cause) => {
+        if (epoch === historyEpoch.current) {
+          setHistory(undefined);
+          setError(cause instanceof Error ? cause.message : '记录加载失败');
+        }
+      })
+      .finally(() => {
+        if (epoch === historyEpoch.current) setHistoryLoading(false);
+      });
+    return () => {
+      historyEpoch.current++;
+    };
+  }, [section, gameFilter, attempt]);
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -93,18 +130,23 @@ export function ProfilePage({
   }
 
   async function more() {
-    if (!history?.nextCursor || moreLock.current) return;
+    if (!history?.nextCursor || moreLock.current || historyLoading) return;
+    const epoch = historyEpoch.current;
     moreLock.current = true;
     setLoadingMore(true);
     try {
-      const page = await api.matchHistory(history.nextCursor);
-      if (active.current)
+      const page = await api.matchHistory(history.nextCursor, gameFilter || undefined);
+      if (active.current && epoch === historyEpoch.current)
         setHistory((current) => ({
-          items: [...(current?.items ?? []), ...page.items],
+          items: [
+            ...(current?.items ?? []),
+            ...page.items.filter((item) => !current?.items.some((old) => old.id === item.id)),
+          ],
           nextCursor: page.nextCursor,
         }));
     } catch (cause) {
-      if (active.current) setError(cause instanceof Error ? cause.message : '记录加载失败');
+      if (active.current && epoch === historyEpoch.current)
+        setError(cause instanceof Error ? cause.message : '记录加载失败');
     } finally {
       moreLock.current = false;
       if (active.current) setLoadingMore(false);
@@ -143,11 +185,17 @@ export function ProfilePage({
 
   if (!profile || !draft || (section === 'history' && !history))
     return error ? (
-      <PageFeedback title="资料加载失败" retry={() => setAttempt((value) => value + 1)}>
+      <PageFeedback
+        title={section === 'history' ? '对局记录加载失败' : '资料加载失败'}
+        retry={() => setAttempt((value) => value + 1)}
+      >
         {error}
       </PageFeedback>
     ) : (
-      <PageFeedback title="正在加载我的资料…" loading />
+      <PageFeedback
+        title={section === 'history' ? '正在加载对局记录…' : '正在加载我的资料…'}
+        loading
+      />
     );
   const navigationState: unknown = window.history.state;
   const saved =
@@ -582,14 +630,59 @@ export function ProfilePage({
       {section === 'identity' && <FriendIdCard />}
 
       {section === 'history' && history && (
-        <section className="room-list">
-          {history.items.length === 0 ? (
+        <section className="room-list" aria-busy={historyLoading}>
+          <div className="history-filters">
+            <label>
+              按游戏筛选
+              <select
+                value={gameFilter}
+                onChange={(event) => {
+                  historyEpoch.current++;
+                  setHistoryLoading(true);
+                  setGameFilter(event.target.value);
+                }}
+              >
+                <option value="">全部游戏</option>
+                {[
+                  ...new Map([
+                    ...historyGames.map((game) => [game.id, game.name] as const),
+                    ...history.items
+                      .filter((match) => !historyGames.some((game) => game.id === match.gameId))
+                      .map((match) => [match.gameId, match.gameId] as const),
+                    ...(gameFilter && !historyGames.some((game) => game.id === gameFilter)
+                      ? [[gameFilter, gameFilter] as const]
+                      : []),
+                  ]).entries(),
+                ].map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {gameFilter && (
+              <button
+                className="secondary"
+                onClick={() => {
+                  historyEpoch.current++;
+                  setHistoryLoading(true);
+                  setGameFilter('');
+                }}
+              >
+                查看全部游戏
+              </button>
+            )}
+          </div>
+          {historyLoading ? (
+            <p role="status">正在读取对局记录…</p>
+          ) : history.items.length === 0 ? (
             <div className="profile-empty-history panel">
               <div className="empty-history-icon" aria-hidden="true">
                 🎲
               </div>
               <p className="muted">
-                暂无对局记录。<a href="/">去大厅开始第一局</a>
+                {gameFilter ? '这款游戏还没有对局记录。' : '暂无对局记录。'}
+                <a href="/">去大厅开始第一局</a>
               </p>
             </div>
           ) : (
@@ -598,22 +691,40 @@ export function ProfilePage({
                 <span>
                   <strong>{match.roomName}</strong>
                   <small>
-                    {match.gameId} · {match.gameVersion} · {date(match.createdAt)}
+                    {historyGames.find((game) => game.id === match.gameId)?.name ?? match.gameId} ·{' '}
+                    {match.gameVersion} · {date(match.createdAt)}
                   </small>
+                </span>
+                <span className="match-history-result">
+                  {match.status === 'finished' && (
+                    <strong>
+                      {match.result
+                        ? match.result.winner
+                          ? match.result.sharedWin
+                            ? '共同胜出'
+                            : '胜出'
+                          : '未胜出'
+                        : '未记录结果'}
+                    </strong>
+                  )}
+                  {match.result?.score !== undefined && <span>{match.result.score} 分</span>}
                 </span>
                 <span className={`match-status-tag match-status-tag--${match.status}`}>
                   {statuses[match.status]}
                 </span>
-                <a
-                  className="button-link secondary"
-                  href={`/matches/${match.id}${match.status === 'active' ? '' : '/replay'}`}
-                >
-                  {match.status === 'active' ? '继续对局' : '查看回放'}
-                </a>
+                <div className="match-history-links">
+                  {match.status === 'finished' && <a href={`/matches/${match.id}`}>查看结果</a>}
+                  <a
+                    className="button-link secondary"
+                    href={`/matches/${match.id}${match.status === 'active' ? '' : '/replay'}`}
+                  >
+                    {match.status === 'active' ? '继续对局' : '查看回放'}
+                  </a>
+                </div>
               </article>
             ))
           )}
-          {history.nextCursor && (
+          {!historyLoading && history.nextCursor && (
             <button
               className="secondary history-more-btn"
               disabled={loadingMore}

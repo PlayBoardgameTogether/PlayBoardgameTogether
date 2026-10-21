@@ -464,6 +464,8 @@ export class RoomService {
     const ext = this.registry.get(body.gameId, body.version);
     if (!ext || ext.manifest.developmentOnly)
       throw new AppError('GAME_VERSION_UNAVAILABLE', 'Game version is unavailable', 422);
+    if (body.computerOpponents && (!ext.getDecisionContext || body.visibility === 'public'))
+      throw new AppError('AI_NOT_SUPPORTED', '电脑对局需要支持脚本 AI 的游戏与私密房间', 422);
     const options = ext.validateOptions(body.options);
     if (body.seatCount < ext.manifest.players.min || body.seatCount > ext.manifest.players.max)
       throw new AppError('VALIDATION_ERROR', 'seatCount is outside game limits', 400);
@@ -513,11 +515,23 @@ export class RoomService {
         roomId,
         accountId,
       ]);
-      for (let i = 0; i < body.seatCount; i++)
+      for (let i = 0; i < body.seatCount; i++) {
+        const bot = !!body.computerOpponents && i > 0;
         await client.query(
-          'INSERT INTO seats(id,room_id,seat_index,owner_account_id) VALUES($1,$2,$3,$4)',
-          [randomUUID(), roomId, i, i === 0 ? accountId : null],
+          `INSERT INTO seats(id,room_id,seat_index,owner_account_id,occupant_kind,bot_name,bot_policy_id,bot_policy_version)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [
+            randomUUID(),
+            roomId,
+            i,
+            i === 0 ? accountId : null,
+            bot ? 'bot' : 'human',
+            bot ? `电脑 ${i + 1}` : null,
+            bot ? 'basic-v1' : null,
+            bot ? '1.0.0' : null,
+          ],
         );
+      }
       invite = inviteCode();
       const issuedAt = new Date();
       await client.query(

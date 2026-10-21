@@ -8,4 +8,5 @@ export const guides = [
   { slug: 'add-game', title: '添加游戏', summary: '扩展注册、测试、未来接口' },
   { slug: 'game-packages', title: '在线游戏 ZIP', summary: '打包、隔离规则与即时安装' },
   { slug: 'ai', title: 'AI 开发指南', summary: '编码代理与游戏内 AI' },
+  { slug: 'online-update', title: '在线更新与恢复', summary: '接通网页更新、配置托管与排查失败' },
 ] as const;

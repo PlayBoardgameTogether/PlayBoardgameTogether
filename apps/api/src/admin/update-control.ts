@@ -38,7 +38,7 @@ export class UpdateControl {
       const timer = setTimeout(() => finish(unavailable()), 3000);
       this.ipc.on('message', listener);
       try {
-        this.ipc.send!({ type: 'update.control', id, action, requestId }, error => {
+        this.ipc.send!({ type: 'update.control', id, action, requestId, statusVersion: 2 }, error => {
           if (error) finish(unavailable());
         });
       } catch { finish(unavailable()); }

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import { createDatabase, type Database } from '../../apps/api/src/db/index.js';
 import { createRegistry } from '../../apps/api/src/registry/index.js';
@@ -31,8 +31,7 @@ describe('administrator management', () => {
     app.inject({ method: 'PUT', url: path, headers, payload });
   const read = (path: string, headers = admin) =>
     app.inject({ url: path, headers });
-  beforeAll(async () => {
-    db = createDatabase(url);
+  async function startApp() {
     app = await createApp({
       db,
       registry: createRegistry(false),
@@ -46,8 +45,8 @@ describe('administrator management', () => {
         LOG_LEVEL: 'silent',
       },
     });
-  });
-  afterAll(async () => {
+  }
+  afterEach(async () => {
     await db.query('UPDATE game_installations SET enabled=true');
     await app.close();
   });
@@ -69,6 +68,8 @@ describe('administrator management', () => {
     };
   }
   beforeEach(async () => {
+    // Prepare fixtures before starting background workers that access these tables.
+    db = createDatabase(url);
     await db.query('TRUNCATE accounts CASCADE');
     await db.query('UPDATE game_installations SET enabled=true');
     adminId = await createAccount(db, {
@@ -83,6 +84,7 @@ describe('administrator management', () => {
       password: 'admin management password',
       role: 'user',
     });
+    await startApp();
     admin = await login('manage_admin');
     user = await login('manage_user');
   });

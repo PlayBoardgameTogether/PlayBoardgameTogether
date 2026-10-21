@@ -1,5 +1,11 @@
 # 架构
 
+## 电脑开局与公开结果（2026-10-20，0.12.0）
+
+电脑开局由 Web 的 ComputerGamePage 协调原建房/准备/开局接口；RoomService 只在原建房事务填充脚本 bot 席位，不拥有新的规则动作入口。会话进度固定三条命令的请求身份，完成或登出后清除，离页停止后续写入。
+
+registry.resultSummaries 按精确版本显式装配公开结果投影，MatchService 在原真人/自动动作事务写入可空终局摘要，ProfileService 同一 SQL 投影本人结果及游戏筛选游标。未改游戏规则、GameExtension、规则摘要或在线 VM；未登记的游戏及历史记录不猜测结果。共享 result schema 由 protocol 拥有；Web MatchResultPanel 只消费公开 DTO，继续保留游戏桌面的原终局表现和本人回放。
+
 ## 官方 AI token 计价（2026-10-18，0.11.0）
 
 `official-ai/pricing.ts` 使用 BigInt 按输入/输出用量与管理员加价合计结算，`OfficialAiService` 拥有原预留和 ready 价格快照；正式扣费仍由 matches 原事务调用。protocol 增加可选价格/账单字段以兼容历史固定档位。Web 在原后台/玩家入口使用共用 `OfficialAiPrice` 展示售价，房间/控制选择器区分 token 和固定档位。没有增加支付服务、平行动作链路或新的运行单元。详见 [官方 AI](official-ai.md)。

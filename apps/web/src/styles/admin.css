@@ -184,7 +184,101 @@
     }
   }
   .admin-update-section {
-    max-width: 48rem;
+    max-width: 62rem;
+    display: grid;
+    gap: 20px;
+  }
+  .admin-update-section p {
+    margin-block: 0 10px;
+  }
+  .admin-update-summary {
+    padding: clamp(20px, 4vw, 36px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .admin-update-summary[data-tone='success'] {
+    border-color: var(--success);
+  }
+  .admin-update-summary[data-tone='error'] {
+    border-color: var(--danger);
+  }
+  .admin-update-version {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-update-version strong {
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    line-height: 1.2;
+  }
+  .admin-update-version > span {
+    color: var(--muted);
+    font-size: 1.2rem;
+  }
+  .admin-update-status h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+  }
+  .admin-update-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-block: 24px 12px;
+  }
+  .admin-update-section .admin-update-caption,
+  .admin-update-section .admin-update-footnote {
+    margin: 0;
+    font-size: 0.875rem;
+    overflow-wrap: anywhere;
+  }
+  .admin-update-help,
+  .admin-update-failure {
+    padding: 20px;
+    border-radius: var(--radius);
+    background: var(--panel);
+    border-inline-start: 3px solid var(--warning);
+  }
+  .admin-update-failure {
+    border-inline-start-color: var(--danger);
+  }
+  .admin-update-help h3,
+  .admin-update-failure h3 {
+    margin-top: 0;
+  }
+  .admin-update-help ol {
+    padding-inline-start: 24px;
+    display: grid;
+    gap: 12px;
+  }
+  .admin-update-technical {
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+  }
+  .admin-update-technical summary {
+    min-height: 44px;
+    display: list-item;
+    align-content: center;
+    cursor: pointer;
+  }
+  .admin-update-diagnostic {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .admin-update-diagnostic textarea {
+    width: 100%;
+    min-width: 0;
+    resize: vertical;
+    font-size: 0.875rem;
+  }
+  .admin-update-live-step {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
   }
   .admin-update-details {
     display: grid;
@@ -266,20 +360,28 @@
   .admin-update-progress {
     list-style: none;
     padding: 0;
-    margin: 1.5rem 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
   }
   .admin-update-progress li {
     display: grid;
-    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
     align-items: center;
     gap: 12px;
     padding: 10px 0;
-    border-bottom: 1px solid var(--line);
+    border-top: 2px solid var(--line);
     color: var(--muted);
   }
   .admin-update-progress li[data-state='active'] {
     color: var(--text);
     font-weight: 600;
+    border-top-color: var(--accent);
+  }
+  .admin-update-progress li[data-state='complete'] {
+    color: var(--success);
+    border-top-color: var(--success);
   }
   .admin-update-step-number {
     text-align: center;
@@ -287,9 +389,21 @@
   .admin-update-progress small {
     font-weight: 400;
     white-space: nowrap;
+    grid-column: 2;
   }
-  .admin-update-waiting p {
-    margin: 8px 0;
+  @media (max-width: 900px) {
+    .admin-update-progress {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 440px) {
+    .admin-update-actions {
+      flex-direction: column;
+    }
+    .admin-update-details > div {
+      grid-template-columns: 5rem minmax(0, 1fr);
+      gap: 8px;
+    }
   }
 }
 

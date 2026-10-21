@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
 import { DeterministicRng } from '@boardgame/game-sdk';
-import { controllerCommandSchema, matchActionSchema } from '@boardgame/protocol';
+import { controllerCommandSchema, matchActionSchema, matchResultSchema } from '@boardgame/protocol';
 import type { Database } from './db/index.js';
 import type { GameRegistry } from './registry/index.js';
 import { AppError } from './errors.js';
@@ -23,6 +23,7 @@ type MatchRow = {
   asset_contract_version: string | null;
   state: unknown;
   rng_state: unknown;
+  result_summary?: unknown;
   revision: number;
   status: 'active' | 'finished' | 'aborted';
 };
@@ -314,6 +315,10 @@ export class MatchService {
         : null,
       revision: row.revision,
       status: row.status,
+      result:
+        row.status === 'finished' && row.result_summary
+          ? matchResultSchema.parse(row.result_summary)
+          : null,
       seatIndex: row.seat_index,
       controller: {
         type: row.controller_type,
@@ -424,6 +429,18 @@ export class MatchService {
       !Array.isArray(outcome) &&
       outcome.status === 'finished';
     const status = finished ? ('finished' as const) : ('active' as const);
+    let resultSummary = null;
+    const summarize = this.registry.resultSummaries.get(`${row.game_id}@${row.game_version}`);
+    if (finished && summarize) {
+      const participants = await client.query<{ seat_id: string }>(
+        'SELECT seat_id FROM match_participants WHERE match_id=$1 ORDER BY seat_index',
+        [row.id],
+      );
+      resultSummary = summarize(
+        outcome,
+        participants.rows.map((item) => item.seat_id),
+      );
+    }
     const revision = row.revision + 1;
     const viewer = { kind: 'seat' as const, seatId: player.seat_id };
     const actorView: unknown = extension.getView(applied.state, viewer);
@@ -435,8 +452,8 @@ export class MatchService {
       }));
     const actionId = randomUUID();
     await client.query(
-      'UPDATE matches SET state=$2,rng_state=$3,revision=$4,status=$5 WHERE id=$1',
-      [row.id, serialized, rng.snapshot(), revision, status],
+      'UPDATE matches SET state=$2,rng_state=$3,revision=$4,status=$5,result_summary=$6 WHERE id=$1',
+      [row.id, serialized, rng.snapshot(), revision, status, resultSummary],
     );
     await client.query(
       'UPDATE match_replay_frames SET internal_events=$3,actor_seat_id=$4 WHERE match_id=$1 AND revision=$2',
@@ -475,6 +492,7 @@ export class MatchService {
       status,
       actorView,
       actorEvents,
+      resultSummary,
       roomChanged,
       events: applied.events as unknown[],
     };
@@ -594,7 +612,7 @@ export class MatchService {
           hash,
         });
         result = this.response(
-          { ...row, status: applied.status },
+          { ...row, status: applied.status, result_summary: applied.resultSummary },
           player,
           applied.revision,
           applied.actorView,
@@ -958,6 +976,10 @@ export class MatchService {
         : null,
       revision,
       status: row.status,
+      result:
+        row.status === 'finished' && row.result_summary
+          ? matchResultSchema.parse(row.result_summary)
+          : null,
       seatIndex: player.seat_index,
       controller: {
         type: player.controller_type,

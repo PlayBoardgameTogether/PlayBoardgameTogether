@@ -7,6 +7,7 @@ const catalogSchema = z.array(z.object({
   id: z.string(), version: z.string(), name: z.string(), description: z.string(),
   players: z.object({ min: z.number().int(), max: z.number().int() }),
   developmentOnly: z.boolean(),
+  supportsScriptAi: z.boolean().optional(),
 }));
 export type AvailableGame = z.infer<typeof catalogSchema>[number] & { presentation?: GamePresentation };
 export const gamePath = (game: Pick<AvailableGame, 'id' | 'version'>) =>
