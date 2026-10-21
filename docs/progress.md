@@ -10,7 +10,11 @@
 
 实机随后复现迁移前失败：监督器把 `{ sha, path }` 版本对象作为子进程 cwd，导致命令尚未启动即抛出参数错误；没有执行迁移，旧 API 已自动恢复，公网 HTTPS 与数据库就绪正常。修复为统一由 `prepareReleaseDatabase` 使用候选 `release.path` 串行运行原 `db:migrate` / `games:sync`，保留备份、排空、权限、迁移历史校验及失败恢复机制。新增两项真实 pnpm/Node 子进程回归，覆盖候选目录、顺序与迁移失败阻止游戏同步；不连接数据库，不以命令替身计为真实迁移成功。
 
-修复后实际执行 `pnpm --config.verify-deps-before-run=false test tests/unit/update-command.test.ts tests/unit/online-update.test.ts tests/unit/admin-update-control.test.ts`（29/29）、同选项 typecheck、lint、build 及 `git diff --check`，全部通过。生产 build 仍有既有 model-viewer 大 chunk 提示，不影响构建。修复未改变 API/WS/数据库业务行为，本批已通过的集成/E2E 不重复运行；上线迁移与真实运行版本待随后实机结果确认。平台 0.13.0 → 0.13.1，属于兼容更新器缺陷修复（PATCH+1），README 同步，游戏/workspace 包及锁文件不改号。
+修复后实际执行 `pnpm --config.verify-deps-before-run=false test tests/unit/update-command.test.ts tests/unit/online-update.test.ts tests/unit/admin-update-control.test.ts`（29/29）、同选项 typecheck、lint、build 及 `git diff --check`，全部通过。生产 build 仍有既有 model-viewer 大 chunk 提示，不影响构建。修复未改变 API/WS/数据库业务行为，本批已通过的集成/E2E 不重复运行。平台 0.13.0 → 0.13.1，属于兼容更新器缺陷修复（PATCH+1），README 同步，游戏/workspace 包及锁文件不改号。
+
+修复通过 [PR #14](https://github.com/Rst307/PlayBoardgameTogether/pull/14) 合并为 `7c858a89e9ee92f3f3a13aa62e37c6bc4989a1a3`。保存替换前两个模块后安装监督器及命令 helper，保留服务器原备份连接补丁和生产配置并重启。原更新器真实完成构建、排空、自动备份、迁移、游戏同步、API 就绪和版本切换，日志记录 `updated 7c858a89e9ee`；current.json 与运行目录 package.json 确认为该 SHA / 0.13.1，systemd active、NRestarts=0。成功切换的备份 `update-9bOz0C` 共 76 个文件再次核对长度和 SHA-256，全通过；没有恢复或降级生产数据库。
+
+公网 `https://bg.rst307.cn/health/ready` 返回数据库 ready，主页引用新版构建资产。只读查询确认迁移 034 已记录且 matches.result_summary 存在；公开 games API 的 9 款游戏均返回布尔 supportsScriptAi 字段。`node .data/server-sync/live-check.mjs` 匿名 Chromium 实际访问生产首页和在线更新指南，在 1440×900、390×844 检查到页脚 0.13.1、无横向溢出及 pageerror，实际查看两端截图，证据保存在 `.data/server-sync/live-home-*.png`。没有为验收创建生产账户/对局或执行生产数据清理；线上登录后的管理操作与完整对局、物理手机及备份独立恢复演练仍未实测。此次同步已完成，后续按 AGENTS.md 的持续授权复用同一发布与备份流程；本轮验收记录后续仅补文档不强制重启应用。
 
 ## 服务更新体验重整（2026-10-20，0.13.0）
 
