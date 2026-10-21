@@ -7,7 +7,7 @@ import { setTimeout, clearTimeout, setInterval, clearInterval } from 'node:timer
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 import { createUpdateControl, updateStatusForClient } from './update-control.mjs';
-import { buildRelease, runUpdateCommand } from './update-command.mjs';
+import { buildRelease, prepareReleaseDatabase, runUpdateCommand } from './update-command.mjs';
 import { backupUpdate, migrationPolicy } from './update-backup.mjs';
 const { fetch, AbortSignal } = globalThis;
 
@@ -297,10 +297,7 @@ async function main() {
           },
           prepareDatabase: async release => {
             updates.patch({ phase: 'applying' });
-            setStage('migrate');
-            await command('pnpm', ['db:migrate'], release);
-            setStage('sync');
-            await command('pnpm', ['games:sync'], release);
+            await prepareReleaseDatabase(command, release, setStage);
           },
           persist: async release => {
             setStage('persist');

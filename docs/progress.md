@@ -1,5 +1,17 @@
 # 开发进度
 
+## 合并规则、服务器同步与更新迁移修复（2026-10-21，0.13.1）
+
+按用户要求在 AGENTS.md 增加 PR 合并、锁定 head SHA、保留共享历史及持续服务器同步规则。已确认实际部署入口 `/opt/boardgame`、系统服务 `boardgame-local.service`，运行版本由 `.data/updates/current.json` 选择，不等于启动仓库 HEAD。功能与规则通过 [PR #13](https://github.com/Rst307/PlayBoardgameTogether/pull/13) 合并为 `47dfeffb35bc5e98613b9467f4fee7f0d8aa4653`。
+
+本轮重新执行全 workspace typecheck、lint、生产 build（含 bundle/API runtime）及 39 项相关单测，均通过。原 `test:integration` / `test:e2e` 准备脚本串行使用本轮专用 PostgreSQL 17 临时容器、15436 端口与 `boardgame_sync_test_20261021` 独立库，电脑对局/结果及管理员更新 11 项集成、桌面/手机 6 项真实 E2E 全通过，无 skip；生成配置与截图在忽略目录 `.data/server-sync`，临时容器与其卷已按精确 ID 删除，未清理开发或生产库。备份流程 10 项及服务器已有 PostgreSQL 连接适配 2 项测试通过。未运行无关全量业务回归或付费模型调用。
+
+线上原为 0.11.1。自动审批最初拒绝写入生产脚本和持久代理配置；用户明确回答“是”后才执行。私有维护备份为 `/opt/boardgame/.data/updates/server-sync-20261021T143349Z`，保存原监督模块、服务单元、原生产配置及版本选择；保留已有未提交备份连接补丁、资源与数据库，不覆盖生产 `.env`。新增 systemd drop-in 让服务使用本机已有代理，解决 GitHub 拉取超时。首次升级构建和备份成功，自动备份 `update-7MObxQ` 的 COMPLETE.json 共 76 个文件逐一校验字节数和 SHA-256；尚未做独立数据库恢复演练。
+
+实机随后复现迁移前失败：监督器把 `{ sha, path }` 版本对象作为子进程 cwd，导致命令尚未启动即抛出参数错误；没有执行迁移，旧 API 已自动恢复，公网 HTTPS 与数据库就绪正常。修复为统一由 `prepareReleaseDatabase` 使用候选 `release.path` 串行运行原 `db:migrate` / `games:sync`，保留备份、排空、权限、迁移历史校验及失败恢复机制。新增两项真实 pnpm/Node 子进程回归，覆盖候选目录、顺序与迁移失败阻止游戏同步；不连接数据库，不以命令替身计为真实迁移成功。
+
+修复后实际执行 `pnpm --config.verify-deps-before-run=false test tests/unit/update-command.test.ts tests/unit/online-update.test.ts tests/unit/admin-update-control.test.ts`（29/29）、同选项 typecheck、lint、build 及 `git diff --check`，全部通过。生产 build 仍有既有 model-viewer 大 chunk 提示，不影响构建。修复未改变 API/WS/数据库业务行为，本批已通过的集成/E2E 不重复运行；上线迁移与真实运行版本待随后实机结果确认。平台 0.13.0 → 0.13.1，属于兼容更新器缺陷修复（PATCH+1），README 同步，游戏/workspace 包及锁文件不改号。
+
 ## 服务更新体验重整（2026-10-20，0.13.0）
 
 围绕管理员检查更新、理解状态与失败恢复重新组织 `/admin/updates`：
