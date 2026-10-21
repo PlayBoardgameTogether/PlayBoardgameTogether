@@ -23,8 +23,10 @@ test('coin wallet persists grants, recovers lost confirmation and displays deduc
     await page.getByRole('link', { name: '我的桌游币' }).click();
     await expect(page.getByRole('heading', { name: '我的桌游币' })).toBeVisible();
     await expect(page.locator('.coin-amount')).toHaveText('0');
-    await expect(page.getByText('暂无流水。', { exact: false })).toBeVisible();
-    await expect(page.getByText('AI 点数仅用于 AI', { exact: false })).toBeVisible();
+    await expect(page.getByText('暂无收支明细。', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('桌游币是平台的通用货币，用于参与各类互动。', { exact: true }),
+    ).toBeVisible();
 
     const admin = await context.newPage();
     await login(admin, 'stage7_admin');
@@ -64,6 +66,10 @@ test('coin wallet persists grants, recovers lost confirmation and displays deduc
     await expect(admin.locator('.coin-amount')).toHaveText('100');
     await page.reload();
     await expect(page.locator('.coin-amount')).toHaveText('100');
+    // Coin grants remain independent of the player's AI point wallet.
+    const aiWallet = await page.request.get('/api/v1/me/ai-points');
+    expect(aiWallet.ok()).toBe(true);
+    expect((await aiWallet.json()).data).toMatchObject({ balance: 0, reserved: 0 });
     await expect(page.locator('.coin-entry')).toHaveCount(2);
     await expect(page.locator('.coin-entry').first()).toContainText('-20');
     await expect(page.locator('.coin-entry').last()).toContainText('+120');

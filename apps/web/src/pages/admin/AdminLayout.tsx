@@ -8,16 +8,26 @@ import '../../styles/admin.css';
 const meSchema = z.object({
   account: z.object({ role: z.enum(['user', 'administrator']) }),
 });
-const links = [
-  ['/admin', '管理总览'],
-  ['/admin/accounts', '账户管理'],
-  ['/admin/badges', '徽章设计'],
-  ['/admin/catalog', '游戏管理'],
-  ['/admin/submissions', '接入审核'],
-  ['/admin/games', '游戏展示'],
-  ['/admin/assets', '资源管理'],
-  ['/admin/updates', '服务更新'],
-  ['/admin/official-ai', '官方 AI 与点数'],
+const navigationGroups = [
+  { label: '工作台', links: [['/admin', '管理总览']] },
+  {
+    label: '玩家与权益',
+    links: [
+      ['/admin/accounts', '账户管理'],
+      ['/admin/badges', '徽章设计'],
+      ['/admin/official-ai', '官方 AI 与点数'],
+    ],
+  },
+  {
+    label: '游戏与内容',
+    links: [
+      ['/admin/catalog', '游戏管理'],
+      ['/admin/submissions', '接入审核'],
+      ['/admin/games', '游戏展示'],
+      ['/admin/assets', '资源管理'],
+    ],
+  },
+  { label: '系统维护', links: [['/admin/updates', '服务更新']] },
 ] as const;
 
 export function AdminLayout({
@@ -76,32 +86,49 @@ export function AdminLayout({
   if (state === 'loading') return <PageFeedback title="正在验证管理权限…" loading />;
   return (
     <div className="admin-workspace">
-      <section className="page-heading">
-        <div>
-          <p className="eyebrow">平台管理</p>
-          <h1>{title}</h1>
-          <p>{description}</p>
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-heading">
+          <strong>管理中心</strong>
+          <span>PLAYBOARD CONSOLE</span>
         </div>
-        <a className="button-link secondary" href="/">
-          返回大厅
+        <nav ref={navigation} className="admin-nav" aria-label="后台导航">
+          {navigationGroups.map((group) => (
+            <div className="admin-nav-group" key={group.label}>
+              <span className="admin-nav-label">{group.label}</span>
+              {group.links.map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  aria-current={
+                    path === href ||
+                    (href === '/admin/accounts' && path.startsWith('/admin/accounts/'))
+                      ? 'page'
+                      : undefined
+                  }
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          ))}
+        </nav>
+        <a className="admin-sidebar-help" href="/developers">
+          开发与维护指南 ↗
         </a>
-      </section>
-      <nav ref={navigation} className="admin-nav" aria-label="后台导航">
-        {links.map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
-            aria-current={
-              path === href || (href === '/admin/accounts' && /^\/admin\/accounts\//.test(path))
-                ? 'page'
-                : undefined
-            }
-          >
-            {label}
+      </aside>
+      <div className="admin-main">
+        <section className="page-heading admin-page-heading">
+          <div>
+            <p className="eyebrow">平台管理 / {path === '/admin' ? '工作台' : title}</p>
+            <h1>{title}</h1>
+            <p>{description}</p>
+          </div>
+          <a className="button-link secondary" href="/">
+            返回大厅
           </a>
-        ))}
-      </nav>
-      {children}
+        </section>
+        <div className="admin-content">{children}</div>
+      </div>
     </div>
   );
 }

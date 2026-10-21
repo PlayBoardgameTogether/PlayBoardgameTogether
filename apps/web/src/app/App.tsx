@@ -34,7 +34,7 @@ function AppShell({ path }: { path: string }) {
   useEffect(() => {
     document.title = route.documentTitle ?? `${route.title} · 桌游平台`;
   }, [route.title, route.documentTitle]);
-  return <div className={`desktop-shell ${route.game ? 'desktop-shell--game' : ''}`} onClick={followLink}>
+  return <div className={`desktop-shell ${route.game ? 'desktop-shell--game' : ''} ${path === '/admin' || path.startsWith('/admin/') ? 'desktop-shell--admin' : ''}`} onClick={followLink}>
     <a className="skip-link" href="#main-content">跳到主要内容</a>
     <header className="site-header" ref={header}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>

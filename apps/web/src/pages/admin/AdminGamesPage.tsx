@@ -59,12 +59,7 @@ function Games() {
     setNotice('');
     try {
       const saved = await api.setAdminGameStatus(game.id, game.version, {
-        requestId: requestId([
-          game.id,
-          game.version,
-          game.revision,
-          !game.enabled,
-        ]),
+        requestId: requestId([game.id, game.version, game.revision, !game.enabled]),
         expectedRevision: game.revision,
         enabled: !game.enabled,
       });
@@ -74,9 +69,7 @@ function Games() {
           item.id === saved.id && item.version === saved.version ? saved : item,
         ),
       );
-      setNotice(
-        `${saved.name} ${saved.version}已${saved.enabled ? '上架' : '下架'}。`,
-      );
+      setNotice(`${saved.name} ${saved.version}已${saved.enabled ? '上架' : '下架'}。`);
     } catch (cause) {
       if (alive.current) setError(adminError(cause));
     } finally {
@@ -92,43 +85,67 @@ function Games() {
   }
   const selected = selectedId ? grouped.get(selectedId) : undefined;
   const visible = [...grouped.values()].filter(([game]) =>
-    `${game.name} ${game.id}`
-      .toLowerCase()
-      .includes(filter.trim().toLowerCase()),
+    `${game.name} ${game.id}`.toLowerCase().includes(filter.trim().toLowerCase()),
   );
   return (
     <>
-      <GamePackageUpload onInstalled={() => setAttempt(value => value + 1)} />
+      <GamePackageUpload onInstalled={() => setAttempt((value) => value + 1)} />
       <div className="admin-actions admin-game-toolbar">
         {selectedId && (
-          <button className="secondary" disabled={busy} onClick={() => {
-            const previousId = selectedId;
-            setSelectedId(undefined);
-            setError('');
-            setNotice('');
-            requestAnimationFrame(() => gameButtons.current.get(previousId)?.focus());
-          }}>← 返回游戏列表</button>
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() => {
+              const previousId = selectedId;
+              setSelectedId(undefined);
+              setError('');
+              setNotice('');
+              requestAnimationFrame(() => gameButtons.current.get(previousId)?.focus());
+            }}
+          >
+            ← 返回游戏列表
+          </button>
         )}
-        <button className="secondary" disabled={busy} onClick={() => setAttempt(value => value + 1)}>
+        <button
+          className="secondary"
+          disabled={busy}
+          onClick={() => setAttempt((value) => value + 1)}
+        >
           刷新游戏
         </button>
       </div>
-      {!selectedId && <label className="admin-filter">
-        筛选游戏
-        <input value={filter} onChange={event => setFilter(event.target.value)} placeholder="名称或游戏 ID" />
-      </label>}
-      {selected && <header className="admin-game-heading">
-        <h2 ref={selectionHeading} tabIndex={-1}>{selected[0].name}</h2>
-        <p className="muted">{selectedId} · {selected.length} 个安装版本</p>
-      </header>}
-      {selectedId && <details className="admin-guidance">
+      {!selectedId && (
+        <label className="admin-filter">
+          筛选游戏
+          <input
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="名称或游戏 ID"
+          />
+        </label>
+      )}
+      {selected && (
+        <header className="admin-game-heading">
+          <h2 ref={selectionHeading} tabIndex={-1}>
+            {selected[0].name}
+          </h2>
+          <p className="muted">
+            {selectedId} · {selected.length} 个安装版本
+          </p>
+        </header>
+      )}
+      {selectedId && (
+        <details className="admin-guidance">
           <summary>版本管理说明</summary>
-          <p>下架隐藏大厅入口并阻止新建、开局；进行中的对局保留原规则与资源。重新上架后等待房间可继续开局。</p>
+          <p>
+            下架隐藏大厅入口并阻止新建、开局；进行中的对局保留原规则与资源。重新上架后等待房间可继续开局。
+          </p>
           <p>
             在线格式游戏包可从上方直接上传安装。普通源码项目由维护者审查、部署并同步；新版本使用新版本号，旧版本需继续保留以恢复已有对局。
           </p>
           <a href="/developers/add-game">查看游戏接入指南</a>
-      </details>}
+        </details>
+      )}
       {error && (
         <p className="error-notice" role="alert">
           {error}
@@ -141,58 +158,78 @@ function Games() {
         <>
           {!selectedId ? (
             <ul className="admin-game-list" aria-label="选择游戏">
-              {visible.map(versions => (
+              {visible.map((versions) => (
                 <li key={versions[0].id}>
-                  <button className="secondary admin-game-choice" ref={element => {
-                    if (element) gameButtons.current.set(versions[0].id, element);
-                    else gameButtons.current.delete(versions[0].id);
-                  }} onClick={() => {
-                    setSelectedId(versions[0].id);
-                    setError('');
-                    setNotice('');
-                  }}>
-                    <span><strong>{versions[0].name}</strong><small>{versions[0].id}</small></span>
-                    <span className="muted">{versions.length} 个版本 <span aria-hidden="true">→</span></span>
+                  <button
+                    className="secondary admin-game-choice"
+                    ref={(element) => {
+                      if (element) gameButtons.current.set(versions[0].id, element);
+                      else gameButtons.current.delete(versions[0].id);
+                    }}
+                    onClick={() => {
+                      setSelectedId(versions[0].id);
+                      setError('');
+                      setNotice('');
+                    }}
+                  >
+                    <span>
+                      <strong>{versions[0].name}</strong>
+                      <small>{versions[0].id}</small>
+                    </span>
+                    <span className="admin-game-meta">
+                      <span
+                        className="status-badge"
+                        data-status={versions.some((game) => game.enabled) ? 'active' : 'disabled'}
+                      >
+                        {versions.some((game) => game.enabled) ? '已上架' : '已下架'}
+                      </span>
+                      <span className="muted">
+                        {versions.length} 个版本 <span aria-hidden="true">→</span>
+                      </span>
+                    </span>
                   </button>
                 </li>
               ))}
             </ul>
-          ) : <div className="admin-records" aria-label="游戏版本">
-            {selected?.map((game) => (
-              <article
-                className="panel admin-record"
-                key={`${game.id}@${game.version}`}
-                aria-label={`${game.name} ${game.version}`}
-              >
-                <div>
-                  <h2>
-                    版本 <small>{game.version}</small>
-                  </h2>
-                  {game.developmentOnly && <p className="muted">仅开发环境</p>}
-                  <p>
-                    {game.available
-                      ? '规则与资源已加载'
-                      : '规则或资源不可用，需检查部署'}
-                  </p>
-                </div>
-                <div className="admin-record-actions">
-                  <span className="status-badge">
-                    {game.enabled ? '已上架' : '已下架'}
-                  </span>
-                  <button
-                    className="secondary"
-                    disabled={busy || (!game.enabled && !game.available)}
-                    onClick={() => void change(game)}
-                  >
-                    {game.enabled ? '下架版本' : '上架版本'}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>}
-          {(!selectedId && visible.length === 0) && (
+          ) : (
+            <div className="admin-records" aria-label="游戏版本">
+              {selected?.map((game) => (
+                <article
+                  className="panel admin-record"
+                  key={`${game.id}@${game.version}`}
+                  aria-label={`${game.name} ${game.version}`}
+                >
+                  <div>
+                    <h2>
+                      版本 <small>{game.version}</small>
+                    </h2>
+                    {game.developmentOnly && <p className="muted">仅开发环境</p>}
+                    <p>{game.available ? '规则与资源已加载' : '规则或资源不可用，需检查部署'}</p>
+                  </div>
+                  <div className="admin-record-actions">
+                    <span
+                      className="status-badge"
+                      data-status={game.enabled ? 'active' : 'disabled'}
+                    >
+                      {game.enabled ? '已上架' : '已下架'}
+                    </span>
+                    <button
+                      className="secondary"
+                      disabled={busy || (!game.enabled && !game.available)}
+                      onClick={() => void change(game)}
+                    >
+                      {game.enabled ? '下架版本' : '上架版本'}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+          {!selectedId && visible.length === 0 && (
             <p>
-              {games.length === 0 ? '暂无安装游戏，可上传游戏 ZIP 或部署并同步游戏。' : '没有匹配的游戏，请尝试其他名称或游戏 ID。'}
+              {games.length === 0
+                ? '暂无安装游戏，可上传游戏 ZIP 或部署并同步游戏。'
+                : '没有匹配的游戏，请尝试其他名称或游戏 ID。'}
             </p>
           )}
           {selectedId && !selected && <p>此游戏已不在安装列表中，请返回选择其他游戏。</p>}

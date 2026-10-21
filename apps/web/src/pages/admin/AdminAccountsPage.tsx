@@ -6,8 +6,7 @@ import { AdminLayout, adminError, useAdminRequestId } from './AdminLayout.js';
 
 function Accounts() {
   const requestId = useAdminRequestId();
-  const [page, setPage] =
-    useState<Awaited<ReturnType<typeof api.adminAccounts>>>();
+  const [page, setPage] = useState<Awaited<ReturnType<typeof api.adminAccounts>>>();
   const [draft, setDraft] = useState('');
   const [search, setSearch] = useState('');
   const [before, setBefore] = useState<string>();
@@ -72,14 +71,10 @@ function Accounts() {
         (previous) =>
           previous && {
             ...previous,
-            items: previous.items.map((item) =>
-              item.id === saved.id ? saved : item,
-            ),
+            items: previous.items.map((item) => (item.id === saved.id ? saved : item)),
           },
       );
-      setNotice(
-        `${saved.displayName}已${saved.status === 'active' ? '启用' : '停用'}。`,
-      );
+      setNotice(`${saved.displayName}已${saved.status === 'active' ? '启用' : '停用'}。`);
     } catch (cause) {
       if (alive.current) setError(adminError(cause));
     } finally {
@@ -113,10 +108,7 @@ function Accounts() {
       {notice && <p role="status">{notice}</p>}
       {!page ? (
         error ? (
-          <button
-            className="secondary"
-            onClick={() => setAttempt((value) => value + 1)}
-          >
+          <button className="secondary" onClick={() => setAttempt((value) => value + 1)}>
             刷新账户
           </button>
         ) : (
@@ -124,7 +116,13 @@ function Accounts() {
         )
       ) : (
         <>
-          <div className="admin-records">
+          <div className="admin-section-heading">
+            <h2>{search ? `“${search}”的搜索结果` : '账户列表'}</h2>
+            <span className="muted">
+              本页 {page.items.length} 个账户{page.nextCursor ? ' · 还有更多' : ''}
+            </span>
+          </div>
+          <div className="admin-records admin-account-list">
             {page.items.map((account) => (
               <article
                 className="panel admin-record"
@@ -134,15 +132,17 @@ function Accounts() {
                 <div>
                   <h2>{account.displayName}</h2>
                   <p>
-                    {account.username} ·{' '}
-                    {account.role === 'administrator' ? '管理员' : '玩家'}
+                    {account.username} · {account.role === 'administrator' ? '管理员' : '玩家'}
                   </p>
-                  <small className="muted">{account.id}</small>
+                  <details className="admin-account-id">
+                    <summary>账户 ID</summary>
+                    <code>{account.id}</code>
+                  </details>
                 </div>
                 <div className="admin-record-actions">
                   <a href={`/admin/accounts/${account.id}/badges`}>管理徽章</a>
                   <a href={`/admin/accounts/${account.id}/coins`}>管理桌游币</a>
-                  <span className="status-badge">
+                  <span className="status-badge" data-status={account.status}>
                     {account.status === 'active' ? '已启用' : '已停用'}
                   </span>
                   {account.role === 'user' && (
@@ -158,9 +158,7 @@ function Accounts() {
               </article>
             ))}
           </div>
-          {page.items.length === 0 && (
-            <p className="panel">未找到匹配账户，请调整用户名或昵称。</p>
-          )}
+          {page.items.length === 0 && <p className="panel">未找到匹配账户，请调整用户名或昵称。</p>}
           <div className="admin-actions">
             <button
               className="secondary"
@@ -173,19 +171,12 @@ function Accounts() {
               刷新账户
             </button>
             {before && (
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() => setBefore(undefined)}
-              >
+              <button className="secondary" disabled={busy} onClick={() => setBefore(undefined)}>
                 返回第一页
               </button>
             )}
             {page.nextCursor && (
-              <button
-                disabled={busy}
-                onClick={() => setBefore(page.nextCursor!)}
-              >
+              <button disabled={busy} onClick={() => setBefore(page.nextCursor!)}>
                 下一页
               </button>
             )}
