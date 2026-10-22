@@ -12,6 +12,7 @@
 - [Adding a game](/developer-docs/add-game.md)
 - [Runtime game ZIP packages](/developer-docs/game-packages.md)
 - [AI development](/developer-docs/ai.md)
+- [Online updates and recovery](/developer-docs/online-update.md)
 
 ## Machine-readable resources
 - [Full documentation](/llms-full.txt)

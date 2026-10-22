@@ -26,7 +26,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json && node build.mjs"
   },
   "dependencies": {
     "@boardgame/game-sdk": "workspace:*",

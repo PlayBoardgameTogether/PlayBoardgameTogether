@@ -28,7 +28,7 @@ export const publicSdkFiles = [
   'packages/protocol/src/game-packages.ts',
   'packages/protocol/src/admin.ts',
 ] as const;
-const guides = ['index', 'quickstart', 'game-sdk', 'client-sdk', 'api', 'realtime', 'add-game', 'game-packages', 'ai'];
+const guides = ['index', 'quickstart', 'game-sdk', 'client-sdk', 'api', 'realtime', 'add-game', 'game-packages', 'ai', 'online-update'];
 const repository = new URL('../../', import.meta.url);
 
 export async function developerResources() {

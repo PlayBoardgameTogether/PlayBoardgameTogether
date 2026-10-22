@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { beforeAll, beforeEach, afterAll, describe, it, expect } from 'vitest';
+import { beforeEach, afterEach, describe, it, expect } from 'vitest';
 import { gameSubmissionPageSchema, gameSubmissionSchema } from '../../packages/protocol/src/index.js';
 import { createApp } from '../../apps/api/src/app.js';
 import { createDatabase, type Database } from '../../apps/api/src/db/index.js';
@@ -23,14 +23,7 @@ describe('inert game application security', () => {
   let app: Awaited<ReturnType<typeof createApp>>;
   let user: Headers, other: Headers, admin: Headers;
   let userId: string;
-  beforeAll(async () => {
-    db = createDatabase(testUrl);
-    app = await createApp({ db, registry: createRegistry(false), config: {
-      NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: testUrl,
-      WEB_ORIGIN: origin, ENABLE_DEV_LAB: false, LOG_LEVEL: 'silent',
-    } });
-  });
-  afterAll(async () => { await app.close(); });
+  afterEach(async () => { await app.close(); });
   async function login(username: string): Promise<Headers> {
     const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', headers: { origin }, payload: { username, password: 'submission test password' } });
     expect(response.statusCode).toBe(200);
@@ -38,10 +31,24 @@ describe('inert game application security', () => {
     return { cookie: (Array.isArray(cookies) ? cookies : [String(cookies)]).map(value => value.split(';')[0]).join('; '), origin, 'x-csrf-token': String(response.json().data.csrfToken) };
   }
   beforeEach(async () => {
+    db = createDatabase(testUrl);
     await db.query('TRUNCATE accounts CASCADE');
     userId = await createAccount(db, { username: 'submission_user', displayName: '申请人', password: 'submission test password', role: 'user' });
     await createAccount(db, { username: 'submission_other', displayName: '其他用户', password: 'submission test password', role: 'user' });
     await createAccount(db, { username: 'submission_admin', displayName: '管理员', password: 'submission test password', role: 'administrator' });
+    app = await createApp({
+      db,
+      registry: createRegistry(false),
+      config: {
+        NODE_ENV: 'test',
+        API_HOST: '127.0.0.1',
+        API_PORT: 3001,
+        DATABASE_URL: testUrl,
+        WEB_ORIGIN: origin,
+        ENABLE_DEV_LAB: false,
+        LOG_LEVEL: 'silent',
+      },
+    });
     user = await login('submission_user'); other = await login('submission_other'); admin = await login('submission_admin');
   });
   const submit = (payload = input(), headers = user) => app.inject({ method: 'POST', url: endpoint, headers, payload });

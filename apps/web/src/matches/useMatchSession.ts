@@ -1,18 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
-import {
-  matchSnapshotMessageSchema,
-  roomSnapshotSchema,
-  type MatchView,
-  type ModelProfile,
-} from '@boardgame/protocol';
+import { type MatchView, type ModelProfile } from '@boardgame/protocol';
 import { api, command, navigate } from '../platform.js';
 import { clientGame, type GameBoard } from '../game-registry.js';
 import { AssetResolver, verifyManifest } from '../assets/resolver.js';
 import { audioManager, ownAudio } from '../assets/audio-manager.js';
 import { PresentationConsumer } from '../assets/presentation.js';
 import { BoardAudio } from '../assets/board-audio.js';
-import { reconnectBackoff, singleFlight } from '../network/scheduling.js';
+import { singleFlight } from '../network/scheduling.js';
+import { startMatchConnection, type MatchConnectionState } from './connection.js';
 import type { AssetContract } from '@boardgame/game-sdk/assets';
 type Pending = {
   accountId: string;
@@ -23,14 +19,6 @@ type Pending = {
   action: unknown;
   attempts: number;
 };
-type Connection =
-  | 'connecting'
-  | 'syncing'
-  | 'online'
-  | 'reconnecting'
-  | 'offline'
-  | 'auth-expired'
-  | 'recovery-blocked';
 const pendingKey = (id: string) => `boardgame:pending-match:${id}`;
 function readPending(id: string, accountId: string): Pending | undefined {
   try {
@@ -72,7 +60,7 @@ export function useMatchSession(id: string) {
   const [pendingPhase, setPendingPhase] = useState<'submitting' | 'checking' | 'uncertain'>();
   // A ref also locks same-tick clicks and background recovery before React renders.
   const operation = useRef<number | undefined>(undefined);
-  const [connection, setConnection] = useState<Connection>('connecting');
+  const [connection, setConnection] = useState<MatchConnectionState>('connecting');
   const [modelProfiles, setModelProfiles] = useState<ModelProfile[]>([]);
   const latest = useRef<MatchView | undefined>(undefined);
   const pendingRef = useRef<Pending | undefined>(undefined);
@@ -296,327 +284,76 @@ export function useMatchSession(id: string) {
     setPending(undefined);
     setBusy(false);
     setNotice('');
-    let socket: WebSocket | undefined;
-    let retryTimer: number | undefined;
-    let roomId: string | undefined;
-    const backoff = reconnectBackoff();
-    let stopped = false;
-    let lastPong = Date.now();
-    let connectedOnce = false;
-    let subscriptionReady = false;
-    let roomSubscriptionReady = false;
-    let networkOnline = navigator.onLine;
-    let releaseAudio: (() => void) | undefined;
-    const sync = singleFlight(async () => {
-      if (generation.current !== token || stopped) return;
-      if (!networkOnline) {
-        connected.current = false;
-        setConnection('offline');
-        return;
-      }
-      try {
-        const view = await refresh(token);
-        if (generation.current !== token) return;
-        roomId = view.roomId;
-        setError('');
-        if (pendingRef.current) await reconcile(token);
-        if (generation.current !== token) return;
-        if (!networkOnline) {
-          connected.current = false;
-          setConnection('offline');
-          return;
-        }
-        connected.current =
-          socket?.readyState === WebSocket.OPEN &&
-          (subscriptionReady || (roomSubscriptionReady && view.status === 'finished'));
-        if (connected.current) presentation.current.baseline(view.revision);
-        setConnection(
-          connected.current
-            ? 'online'
-            : socket?.readyState === WebSocket.OPEN
-              ? 'syncing'
-              : 'offline',
-        );
-      } catch (cause) {
-        if (generation.current !== token) return;
-        connected.current = false;
-        if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') {
-          stopped = true;
-          socket?.close();
-          storePending(undefined);
-          latest.current = undefined;
-          setData(undefined);
-          setConnection('auth-expired');
-        } else if (
-          cause instanceof ApiError &&
-          (cause.code === 'RECOVERY_BLOCKED' || cause.code === 'GAME_VERSION_UNAVAILABLE')
-        ) {
-          stopped = true;
-          socket?.close();
-          setConnection('recovery-blocked');
-          setError(cause.message);
-        } else {
-          setConnection('offline');
-          setError('无法同步对局，请检查连接后重试。');
-        }
-      }
-    });
-    const connect = () => {
-      if (generation.current !== token || stopped || !roomId || !navigator.onLine) return;
-      if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING)
-        return;
-      if (retryTimer !== undefined) clearTimeout(retryTimer);
-      retryTimer = undefined;
-      const url = new URL('/api/v1/ws/session', location.href);
-      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(url);
-      socket = ws;
-      presentation.current.reset();
-      audioManager.invalidate();
-      subscriptionReady = false;
-      roomSubscriptionReady = false;
-      setConnection(connectedOnce ? 'reconnecting' : 'connecting');
-      ws.onopen = () => {
-        if (generation.current !== token || socket !== ws) return;
-        connectedOnce = true;
-        lastPong = Date.now();
-        ws.send(JSON.stringify({ protocolVersion: 1, type: 'room.subscribe', roomId }));
-      };
-      ws.onmessage = (event) => {
-        if (generation.current !== token || socket !== ws) return;
-        try {
-          const message: unknown = JSON.parse(String(event.data));
-          if (!message || typeof message !== 'object' || !('type' in message)) return;
-          if (message.type === 'pong') {
-            lastPong = Date.now();
-            return;
-          }
-          if (
-            message.type === 'room.snapshot' &&
-            'roomId' in message &&
-            message.roomId === roomId
-          ) {
-            roomSubscriptionReady = true;
-            // The active match arrives in its own identity-projected WS snapshot.
-            // A finished match is no longer included in the room subscription.
-            const room = roomSnapshotSchema.safeParse(
-              'snapshot' in message ? message.snapshot : undefined,
-            );
-            if (
-              latest.current?.status === 'finished' ||
-              (room.success && room.data.activeMatchId !== id)
-            ) {
-              backoff.reset();
-              void sync();
-            }
-          }
-          if (message.type === 'match.snapshot') {
-            const parsed = matchSnapshotMessageSchema.parse(message);
-            if (parsed.matchId === id) {
-              const snapshot = parsed.snapshot;
+    const stopConnection = startMatchConnection({
+      id,
+      signal: controller.signal,
+      isCurrent: () => generation.current === token,
+      currentView: () => latest.current,
+      isConnected: () => connected.current,
+      refresh: () => refresh(token),
+      reconcile: () => reconcile(token),
+      on: {
+        authenticated: (currentAccountId) => {
+          accountId.current = currentAccountId;
+          audioManager.setAccount(currentAccountId);
+          const saved = readPending(id, currentAccountId);
+          pendingRef.current = saved;
+          setPending(saved);
+          setPendingPhase(saved ? 'checking' : undefined);
+        },
+        ready: (currentAccountId) =>
+          ownAudio(currentAccountId, id, async () => {
+            presentation.current.reset();
+            const baseline = await readSnapshot();
+            if (generation.current === token) presentation.current.baseline(baseline.revision);
+          }),
+        snapshot: merge,
+        live: (snapshot) => {
+          presentation.current.consume(id, snapshot.revision, snapshot.cues ?? [], true, (cue) => {
+            const game = clientGame(snapshot.gameId, snapshot.gameVersion);
+            if ('boardAudio' in game && game.boardAudio) {
               if (
-                connected.current &&
-                subscriptionReady &&
-                snapshot.delivery === 'live' &&
-                snapshot.events?.length
-              ) {
-                presentation.current.consume(
-                  id,
-                  snapshot.revision,
-                  snapshot.cues ?? [],
-                  true,
-                  (cue) => {
-                    const game = clientGame(snapshot.gameId, snapshot.gameVersion);
-                    if ('boardAudio' in game && game.boardAudio) {
-                      if (
-                        audioManager.available &&
-                        audioManager.owner &&
-                        !audioManager.preferences.muted &&
-                        !document.hidden
-                      )
-                        boardAudio.current.authorize(cue.eventId);
-                      return;
-                    }
-                    const resources = soundResources.current;
-                    if (resources)
-                      void audioManager.play(
-                        cue.cueId,
-                        resources.resolver.manifest,
-                        resources.contract,
-                      );
-                  },
-                );
-              }
-              merge(parsed.snapshot);
-              if (!subscriptionReady) {
-                subscriptionReady = true;
-                backoff.reset();
-                void sync();
-              }
+                audioManager.available &&
+                audioManager.owner &&
+                !audioManager.preferences.muted &&
+                !document.hidden
+              )
+                boardAudio.current.authorize(cue.eventId);
+              return;
             }
-          }
-          if (message.type === 'room.closed' && 'roomId' in message && message.roomId === roomId) {
-            returnHome();
-            return;
-          }
-          if (
-            message.type === 'subscription.revoked' &&
-            'roomId' in message &&
-            message.roomId === roomId
-          ) {
-            stopped = true;
-            connected.current = false;
-            setConnection('offline');
-            setError('已失去房间访问权限。');
-            ws.close();
-          }
-        } catch {
-          connected.current = false;
-          setConnection('syncing');
-          setError('实时消息无法读取，正在重新同步。');
-          void sync();
-        }
-      };
-      ws.onclose = (event) => {
-        if (generation.current !== token || socket !== ws) return;
-        subscriptionReady = false;
-        roomSubscriptionReady = false;
-        connected.current = false;
-        presentation.current.reset();
-        audioManager.invalidate();
-        if (event.code === 4001) {
-          stopped = true;
+            const resources = soundResources.current;
+            if (resources)
+              void audioManager.play(cue.cueId, resources.resolver.manifest, resources.contract);
+          });
+        },
+        baseline: (revision) => presentation.current.baseline(revision),
+        disconnected: () => {
+          presentation.current.reset();
+          audioManager.invalidate();
+        },
+        expired: () => {
           storePending(undefined);
           latest.current = undefined;
           setData(undefined);
-          setConnection('auth-expired');
-          return;
-        }
-        if (stopped) return;
-        setConnection('offline');
-        // An expired session can reject the WS upgrade before the server can
-        // send close code 4001. Recheck via authenticated HTTP so a failed
-        // handshake cannot leave the previous private View on screen forever.
-        void sync().then(() => {
-          if (generation.current !== token || stopped || socket !== ws || !latest.current) return;
-          retryTimer = window.setTimeout(() => {
-            retryTimer = undefined;
-            connect();
-          }, backoff.next());
-        });
-      };
-    };
-    const onOnline = () => {
-      networkOnline = true;
-      if (generation.current !== token) return;
-      if (!roomId) {
-        void initialize();
-        return;
-      }
-      if (retryTimer) clearTimeout(retryTimer);
-      if (socket?.readyState !== WebSocket.OPEN) connect();
-      else void sync();
-    };
-    const onOffline = () => {
-      networkOnline = false;
-      connected.current = false;
-      presentation.current.reset();
-      audioManager.invalidate();
-      setConnection('offline');
-    };
-    const onFocus = () => {
-      if (socket?.readyState === WebSocket.OPEN) void sync();
-    };
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    window.addEventListener('focus', onFocus);
-    const initialize = singleFlight(async () => {
-      if (generation.current !== token || stopped) return;
-      if (retryTimer !== undefined) clearTimeout(retryTimer);
-      retryTimer = undefined;
-      try {
-        const account = await api.me(controller.signal);
-        if (generation.current !== token) return;
-        accountId.current = account.account.id;
-        audioManager.setAccount(account.account.id);
-        const saved = readPending(id, account.account.id);
-        pendingRef.current = saved;
-        setPending(saved);
-        setPendingPhase(saved ? 'checking' : undefined);
-        const view = await refresh(token);
-        if (generation.current !== token) return;
-        roomId = view.roomId;
-        // A retained aborted match is a read-only archive. It does not subscribe
-        // to a closed room, which would otherwise redirect it to the lobby.
-        if (view.status === 'aborted') {
-          storePending(undefined);
-          setError('');
-          setConnection('online');
-          return;
-        }
-        releaseAudio = ownAudio(account.account.id, id, async () => {
-          presentation.current.reset();
-          const baseline = await readSnapshot();
-          if (generation.current === token) presentation.current.baseline(baseline.revision);
-        });
-        setError('');
-        connect();
-      } catch (cause) {
-        if (generation.current !== token) return;
-        if (cause instanceof ApiError && cause.code === 'UNAUTHENTICATED') {
-          stopped = true;
-          storePending(undefined);
-          setConnection('auth-expired');
-          return;
-        }
-        if (
-          cause instanceof ApiError &&
-          (cause.code === 'RECOVERY_BLOCKED' || cause.code === 'GAME_VERSION_UNAVAILABLE')
-        ) {
-          stopped = true;
-          setConnection('recovery-blocked');
-          setError(cause.message);
-          return;
-        }
-        if (cause instanceof ApiError && cause.code === 'MATCH_NOT_FOUND') {
-          stopped = true;
-          setConnection('offline');
-          setError('当前会话无权读取该局。');
-          return;
-        }
-        setConnection('offline');
-        setError('服务暂时不可用，正在重新连接。');
-        retryTimer = window.setTimeout(() => void initialize(), backoff.next());
-      }
+        },
+        clearPending: () => storePending(undefined),
+        closed: returnHome,
+        connected: (active) => {
+          connected.current = active;
+        },
+        connection: setConnection,
+        error: setError,
+      },
     });
-    void initialize();
-    const pollTimer = window.setInterval(() => {
-      if (socket?.readyState === WebSocket.OPEN) void sync();
-    }, 15000);
-    const heartbeat = window.setInterval(() => {
-      if (socket?.readyState !== WebSocket.OPEN) return;
-      if (Date.now() - lastPong > 60000) {
-        socket.close();
-        return;
-      }
-      socket.send(JSON.stringify({ protocolVersion: 1, type: 'ping', requestId: command() }));
-    }, 20000);
     return () => {
       generation.current++;
       controller.abort();
       if (reads.current?.token === token) reads.current = undefined;
       connected.current = false;
-      releaseAudio?.();
+      stopConnection();
       audioManager.clear();
       presentation.current.reset();
       soundResources.current = undefined;
-      if (retryTimer) clearTimeout(retryTimer);
-      clearInterval(pollTimer);
-      clearInterval(heartbeat);
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-      window.removeEventListener('focus', onFocus);
-      socket?.close();
     };
   }, [id]);
   useEffect(() => {

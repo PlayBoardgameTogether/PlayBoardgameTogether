@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import './style.css';
 import type { AssetResolverPort } from '@boardgame/game-sdk/assets';
 export { ColorAssetPreview } from './preview.js';
 export { colorMatchTutorial } from './tutorial.js';
