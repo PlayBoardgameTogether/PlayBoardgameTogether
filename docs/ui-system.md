@@ -1,5 +1,11 @@
 # 界面系统
 
+## 大厅视觉层级（2026-10-23，0.14.3）
+
+访客与登录大厅共用 `pages/LobbyHeading.tsx`：桌面页头并列邀请码折叠入口，手机保持完整宽度；表单继续由 `RoomInviteEntry`/`RoomInviteForm` 拥有。访客手机快捷入口位于目录后，登录玩家继续房间维持原有优先级。
+
+`styles/discovery.css` 在原 theme 层拥有大厅推荐、目录与游客登录引导：压缩推荐区、手机 Artwork 优先、宽屏搜索筛选同行、单一实时结果数量和轻量卡片。`styles/themes.css` 仅对普通桌面平台减弱导航选中和阴影，不改变游戏、后台及手机导航。亮暗 Token、搜索/筛选/邀请码、键盘焦点与减少动态效果保持；本轮实际验证范围见开发进度。
+
 ## Color Match 样式所有权（2026-10-22，0.14.2）
 
 Color Match 样式从 stage2、stage9、assets、vibrancy、theme-refresh、themes 六个文件收敛到游戏自身的 `games/color-match/src/client/style.css`，由客户端入口按需导入；构建复制 CSS，平台唯一入口声明 `games.color-match` 子层。布局和状态外观沿用现有设计，保留亮暗主题、手机公共牌与玩家区域、选牌和减少动态效果。
