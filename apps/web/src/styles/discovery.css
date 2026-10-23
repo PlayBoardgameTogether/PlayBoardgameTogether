@@ -1,34 +1,75 @@
 /* Discovery surfaces use the existing warm lobby tokens and theme layer. */
 @layer theme {
   .discovery-heading {
-    margin-bottom: 24px;
+    margin-bottom: 28px;
     --page-heading-size: clamp(28px, 3vw, 38px);
     --page-heading-margin: 6px 10px;
   }
   .discovery-heading p {
     margin-bottom: 0;
   }
+  .lobby-heading {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px 32px;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  .lobby-heading-copy {
+    flex: 1 1 280px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .lobby-heading .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .lobby-heading .lobby-invite {
+    flex: 0 1 320px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+  }
+  .lobby-heading .lobby-invite > summary {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  .lobby-heading .lobby-invite summary small {
+    display: none;
+  }
+  .lobby-heading .lobby-invite[open] {
+    flex-basis: 380px;
+  }
   .discovery-spotlight {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
     align-items: center;
-    gap: clamp(20px, 3vw, 44px);
-    padding: clamp(20px, 3vw, 38px);
-    margin-bottom: 38px;
+    gap: clamp(24px, 4vw, 56px);
+    padding: clamp(24px, 2.5vw, 32px);
+    margin-bottom: 32px;
     border-radius: 24px;
     background:
       radial-gradient(ellipse at 0 0, var(--accent-soft), transparent 70%), var(--panel-raised);
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--line);
   }
   .discovery-spotlight-copy {
     min-width: 0;
   }
   .discovery-spotlight-copy h2 {
     max-width: 13em;
-    margin: 12px 0 16px;
+    margin: 10px 0 14px;
     color: var(--text);
     font-family: inherit;
-    font-size: clamp(26px, 3.1vw, 44px);
+    font-size: clamp(26px, 2.7vw, 38px);
     font-weight: 850;
     line-height: 1.24;
     letter-spacing: -0.035em;
@@ -37,7 +78,7 @@
   .discovery-spotlight-copy > p:not(.eyebrow) {
     max-width: 34em;
     color: var(--text-secondary);
-    line-height: 1.85;
+    line-height: 1.75;
   }
   .discovery-spotlight-copy > small {
     display: block;
@@ -81,20 +122,23 @@
     color: var(--text);
     text-decoration: none;
     box-shadow: var(--shadow-card);
-    transform: rotate(2deg);
+    transform: none;
     transition: transform 200ms ease;
   }
   .discovery-spotlight-art .game-cover {
     border-radius: 0;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 16 / 8;
   }
   .discovery-art-caption {
-    display: grid;
-    gap: 6px;
-    padding: 18px 22px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 14px 18px;
   }
   .discovery-art-caption strong {
-    font-size: 20px;
+    font-size: 17px;
   }
   .discovery-art-caption > span {
     color: var(--muted);
@@ -103,13 +147,9 @@
   .discovery-catalog .catalog-section-heading {
     margin-bottom: 16px;
   }
-  .discovery-catalog .catalog-section-heading .eyebrow {
-    margin: 0 0 6px;
-    color: var(--muted);
-  }
 
   .discovery-result-count {
-    margin: 14px 0;
+    margin: 0;
     color: var(--muted);
     font-size: 12px;
   }
@@ -118,8 +158,8 @@
   }
   .discovery-practice-tag {
     position: absolute;
-    inset: auto auto 12px 12px;
-    padding: 5px 10px;
+    inset: 12px auto auto 12px;
+    padding: 4px 9px;
     border-radius: 999px;
     background: var(--panel);
     color: var(--text);
@@ -128,12 +168,71 @@
     box-shadow: var(--shadow-sm);
   }
 
+  .discovery-catalog .catalog-section-heading > .discovery-result-count {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .discovery-catalog .game-card {
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+  .discovery-catalog .game-card .game-cover {
+    aspect-ratio: 16 / 10;
+    border-radius: 0;
+  }
+  .discovery-catalog .game-card-info {
+    gap: 12px;
+    padding: 18px;
+  }
+  .discovery-catalog .game-card-icon {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 7px;
+  }
+  .discovery-catalog .game-card-heading h3 {
+    font-size: 17px;
+    line-height: 1.4;
+  }
   .discovery-catalog .game-card-desc {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .discovery-catalog .game-card-footer {
+    padding-top: 4px;
+    border-top: 0;
+  }
+  .discovery-catalog .game-card-players {
+    padding: 0;
+    background: none;
+    font-weight: 500;
+  }
+  .discovery-catalog .game-card:hover .game-card-action {
+    color: var(--link);
   }
   .discovery-catalog .game-card-action {
     color: var(--text);
+  }
+  .desktop-shell .guest-welcome-banner {
+    gap: 20px;
+    padding: 24px;
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+  .desktop-shell .guest-welcome-banner > p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin: 0;
   }
   .discovery-empty {
     padding: 28px;
@@ -215,7 +314,27 @@
   }
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     .discovery-spotlight-art:hover {
-      transform: rotate(0deg) translateY(-3px);
+      transform: translateY(-2px);
+    }
+  }
+  @media (min-width: 1100px) {
+    .discovery-catalog .catalog-discovery {
+      grid-template-columns: minmax(220px, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .discovery-catalog .catalog-search {
+      max-width: none;
+    }
+    .discovery-catalog .catalog-filters {
+      justify-content: flex-end;
+    }
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .discovery-catalog .game-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-card);
     }
   }
   @media (max-width: 1000px) {
@@ -224,27 +343,73 @@
       padding: 24px;
     }
   }
-  @media (max-width: 700px) {
-    .discovery-spotlight {
-      grid-template-columns: minmax(0, 1fr);
-      padding: 22px;
-      gap: 22px;
+  @media (max-width: 760px) {
+    .lobby-heading {
+      gap: 14px;
+      margin-bottom: 20px;
+      --page-heading-size: 28px;
     }
-    .discovery-spotlight-art {
+    .lobby-heading-copy {
+      flex-basis: 100%;
+    }
+    .lobby-heading .lobby-invite,
+    .lobby-heading .lobby-invite[open] {
+      flex-basis: 100%;
+    }
+    .discovery-catalog .game-card,
+    .discovery-catalog .game-card:hover {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
       transform: none;
     }
-    .discovery-spotlight-art .game-cover {
-      aspect-ratio: 16 / 7;
+    .discovery-catalog .game-card .game-cover {
+      aspect-ratio: 1;
+      border-radius: 16px;
+    }
+    .discovery-catalog .game-card-info {
+      gap: 6px;
+      padding: 10px 2px 0;
+    }
+    .discovery-catalog .game-card-heading h3 {
+      font-size: 14px;
+    }
+    .discovery-catalog .game-card-footer {
+      padding: 0;
+    }
+    .discovery-catalog .discovery-practice-tag {
+      inset: 8px auto auto 8px;
+      font-size: 11px;
+    }
+    .discovery-spotlight {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 18px;
+      gap: 14px;
+      margin-bottom: 28px;
+      border-radius: 20px;
+    }
+    .discovery-spotlight-art {
+      order: -1;
+      transform: none;
+      border-radius: 12px;
+    }
+    .discovery-spotlight-copy h2 {
+      font-size: 25px;
+      margin-block: 8px 12px;
+    }
+    .discovery-spotlight-copy > p:not(.eyebrow) {
+      font-size: 13px;
+    }
+    .discovery-spotlight-actions {
+      gap: 8px 16px;
+      margin-top: 16px;
     }
     .discovery-art-caption {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      justify-content: space-between;
-      padding: 12px 16px;
+      display: none;
     }
-    .discovery-art-caption strong {
-      font-size: 16px;
+    .discovery-spotlight-art .game-cover {
+      aspect-ratio: 16 / 6;
     }
 
     .discovery-detail .game-banner-content {

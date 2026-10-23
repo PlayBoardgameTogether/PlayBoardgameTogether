@@ -1,17 +1,11 @@
 import { GameCatalog } from './GameCatalog.js';
-import { RoomInviteEntry } from './RoomInviteEntry.js';
+import { LobbyHeading } from './LobbyHeading.js';
 
 export function HomePage() {
   return (
     <>
-      <section className="page-heading discovery-heading">
-        <div>
-          <p className="eyebrow">PLAYBOARD · 和朋友，共享一张桌</p>
-          <h1>游戏大厅</h1>
-          <p>挑一款喜欢的桌游，随时开局。</p>
-        </div>
-      </section>
-      <RoomInviteEntry />
+      <LobbyHeading />
+      <GameCatalog />
       <div className="mobile-lobby-actions" aria-label="大厅快捷入口">
         <a href="/friends">
           <span aria-hidden="true">♧</span>
@@ -28,7 +22,6 @@ export function HomePage() {
           <span aria-hidden="true">↗</span>
         </a>
       </div>
-      <GameCatalog />
     </>
   );
 }

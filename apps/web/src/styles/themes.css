@@ -190,6 +190,32 @@
     opacity: 1;
   }
 
+  /* Keep the desktop platform frame quieter than game artwork and actions. */
+  @media (min-width: 761px) {
+    .desktop-shell:not(.desktop-shell--game):not(.desktop-shell--admin) .site-header {
+      box-shadow: none;
+    }
+    .desktop-shell:not(.desktop-shell--game):not(.desktop-shell--admin)
+      .site-header
+      nav
+      > a[aria-current='page'] {
+      background: var(--accent-soft);
+      border-color: transparent;
+      color: var(--text);
+      box-shadow: none;
+    }
+    .desktop-shell:not(.desktop-shell--game):not(.desktop-shell--admin)
+      .site-header
+      nav
+      > a[aria-current='page']
+      svg {
+      stroke: currentColor;
+    }
+    .desktop-shell:not(.desktop-shell--game):not(.desktop-shell--admin) .site-header nav > a:hover {
+      transform: none;
+    }
+  }
+
   /* --------------------------------------------------------------------------
      5. Buttons - Golden Primary & Fresh Green Join Actions
      -------------------------------------------------------------------------- */

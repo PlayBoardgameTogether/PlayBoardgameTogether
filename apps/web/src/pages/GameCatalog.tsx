@@ -61,19 +61,16 @@ export function GameCatalog() {
             <GameCover game={featured} />
             <span className="discovery-art-caption">
               <strong>{featured.name}</strong>
-              <span>
-                动手试试，看看合不合拍 <span aria-hidden="true">↗</span>
-              </span>
+              <span>从第一手开始，边玩边学</span>
             </span>
           </a>
         </section>
       )}
       <div className="catalog-section-heading">
-        <div>
-          <p className="eyebrow">精选桌游</p>
-          <h2>全部游戏</h2>
-        </div>
-        <span>{games.length} 款可玩</span>
+        <h2>全部游戏</h2>
+        <p className="discovery-result-count" role="status" aria-live="polite">
+          {games.length > 0 ? `${visible.length} 款游戏${practiceOnly ? ' · 可先试玩' : ''}` : ''}
+        </p>
       </div>
       {!games.length && <p role="status">暂无可用游戏，请稍后重试。</p>}
       {!!games.length && (
@@ -123,11 +120,6 @@ export function GameCatalog() {
           </div>
         </div>
       )}
-      <p className="discovery-result-count" role="status" aria-live="polite">
-        {games.length > 0
-          ? `共找到 ${visible.length} 款游戏${practiceOnly ? '（可先试玩）' : ''}`
-          : ''}
-      </p>
       {!!games.length && !visible.length && (
         <div className="discovery-empty">
           <h3>还没找到合适的游戏</h3>

@@ -4,7 +4,7 @@ import { PageFeedback } from '@boardgame/ui';
 import { z } from 'zod';
 import { api, navigate } from '../platform.js';
 import { GameCatalog } from './GameCatalog.js';
-import { RoomInviteEntry } from './RoomInviteEntry.js';
+import { LobbyHeading } from './LobbyHeading.js';
 
 const roomSchema = z.object({
   id: z.string(),
@@ -87,20 +87,10 @@ export function DashboardPage() {
         <p>{loadError}</p>
       </PageFeedback>
     );
-  if (!me)
-    return (
-      <PageFeedback title="正在进入大厅…" loading />
-    );
+  if (!me) return <PageFeedback title="正在进入大厅…" loading />;
   return (
     <>
-      <section className="page-heading discovery-heading">
-        <div>
-          <p className="eyebrow">你好，{me.account.displayName}</p>
-          <h1>游戏大厅</h1>
-          <p>回到进行中的对局，或挑选新桌游。</p>
-        </div>
-      </section>
-      <RoomInviteEntry />
+      <LobbyHeading displayName={me.account.displayName} />
       {error && (
         <p className="error-notice" role="alert">
           {error}

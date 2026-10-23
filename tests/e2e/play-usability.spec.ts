@@ -36,7 +36,7 @@ test('friends can join from the lobby and pending requests keep the original for
     await b.getByRole('button', { name: '加入私人房间', exact: true }).click();
     await request;
     await expect(b.getByLabel('12 位邀请码')).toBeDisabled();
-    await expect(b.getByLabel('邀请码房间密码（如有）')).toBeDisabled();
+    await expect(b.locator('.lobby-invite').getByLabel('房间密码（如有）', { exact: true })).toBeDisabled();
     await b.locator('.lobby-invite form').evaluate(form => {
       form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     });
