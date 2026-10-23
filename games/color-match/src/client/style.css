@@ -1,0 +1,395 @@
+/* Color Match owns its table, cards and responsive layout. Theme-layer rules preserve the existing platform cascade. */
+@layer games.color-match {
+  .color-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr);
+    gap: 16px;
+  }
+  .color-board .panel {
+    margin: 0;
+  }
+  .color-hand {
+    grid-column: 1/-1;
+  }
+  .color-card {
+    color: #fff;
+    font-size: 19px;
+    text-align: center;
+    transform: none;
+  }
+  .color-hand-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .color-hand-cards .color-card {
+    cursor: pointer;
+    font-size: 13.5px;
+  }
+  .color-players {
+    display: grid;
+    gap: 9px;
+  }
+  .color-players > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    flex-wrap: wrap;
+  }
+  .color-player--active {
+    background: #eff4ef;
+  }
+  @media (max-width: 640px) {
+    .color-board {
+      grid-template-columns: 1fr;
+    }
+    .color-hand {
+      grid-column: auto;
+    }
+  }
+  .color-events {
+    grid-column: 1/-1;
+  }
+  .color-events ol {
+    margin-bottom: 0;
+    line-height: 1.8;
+  }
+  @media (max-width: 640px) {
+    .color-events {
+      grid-column: auto;
+    }
+  }
+  .color-result {
+    grid-column: 1/-1;
+  }
+  .color-result h2 {
+    margin: 0 0 8px;
+  }
+  .color-result p:last-child {
+    margin-bottom: 0;
+  }
+  @media (max-width: 640px) {
+    .color-result {
+      grid-column: auto;
+    }
+  }
+  .color-hand-cards {
+    padding: 12px 6px;
+  }
+  .color-card {
+    gap: 8px;
+    width: 100px;
+  }
+  .color-hand-cards .color-card--legal small {
+    border-color: #22c55e;
+  }
+  .color-hand-cards .color-card--selected {
+    outline-color: var(--warning);
+  }
+  .color-hand-cards .color-card--selected small {
+    border-color: #f59e0b;
+  }
+  .color-hand-cards .color-card:disabled small {
+    border-color: #cbd5e1;
+  }
+  @media (max-width: 700px) {
+    .color-hand-cards {
+      flex-wrap: nowrap;
+      scroll-snap-type: x proximity;
+      overscroll-behavior-x: contain;
+    }
+    .color-hand-cards .color-card {
+      scroll-snap-align: center;
+      width: 84px;
+    }
+  }
+  .color-card {
+    border-width: 1px;
+  }
+  .color-hand-cards .color-card--selected {
+    transform: none;
+  }
+  .color-hand-cards .color-card--legal {
+    outline-width: 1px;
+  }
+  .color-hand-cards .color-card--selected.color-card--legal {
+    outline-width: 2px;
+  }
+  .color-card--red:hover:not(:disabled) {
+    background: #b43936;
+  }
+  .color-card--blue:hover:not(:disabled) {
+    background: #315eab;
+  }
+  .color-card--yellow:hover:not(:disabled) {
+    background: #c18b1a;
+  }
+  .color-card--green:hover:not(:disabled) {
+    background: #2a7652;
+  }
+  .color-player--active {
+    background: var(--panel-raised);
+  }
+  .color-events li {
+    animation: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .color-result {
+      animation: surface-enter 240ms var(--motion-ease);
+    }
+    .color-events li {
+      animation: content-reveal 280ms ease-out;
+    }
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .color-hand-cards .color-card:hover:not(:disabled) {
+      transform: translateY(-4px);
+    }
+    .color-hand-cards .color-card--selected:hover:not(:disabled) {
+      transform: translateY(-6px);
+    }
+  }
+  @media (min-width: 701px) and (max-width: 1100px) {
+    .color-board {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .color-hand,
+    .color-events,
+    .color-result {
+      grid-column: auto;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .color-card,
+    .color-card--selected,
+    .color-hand-cards .color-card--selected {
+      transform: none !important;
+      transition-duration: 0s !important;
+    }
+  }
+  .color-board {
+    position: relative;
+    isolation: isolate;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+  .color-card {
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .color-card .game-asset-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }
+  .color-hand-cards {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .color-hand-cards .color-card {
+    flex-shrink: 0;
+  }
+  .asset-preview .color-board {
+    margin-top: 16px;
+  }
+  @media (max-width: 600px) {
+    .color-board .panel {
+      min-width: 0;
+    }
+    .color-hand-cards {
+      flex-wrap: nowrap;
+    }
+    .color-board > [aria-label='公共牌区域'] {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr);
+      grid-template-rows: auto auto 1fr;
+      gap: 4px 16px;
+      align-items: center;
+    }
+    .color-board > [aria-label='公共牌区域'] > .color-card {
+      grid-column: 1;
+      grid-row: 1 / 4;
+    }
+    .color-board > [aria-label='公共牌区域'] > :is(p, strong) {
+      grid-column: 2;
+      margin: 0;
+    }
+    .color-board > [aria-label='玩家列表'] h2 {
+      margin-block: 0 8px;
+      font-size: 18px;
+    }
+    .color-players {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .color-players > div {
+      flex-direction: column;
+      align-items: start;
+      gap: 4px;
+      padding: 10px;
+    }
+    .color-players .card-backs {
+      display: none;
+    }
+    .color-players .color-target-button {
+      width: 100%;
+      min-height: 44px;
+    }
+  }
+}
+@layer theme {
+  .color-card {
+    border-radius: 14px;
+    font-weight: 700;
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 8px;
+    min-width: 96px;
+    min-height: 138px;
+    aspect-ratio: 2 / 3;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      outline 160ms ease;
+  }
+  .color-card--red {
+    background: linear-gradient(150deg, #ef4444 0%, #b91c1c 100%);
+    color: #ffffff;
+  }
+  .color-card--blue {
+    background: linear-gradient(150deg, #3b82f6 0%, #1d4ed8 100%);
+    color: #ffffff;
+  }
+  .color-card--yellow {
+    background: linear-gradient(150deg, #f59e0b 0%, #d97706 100%);
+    color: #1e1810;
+  }
+  .color-card--green {
+    background: linear-gradient(150deg, #10b981 0%, #047857 100%);
+    color: #ffffff;
+  }
+
+  .color-card > span {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #111827;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    text-align: center;
+  }
+  .color-card--red > span {
+    color: #dc2626;
+  }
+  .color-card--blue > span {
+    color: #2563eb;
+  }
+  .color-card--yellow > span {
+    color: #b45309;
+  }
+  .color-card--green > span {
+    color: #15803d;
+  }
+  .color-card small {
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1.5px solid #cbd5e1;
+  }
+  .color-hand-cards .color-card--legal small {
+    background: #dcfce7;
+    color: #14532d;
+    border: 1.5px solid #22c55e;
+  }
+  .color-hand-cards .color-card--selected small {
+    background: #fef3c7;
+    color: #78350f;
+    border: 1.5px solid #f59e0b;
+  }
+  .color-hand-cards .color-card:disabled small {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1.5px solid #cbd5e1;
+  }
+
+  :root[data-theme='dark'] .color-hand-cards .color-card--legal small {
+    background: #064e3b;
+    color: #6ee7b7;
+    border-color: #059669;
+  }
+  :root[data-theme='dark'] .color-hand-cards .color-card--selected small {
+    background: #78350f;
+    color: #fef08a;
+    border-color: #d97706;
+  }
+  :root[data-theme='dark'] .color-hand-cards .color-card:disabled small {
+    background: #1e293b;
+    color: #94a3b8;
+    border-color: #475569;
+  }
+  .color-hand-cards .color-card--legal {
+    outline: 3px solid #38bdf8;
+    outline-offset: 3px;
+    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.5);
+  }
+  .color-hand-cards .color-card--selected {
+    outline: 3px solid #f59e0b;
+    outline-offset: 4px;
+    box-shadow:
+      0 10px 24px rgba(245, 158, 11, 0.55),
+      0 0 16px rgba(245, 158, 11, 0.4);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .color-hand-cards .color-card--selected {
+      transform: translateY(-6px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .color-hand-cards .color-card--selected {
+      transform: none !important;
+    }
+  }
+  .color-hand-cards .color-card:disabled {
+    opacity: 0.55;
+    filter: saturate(0.7);
+    cursor: not-allowed;
+  }
+  @media (max-width: 600px) {
+    .color-board > [aria-label='公共牌区域'] {
+      padding: 16px;
+    }
+    .color-board > [aria-label='公共牌区域'] > .color-card {
+      width: 76px;
+      min-width: 76px;
+      height: 112px;
+      min-height: 112px;
+    }
+    .color-board > [aria-label='玩家列表'] {
+      padding: 12px;
+    }
+  }
+}

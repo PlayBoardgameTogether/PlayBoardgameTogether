@@ -27,7 +27,7 @@ async function startMatch(first: BrowserContext, second: BrowserContext) {
   await a.getByRole('button', { name: '开始游戏', exact: true }).click();
   for (const page of [a, b]) {
     await expect(page.locator('.color-hand-cards button')).toHaveCount(5);
-    await expect(page.getByText('连接中断或正在同步，操作已暂停。')).toHaveCount(0);
+    await expect(page.getByText('网络重连中，操作已暂停。')).toHaveCount(0);
   }
   const active = (await a.getByText('轮到你行动', { exact: true }).count()) ? a : b;
   return { active, a, b };
@@ -100,7 +100,7 @@ test('a slow successful action stays calm, keeps the table still and never races
     });
     submit.release();
     for (const page of [a, b])
-      await expect(page.getByText('对局 · revision 1', { exact: true })).toBeVisible();
+      await expect(page.locator(`.match-page[data-match-revision="1"]`)).toBeVisible();
     // The live snapshot can arrive before the original HTTP acknowledgement.
     await expect(uncertain(active)).toHaveCount(0);
     await expect(active.locator('.match-action-feedback')).toHaveText('正在保存操作…');
@@ -165,7 +165,7 @@ test('a lost acknowledgement is checked immediately and unresolved recovery surv
       '操作已保存，已同步最新局面。',
     );
     await expect(uncertain(active)).toHaveCount(0);
-    await expect(active.getByText('对局 · revision 1', { exact: true })).toBeVisible();
+    await expect(active.locator(`.match-page[data-match-revision="1"]`)).toBeVisible();
     expect(posts).toBe(1);
     expect(
       await active.evaluate(
@@ -195,7 +195,7 @@ test('a request lost before commit retries only the original command after a mis
     });
     await draw(active).click();
     await expect(active.locator('.match-action-feedback')).toHaveText('操作已保存。');
-    await expect(active.getByText('对局 · revision 1', { exact: true })).toBeVisible();
+    await expect(active.locator(`.match-page[data-match-revision="1"]`)).toBeVisible();
     await expect(uncertain(active)).toHaveCount(0);
     expect(commands).toHaveLength(2);
     expect(commands[1]).toBe(commands[0]);
@@ -248,7 +248,7 @@ test('receipt recovery waits for a view at least as new as the committed action'
     await expect(active.locator('.match-action-feedback')).toHaveText(
       '操作已保存，已同步最新局面。',
     );
-    await expect(active.getByText('对局 · revision 1', { exact: true })).toBeVisible();
+    await expect(active.locator(`.match-page[data-match-revision="1"]`)).toBeVisible();
     expect(views).toBe(2);
     await expect(uncertain(active)).toHaveCount(0);
   } finally {

@@ -129,7 +129,7 @@ test('overlapping focus recovery shares one HTTP read and later focus reads fres
     release = resolve;
   });
   activeSocket!.send('{invalid-json');
-  await expect(page.getByText('连接中断或正在同步，操作已暂停。')).toBeVisible();
+  await expect(page.getByText('网络重连中，操作已暂停。')).toBeVisible();
   await page.evaluate(() => {
     for (let i = 0; i < 20; i++) window.dispatchEvent(new Event('focus'));
   });
@@ -180,7 +180,7 @@ test('HTTP success does not reset WS backoff and a later subscription recovers w
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
   const beforeFailure = reads;
   activeSocket!.close({ code: 1013, reason: 'temporary service failure' });
-  await expect(page.getByText('连接中断或正在同步，操作已暂停。')).toBeVisible();
+  await expect(page.getByText('网络重连中，操作已暂停。')).toBeVisible();
   await expect.poll(() => reads).toBe(beforeFailure + 1);
   await expect.poll(() => completedReads(page)).toBe(reads);
   await page.clock.runFor(750);

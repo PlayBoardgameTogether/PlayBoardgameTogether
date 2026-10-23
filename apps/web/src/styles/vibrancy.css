@@ -465,38 +465,6 @@
   }
 
   /* Game colors and artwork communicate rules; surrounding chrome stays neutral. */
-  .color-card {
-    border-width: 1px;
-    box-shadow: none;
-  }
-  .color-hand-cards .color-card--selected {
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-    transform: none;
-  }
-  .color-hand-cards .color-card--legal {
-    outline-width: 1px;
-  }
-  .color-hand-cards .color-card--selected.color-card--legal {
-    outline-width: 2px;
-  }
-  .color-card--red:hover:not(:disabled) {
-    background: #b43936;
-  }
-  .color-card--blue:hover:not(:disabled) {
-    background: #315eab;
-  }
-  .color-card--yellow:hover:not(:disabled) {
-    background: #c18b1a;
-  }
-  .color-card--green:hover:not(:disabled) {
-    background: #2a7652;
-  }
-  .color-player--active,
-  .color-result {
-    background: var(--panel-raised);
-  }
-  .color-events li,
   .garden-events li {
     animation: none;
   }
@@ -784,14 +752,9 @@
       animation: content-reveal 220ms ease-out;
     }
     .garden-confirm,
-    .error-notice,
-    .color-result {
+    .error-notice {
       animation: surface-enter 240ms var(--motion-ease);
     }
-    .color-hand-cards .color-card--selected {
-      transform: translateY(-6px);
-    }
-    .color-events li,
     .garden-events li {
       animation: content-reveal 280ms ease-out;
     }
@@ -812,14 +775,6 @@
     ::view-transition-old(*),
     ::view-transition-new(*) {
       animation: none !important;
-    }
-  }
-  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
-    .color-hand-cards .color-card:hover:not(:disabled) {
-      transform: translateY(-4px);
-    }
-    .color-hand-cards .color-card--selected:hover:not(:disabled) {
-      transform: translateY(-6px);
     }
   }
   @media (forced-colors: active) {
@@ -855,14 +810,6 @@
     }
     .dashboard-grid {
       grid-template-columns: minmax(0, 1fr);
-    }
-    .color-board {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .color-hand,
-    .color-events,
-    .color-result {
-      grid-column: auto;
     }
     .garden-player-boards {
       grid-template-columns: minmax(0, 1fr);

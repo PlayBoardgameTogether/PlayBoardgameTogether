@@ -30,7 +30,7 @@ test('Grid Garden completes three simultaneous rounds with script placement', as
   }
   await page.screenshot({ path: testInfo.outputPath('game-first-layout.png'), fullPage: true });
   async function submitAndWait(round: number, choice: 'harvest' | 'build') {
-    const next = round < 3 ? page.getByText(`第 ${round + 1} / 3 轮`) : page.getByRole('region', { name: '本局已结束', exact: true });
+    const next = round < 3 ? page.getByText(`第 ${round + 1} / 3 轮`) : page.getByRole('region', { name: '本局已结束，已返回房间', exact: true });
     const choiceButton = page.getByRole('button', { name: choice === 'build' ? '建造 -1' : '收获 +2' });
     for (let attempt = 0; attempt < 8; attempt++) {
       if (await next.isVisible().catch(() => false)) return;
@@ -148,7 +148,7 @@ test('two human gardens preserve conflict drafts, private choices and keyboard p
     await expect(a.getByText('B1 · 纵向')).toBeVisible();
     await b.getByRole('grid', { name: '我的4乘4花园' }).getByRole('gridcell', { name: /^A1/ }).click();
     await b.getByRole('button', { name: '确认放置' }).click();
-    await expect(a.getByText('对局 · revision 3')).toBeVisible();
+    await expect(a.locator(`.match-page[data-match-revision="3"]`)).toBeVisible();
     await expect(a.getByText('B1 · 纵向')).toBeVisible();
     await a.screenshot({ path: testInfo.outputPath('garden-keyboard-preview.png'), fullPage: true });
     await a.screenshot({ path: testInfo.outputPath('garden-preview-real.png'), fullPage: true });
@@ -157,7 +157,7 @@ test('two human gardens preserve conflict drafts, private choices and keyboard p
       for (const page of [a, b]) await expect(page.getByText(`第 ${round} / 3 轮`)).toBeVisible();
       await a.getByRole('button', { name: '建造 -1' }).click();
     await a.getByRole('button', { name: '确认选择' }).click();
-      await expect(b.getByText(`对局 · revision ${round === 2 ? 5 : 8}`)).toBeVisible();
+      await expect(b.locator(`.match-page[data-match-revision="${round === 2 ? 5 : 8}"]`)).toBeVisible();
       await b.getByRole('button', { name: '收获 +2' }).click();
     await b.getByRole('button', { name: '确认选择' }).click();
       await expect(a.getByRole('heading', { name: '花园建造' })).toBeVisible();

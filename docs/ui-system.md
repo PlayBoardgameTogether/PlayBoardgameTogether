@@ -1,5 +1,11 @@
 # 界面系统
 
+## Color Match 样式所有权（2026-10-22，0.14.2）
+
+Color Match 样式从 stage2、stage9、assets、vibrancy、theme-refresh、themes 六个文件收敛到游戏自身的 `games/color-match/src/client/style.css`，由客户端入口按需导入；构建复制 CSS，平台唯一入口声明 `games.color-match` 子层。布局和状态外观沿用现有设计，保留亮暗主题、手机公共牌与玩家区域、选牌和减少动态效果。
+
+游戏主要布局使用 games 层；高对比卡牌外观暂在游戏文件内保留 theme 层，避免本次整理改变通用控件与游戏的既有优先级。普通外观不再使用 `!important`，减少动态效果的无障碍规则保留。不要再向平台历史样式追加 Color Match 的专属覆盖。
+
 ## 管理后台工作台（2026-10-21，0.14.0）
 
 `AdminLayout` 统一后台分组导航、页标题与内容区；`App` 为后台路径增加 `desktop-shell--admin`，管理区用顶部平台入口和左侧分组栏替代两层横向导航。小屏保留单行横滑栏目和原玩家底部导航，账户子页高亮账户管理。后台样式位于 `styles/admin.css` 的既有组件层和限定管理区的 theme 层，复用暖色亮/暗主题 Token，没有新增主题系统或依赖，不影响游戏舞台。

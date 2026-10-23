@@ -95,7 +95,7 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
     await expect(b.locator('.color-hand-cards button')).toHaveCount(5, { timeout: 15_000 });
     await a.screenshot({ path: testInfo.outputPath('color-initial.png'), fullPage: true });
     for (let revision = 0; revision < 300; revision++) {
-      if (await a.getByRole('region', { name: '本局已结束', exact: true }).count()) break;
+      if (await a.getByRole('region', { name: '本局已结束，已返回房间', exact: true }).count()) break;
       const active = await a.getByText('轮到你行动', { exact: true }).count() ||
         await a.getByText('请选择一名目标玩家', { exact: true }).count() ? a : b;
       const target = active.getByRole('button', { name: '指定摸牌' }).first();
@@ -103,8 +103,8 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
       if (revision === 2) {
         secondAliceTab = await first.newPage();
         await secondAliceTab.goto(a.url());
-        await expect(secondAliceTab.getByText('对局 · revision 2')).toBeVisible();
-        await expect(secondAliceTab.getByText('连接中断或正在同步，操作已暂停。')).toHaveCount(0);
+        await expect(secondAliceTab.locator(`.match-page[data-match-revision="2"]`)).toBeVisible();
+        await expect(secondAliceTab.getByText('网络重连中，操作已暂停。')).toHaveCount(0);
       }
       let resolveFault: (() => void) | undefined;
       let rejectFault: ((cause: unknown) => void) | undefined;
@@ -128,9 +128,9 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
         third = { context, page };
         await login(page, 'stage3_a');
         await page.goto(a.url());
-        await expect(page.getByText('对局 · revision 1')).toBeVisible();
+        await expect(page.locator(`.match-page[data-match-revision="1"]`)).toBeVisible();
         await expect.poll(() => Boolean(releaseOldSnapshot)).toBe(true);
-        await expect(page.getByText('连接中断或正在同步，操作已暂停。')).toBeVisible();
+        await expect(page.getByText('网络重连中，操作已暂停。')).toBeVisible();
       }
       if (revision === 0) await active.route('**/api/v1/matches/*/actions', async route => {
         try {
@@ -174,43 +174,43 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
         await active.unroute('**/api/v1/matches/*/actions');
         await active.reload();
       }
-      await expect.poll(async () => await a.getByText(`对局 · revision ${revision + 1}`).count() > 0 || await a.getByRole('region', { name: '本局已结束', exact: true }).count() > 0, { timeout: revision === 1 ? 20_000 : 5_000 }).toBe(true);
-      await expect.poll(async () => await b.getByText(`对局 · revision ${revision + 1}`).count() > 0 || await b.getByRole('region', { name: '本局已结束', exact: true }).count() > 0, { timeout: revision === 1 ? 20_000 : 5_000 }).toBe(true);
+      await expect.poll(async () => await a.locator(`.match-page[data-match-revision="${revision + 1}"]`).count() > 0 || await a.getByRole('region', { name: '本局已结束，已返回房间', exact: true }).count() > 0, { timeout: revision === 1 ? 20_000 : 5_000 }).toBe(true);
+      await expect.poll(async () => await b.locator(`.match-page[data-match-revision="${revision + 1}"]`).count() > 0 || await b.getByRole('region', { name: '本局已结束，已返回房间', exact: true }).count() > 0, { timeout: revision === 1 ? 20_000 : 5_000 }).toBe(true);
       if (revision === 0) {
         const passive = active === a ? b : a;
         await expect(passive.getByRole('region', { name: '行动记录' }).getByRole('listitem').first()).toBeVisible();
         await expect(active.getByRole('region', { name: '行动记录' }).getByRole('listitem')).toHaveCount(0);
         await active.context().setOffline(true);
         await active.evaluate(() => window.dispatchEvent(new Event('offline')));
-        await expect(active.getByText('连接中断或正在同步，操作已暂停。')).toBeVisible();
+        await expect(active.getByText('网络重连中，操作已暂停。')).toBeVisible();
         await active.screenshot({ path: testInfo.outputPath('offline-real.png'), fullPage: true });
         await active.context().setOffline(false);
         await active.evaluate(() => window.dispatchEvent(new Event('online')));
-        await expect(active.getByText('连接中断或正在同步，操作已暂停。')).toHaveCount(0, { timeout: 20_000 });
+        await expect(active.getByText('网络重连中，操作已暂停。')).toHaveCount(0, { timeout: 20_000 });
       }
       if (revision === 1) {
         expect(dropped).toBe(1);
-        await expect(third!.page.getByText('对局 · revision 2')).toBeVisible();
+        await expect(third!.page.locator(`.match-page[data-match-revision="2"]`)).toBeVisible();
         releaseOldSnapshot?.();
-        await expect(third!.page.getByText('对局 · revision 1')).toHaveCount(0);
+        await expect(third!.page.locator(`.match-page[data-match-revision="1"]`)).toHaveCount(0);
         await third!.context.close();
         third = undefined;
       }
     }
     for (const page of [a, b]) {
       await expect(page).toHaveURL(/\/rooms\//);
-      await expect(page.getByRole('region', { name: '本局已结束', exact: true })).toBeVisible();
+      await expect(page.getByRole('region', { name: '本局已结束，已返回房间', exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: '准备', exact: true })).toBeEnabled();
       await page.getByRole('link', { name: '查看本局结果' }).click();
     }
-    await expect(a.locator('.page-heading').getByText(/已结束/)).toBeVisible();
-    await expect(b.locator('.page-heading').getByText(/已结束/)).toBeVisible();
+    await expect(a.locator('.page-heading').getByText(/^你的座位 \d+ · 已结束$/)).toBeVisible();
+    await expect(b.locator('.page-heading').getByText(/^你的座位 \d+ · 已结束$/)).toBeVisible();
     await expect(a.getByRole('region', { name: '结束页面' })).toBeVisible();
     await expect(b.getByRole('region', { name: '结束页面' })).toBeVisible();
     await a.screenshot({ path: testInfo.outputPath('color-finished.png'), fullPage: true });
     expect(racedTabs).toBe(true);
     await a.reload();
-    await expect(a.locator('.page-heading').getByText(/已结束/)).toBeVisible();
+    await expect(a.locator('.page-heading').getByText(/^你的座位 \d+ · 已结束$/)).toBeVisible();
     const savedMatchUrl = a.url();
     await a.evaluate(async () => {
       const me = await (await fetch('/api/v1/auth/me')).json();
@@ -224,22 +224,22 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
     await a.clock.install({ time: heartbeatStart });
     // Let the lazy route render before freezing time for the heartbeat test.
     await a.goto(savedMatchUrl);
-    await expect(a.locator('.page-heading').getByText(/已结束/)).toBeVisible();
-    await expect(a.getByText('连接中断或正在同步，操作已暂停。')).toHaveCount(0);
+    await expect(a.locator('.page-heading').getByText(/^你的座位 \d+ · 已结束$/)).toBeVisible();
+    await expect(a.getByText('网络重连中，操作已暂停。')).toHaveCount(0);
     await a.clock.pauseAt(await a.evaluate(() => new Date(Date.now() + 1000).toISOString()));
     dropPongA = true;
     // Freeze after the 80s heartbeat deadline, before the 1s reconnect timer.
     await a.clock.runFor(80_000);
     expect(droppedPongs).toBeGreaterThan(0);
-    await expect.poll(() => a.getByText('连接中断或正在同步，操作已暂停。').count()).toBeGreaterThan(0);
+    await expect.poll(() => a.getByText('网络重连中，操作已暂停。').count()).toBeGreaterThan(0);
     dropPongA = false;
     await a.clock.fastForward(1_000);
-    await expect(a.getByText('连接中断或正在同步，操作已暂停。')).toHaveCount(0, { timeout: 20_000 });
+    await expect(a.getByText('网络重连中，操作已暂停。')).toHaveCount(0, { timeout: 20_000 });
     // Subsequent reload/navigation assertions exercise normal rendering timers.
     await a.clock.resume();
     for (let index = 0; index < 3; index++) {
       await a.reload();
-      await expect(a.locator('.page-heading').getByText(/已结束/)).toBeVisible();
+      await expect(a.locator('.page-heading').getByText(/^你的座位 \d+ · 已结束$/)).toBeVisible();
       await expect.poll(() => sockets.active).toBe(1);
       expect(sockets.max).toBe(1);
     }
@@ -276,7 +276,7 @@ test('two browsers play Color Match from login to a saved winner', async ({ brow
     expect(a.url()).not.toBe(savedMatchUrl);
     releaseOldView();
     releaseOldView = undefined;
-    await expect(a.getByText('对局 · revision 0')).toBeVisible();
+    await expect(a.locator(`.match-page[data-match-revision="0"]`)).toBeVisible();
     await expect(a.locator('.color-hand-cards button')).toHaveCount(5);
   } finally {
     releaseOldView?.();

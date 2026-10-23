@@ -79,7 +79,7 @@ export function MatchPage({ id }: { id: string }) {
       </PageFeedback>
     );
   return (
-    <div className="match-page">
+    <div className="match-page" data-match-revision={data.revision}>
       <section className="page-heading match-heading">
         <div>
           <p className="eyebrow">{data.status === 'active' ? '正在对局' : '对局已结束'}</p>
