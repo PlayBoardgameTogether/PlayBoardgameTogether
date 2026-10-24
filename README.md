@@ -2,7 +2,7 @@
 
 顶尖桌游联盟的桌游平台，支持多人实时对局、脚本与模型 AI、在线游戏扩展。先选游戏，再开一桌，让朋友在浏览器里一起玩。
 
-**平台版本 `0.14.3`** · TypeScript · React / Vite · Fastify · PostgreSQL
+**平台版本 `0.15.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
 
 [快速开始](#快速开始) · [游戏列表](#游戏列表) · [部署与更新](#部署与更新) · [开发者文档](#开发者文档) · [开发进度](docs/progress.md)
 
@@ -43,6 +43,7 @@
 | UNO · 休闲版 | 2–4  | `node scripts/package-uno.mjs`      | [上传包说明](game-packages/uno/README.md)    |
 | 五子棋       | 2    | `node scripts/package-gomoku.mjs`   | [上传包说明](game-packages/gomoku/README.md) |
 | 拉密         | 2–4  | `node scripts/package-rummikub.mjs` | [游戏指南](docs/games/rummikub.md)           |
+| 波多黎各     | 3–5  | `node scripts/package-puerto-rico.mjs` | [游戏指南](docs/games/puerto-rico.md) |
 | 卡坦岛       | 3–4  | `node scripts/package-catan.mjs`    | [游戏指南](docs/games/catan.md)              |
 
 输出位于 `dist/game-packages/`。包格式、运行限制及 AI 接口见 [在线游戏 ZIP 规范](apps/web/public/developer-docs/game-packages.md)；普通源码仓库 ZIP 不能直接安装。
