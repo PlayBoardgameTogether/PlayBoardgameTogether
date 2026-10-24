@@ -1,0 +1,92 @@
+const GOODS = ['玉米', '靛蓝', '蔗糖', '烟草', '咖啡'];
+const GOOD_COLORS = ['#ebc45d', '#80a7d9', '#eee5ca', '#d6a078', '#a98c79'];
+const GOOD_TOTALS = [10, 11, 11, 9, 9];
+const TILE_TOTALS = [10, 12, 11, 9, 8, 8];
+const ROLES = [
+  { id: 'settler', name: '开拓者', icon: '❧', text: '取得一块种植园', privilege: '可改拿采石场' },
+  {
+    id: 'mayor',
+    name: '市长',
+    icon: '♟',
+    text: '迎接工人，重新分配岗位',
+    privilege: '额外取得一位工人',
+  },
+  {
+    id: 'builder',
+    name: '建筑师',
+    icon: '⌂',
+    text: '购买一座城市建筑',
+    privilege: '建造费用减少 1',
+  },
+  {
+    id: 'craftsman',
+    name: '工匠',
+    icon: '⚒',
+    text: '按生产链领取货物',
+    privilege: '最后多取一桶已生产货物',
+  },
+  {
+    id: 'trader',
+    name: '商人',
+    icon: '⚖',
+    text: '向贸易所出售一桶货物',
+    privilege: '出售收入增加 1',
+  },
+  {
+    id: 'captain',
+    name: '船长',
+    icon: '⚓',
+    text: '依次装船，获取胜利点',
+    privilege: '首次装船额外得 1 分',
+  },
+  {
+    id: 'prospector',
+    name: '淘金者',
+    icon: '◇',
+    text: '仅选择者取得 1 金币',
+    privilege: '其他玩家不行动',
+  },
+  {
+    id: 'prospector2',
+    name: '淘金者',
+    icon: '◇',
+    text: '仅选择者取得 1 金币',
+    privilege: '其他玩家不行动',
+  },
+];
+// Classic base game: Factory 7, University 8; no designer price-swap variant.
+const BUILDINGS = [
+  ['small_indigo', '小型靛蓝厂', 1, 1, 1, 1, 4, 1, '每位工人可加工一桶靛蓝'],
+  ['small_sugar', '小型糖厂', 2, 1, 1, 1, 4, 2, '每位工人可加工一桶蔗糖'],
+  ['small_market', '小市场', 1, 1, 1, 1, 2, -1, '出售货物额外获得 1 金币'],
+  ['hacienda', '庄园', 2, 1, 1, 1, 2, -1, '开拓时可先盲取一块种植园'],
+  ['construction_hut', '建筑小屋', 2, 1, 1, 1, 2, -1, '开拓时可以改拿采石场'],
+  ['small_warehouse', '小仓库', 3, 1, 1, 1, 2, -1, '额外保存一种货物的全部库存'],
+  ['large_indigo', '大型靛蓝厂', 3, 2, 3, 1, 3, 1, '最多加工三桶靛蓝'],
+  ['large_sugar', '大型糖厂', 4, 2, 3, 1, 3, 2, '最多加工三桶蔗糖'],
+  ['hospice', '招待所', 4, 2, 1, 1, 2, -1, '新取得的明牌地块可附带一位工人'],
+  ['office', '办公室', 5, 2, 1, 1, 2, -1, '允许出售贸易所已有的货物种类'],
+  ['large_market', '大市场', 5, 2, 1, 1, 2, -1, '出售货物额外获得 2 金币'],
+  ['large_warehouse', '大仓库', 6, 2, 1, 1, 2, -1, '额外保存两种货物的全部库存'],
+  ['tobacco', '烟草加工厂', 5, 3, 3, 1, 3, 3, '最多加工三桶烟草'],
+  ['coffee', '咖啡烘焙厂', 6, 3, 2, 1, 3, 4, '最多加工两桶咖啡'],
+  ['factory', '工厂', 7, 3, 1, 1, 2, -1, '生产 2/3/4/5 种货物，收入 1/2/3/5 金币'],
+  ['university', '大学', 8, 3, 1, 1, 2, -1, '新建筑可附带一位工人'],
+  ['harbor', '港口', 8, 3, 1, 1, 2, -1, '每次装船额外获得 1 分'],
+  ['wharf', '私人码头', 9, 3, 1, 1, 2, -1, '每次船长阶段可独立运走一种货物一次'],
+  ['guild_hall', '公会大厅', 10, 4, 1, 2, 1, -1, '终局：小型/大型生产建筑各加 1/2 分'],
+  ['residence', '官邸', 10, 4, 1, 2, 1, -1, '终局：岛屿 1–9/10/11/12 块，额外 4/5/6/7 分'],
+  ['fortress', '要塞', 10, 4, 1, 2, 1, -1, '终局：每三位工人加 1 分'],
+  ['customs_house', '海关', 10, 4, 1, 2, 1, -1, '终局：每四分胜利点筹码加 1 分'],
+  ['city_hall', '市政厅', 10, 4, 1, 2, 1, -1, '终局：每座功能建筑（含自身）加 1 分'],
+].map(([id, name, cost, points, slots, size, count, good, text]) => ({
+  id,
+  name,
+  cost,
+  points,
+  slots,
+  size,
+  count,
+  good,
+  text,
+}));

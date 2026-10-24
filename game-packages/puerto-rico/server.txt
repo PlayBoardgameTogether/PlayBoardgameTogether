@@ -1,0 +1,916 @@
+const copy = (value) => JSON.parse(JSON.stringify(value));
+const sum = (values) => values.reduce((a, b) => a + b, 0);
+const integer = (v, min, max) => Number.isSafeInteger(v) && v >= min && v <= max;
+function requireRule(ok) {
+  if (!ok) throw new Error('非法操作或无效存档');
+}
+function active(p, id) {
+  return p.city.some((b) => BUILDINGS[b.id].id === id && b.workers > 0);
+}
+function citySize(p) {
+  return sum(p.city.map((b) => BUILDINGS[b.id].size));
+}
+function workerCount(p) {
+  return p.idle + sum(p.island.map((t) => t.workers)) + sum(p.city.map((b) => b.workers));
+}
+function capacity(p) {
+  return p.island.length + sum(p.city.map((b) => BUILDINGS[b.id].slots));
+}
+function production(p) {
+  return GOODS.map((_, g) => {
+    const fields = p.island.filter((t) => t.good === g && t.workers === 1).length;
+    return g === 0
+      ? fields
+      : Math.min(
+          fields,
+          sum(p.city.filter((b) => BUILDINGS[b.id].good === g).map((b) => b.workers)),
+        );
+  });
+}
+function cost(s, p, id) {
+  const b = BUILDINGS[id],
+    quarries = p.island.filter((t) => t.good === 5 && t.workers === 1).length;
+  return Math.max(
+    0,
+    b.cost - Math.min(quarries, b.points) - (s.current === s.chooser && s.privilege ? 1 : 0),
+  );
+}
+function shuffled(values, rng) {
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = rng.nextInt(0, i + 1);
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+  return values;
+}
+function drawTile(s, rng) {
+  if (!s.deck.length && s.discard.length) {
+    s.deck = shuffled(s.discard, rng);
+    s.discard = [];
+  }
+  return s.deck.length ? s.deck.pop() : null;
+}
+function refill(s, rng) {
+  while (s.market.length < s.seats.length + 1) {
+    const tile = drawTile(s, rng);
+    if (tile === null) break;
+    s.market.push(tile);
+  }
+}
+function takeWorker(s) {
+  if (s.workers > 0) {
+    s.workers--;
+    return 1;
+  }
+  if (s.workerShip > 0) {
+    s.workerShip--;
+    return 1;
+  }
+  return 0;
+}
+function score(p) {
+  const buildings = sum(p.city.map((b) => BUILDINGS[b.id].points));
+  const bonus = [];
+  if (active(p, 'guild_hall'))
+    bonus.push({
+      name: '公会大厅',
+      points: sum(
+        p.city
+          .filter((b) => BUILDINGS[b.id].good >= 0)
+          .map((b) => (BUILDINGS[b.id].slots === 1 ? 1 : 2)),
+      ),
+    });
+  if (active(p, 'residence'))
+    bonus.push({ name: '官邸', points: p.island.length ? Math.max(4, p.island.length - 5) : 0 });
+  if (active(p, 'fortress')) bonus.push({ name: '要塞', points: Math.floor(workerCount(p) / 3) });
+  if (active(p, 'customs_house')) bonus.push({ name: '海关', points: Math.floor(p.vp / 4) });
+  if (active(p, 'city_hall'))
+    bonus.push({ name: '市政厅', points: p.city.filter((b) => BUILDINGS[b.id].good < 0).length });
+  return {
+    chips: p.vp,
+    buildings,
+    bonus,
+    total: p.vp + buildings + sum(bonus.map((b) => b.points)),
+    tie: p.money + sum(p.goods),
+  };
+}
+function outcome(s) {
+  if (s.phase !== 'finished') return { status: 'ongoing' };
+  const totals = s.players.map(score),
+    top = Math.max(...totals.map((t) => t.total));
+  const tie = Math.max(...totals.filter((t) => t.total === top).map((t) => t.tie));
+  return {
+    status: 'finished',
+    winners: s.seats.filter((_, i) => totals[i].total === top && totals[i].tie === tie),
+    scores: Object.fromEntries(s.seats.map((id, i) => [id, totals[i].total])),
+  };
+}
+function finishRole(s, rng, events) {
+  if (s.role === 0) {
+    s.discard.push(...s.market);
+    s.market = [];
+    refill(s, rng);
+  }
+  if (s.role === 1) {
+    const needed = Math.max(
+      s.seats.length,
+      sum(s.players.map((p) => sum(p.city.map((b) => BUILDINGS[b.id].slots - b.workers)))),
+    );
+    if (s.workers < needed) s.ending = true;
+    s.workerShip = Math.min(needed, s.workers);
+    s.workers -= s.workerShip;
+  }
+  if (s.role === 4 && s.trade.length === 4) {
+    s.trade.forEach((g) => s.bank[g]++);
+    s.trade = [];
+  }
+  if (s.role === 5)
+    s.ships.forEach((ship) => {
+      if (ship.load === ship.capacity) {
+        s.bank[ship.good] += ship.load;
+        ship.good = null;
+        ship.load = 0;
+      }
+    });
+  s.selected++;
+  if (s.selected === s.seats.length) {
+    if (s.ending) {
+      s.phase = 'finished';
+      events.push({ type: 'finished', outcome: outcome(s) });
+      return;
+    }
+    s.roles.forEach((r) => {
+      if (r.owner === null) r.money++;
+      r.owner = null;
+    });
+    s.governor = (s.governor + 1) % s.seats.length;
+    s.round++;
+    s.selected = 0;
+  }
+  s.phase = 'role';
+  s.role = null;
+  s.current = (s.governor + s.selected) % s.seats.length;
+  s.chooser = s.current;
+  s.step = 0;
+}
+function nextPlayer(s, rng, events) {
+  s.step++;
+  if (s.step === s.seats.length) {
+    if (s.phase === 'produce' && s.privilege && s.produced.some((v, g) => v > 0 && s.bank[g] > 0)) {
+      s.phase = 'bonus';
+      s.current = s.chooser;
+      return;
+    }
+    finishRole(s, rng, events);
+  } else {
+    s.current = (s.chooser + s.step) % s.seats.length;
+    s.hacienda = false;
+  }
+}
+function shippingActions(s, index) {
+  const p = s.players[index],
+    result = [];
+  p.goods.forEach((quantity, g) => {
+    if (!quantity) return;
+    const existing = s.ships.findIndex((ship) => ship.good === g);
+    if (existing >= 0) {
+      if (s.ships[existing].load < s.ships[existing].capacity)
+        result.push({ type: 'ship', good: g, ship: existing });
+    } else {
+      const empty = s.ships.map((ship, i) => ({ ship, i })).filter((x) => x.ship.good === null);
+      const maximum = Math.max(0, ...empty.map((x) => Math.min(quantity, x.ship.capacity)));
+      empty
+        .filter((x) => Math.min(quantity, x.ship.capacity) === maximum)
+        .forEach((x) => result.push({ type: 'ship', good: g, ship: x.i }));
+    }
+    if (active(p, 'wharf') && !s.wharves[index]) result.push({ type: 'ship', good: g, ship: 3 });
+  });
+  result.sort((a, b) => {
+    const loaded = (a) =>
+      a.ship === 3
+        ? p.goods[a.good]
+        : Math.min(p.goods[a.good], s.ships[a.ship].capacity - s.ships[a.ship].load);
+    return loaded(b) - loaded(a) || a.ship - b.ship;
+  });
+  return result;
+}
+function seekShipper(s, rng, events) {
+  for (let i = 0; i < s.seats.length; i++) {
+    if (shippingActions(s, s.current).length) return;
+    s.current = (s.current + 1) % s.seats.length;
+  }
+  s.phase = 'store';
+  s.current = s.chooser;
+  s.step = 0;
+  // Storage is a meaningful choice only when there is more than one barrel.
+  while (s.phase === 'store' && sum(s.players[s.current].goods) <= 1) nextPlayer(s, rng, events);
+}
+function warehouseCount(p) {
+  return Number(active(p, 'small_warehouse')) + 2 * Number(active(p, 'large_warehouse'));
+}
+function storageActions(p) {
+  const types = p.goods.map((n, g) => (n ? g : -1)).filter((g) => g >= 0),
+    result = [],
+    seen = new Set();
+  const add = (kept) => {
+    const key = kept.join(',');
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push({ type: 'store', keep: kept });
+    }
+  };
+  function choose(start, selected) {
+    const keep = p.goods.map((n, g) => (selected.includes(g) ? n : 0));
+    const loose = types.filter((g) => !selected.includes(g));
+    if (!loose.length) add(keep);
+    else
+      loose.forEach((g) => {
+        const next = keep.slice();
+        next[g] = 1;
+        add(next);
+      });
+    if (selected.length < warehouseCount(p))
+      for (let i = start; i < types.length; i++) choose(i + 1, [...selected, types[i]]);
+  }
+  choose(0, []);
+  return result.sort(
+    (a, b) =>
+      sum(b.keep) - sum(a.keep) ||
+      sum(b.keep.map((n, g) => n * g)) - sum(a.keep.map((n, g) => n * g)),
+  );
+}
+function assignment(p, reverse = false) {
+  const island = p.island.map(() => 0),
+    city = p.city.map(() => 0);
+  let left = workerCount(p);
+  const put = (array, i, n) => {
+    const take = Math.min(n, left);
+    array[i] += take;
+    left -= take;
+  };
+  // Prioritise working production chains, then economic buildings and remaining posts.
+  if (!reverse)
+    p.city.forEach((b, i) => {
+      if (BUILDINGS[b.id].good < 0) put(city, i, 1);
+    });
+  p.island.forEach((t, i) => {
+    if (t.good === 0) put(island, i, 1);
+  });
+  for (let g = 4; g >= 1; g--) {
+    const fields = p.island.map((t, i) => (t.good === g ? i : -1)).filter((i) => i >= 0);
+    const mills = p.city.map((b, i) => (BUILDINGS[b.id].good === g ? i : -1)).filter((i) => i >= 0);
+    for (const i of fields) {
+      const mill = mills.find((j) => city[j] < BUILDINGS[p.city[j].id].slots);
+      if (mill === undefined || left < 2) break;
+      put(island, i, 1);
+      put(city, mill, 1);
+    }
+  }
+  p.island.forEach((t, i) => {
+    if (t.good === 5) put(island, i, 1);
+  });
+  p.city.forEach((b, i) => put(city, i, BUILDINGS[b.id].slots - city[i]));
+  p.island.forEach((_, i) => put(island, i, 1 - island[i]));
+  return { type: 'assign', island, city };
+}
+function roleValue(s, p, role) {
+  const prod = production(p),
+    occupied = workerCount(p),
+    empty = capacity(p) - occupied;
+  if (role === 0) return p.island.length < 12 ? 4 + Number(p.island.length < 3) * 3 : -10;
+  if (role === 1) return empty > 0 ? 5 + Math.min(empty, 5) : -5;
+  if (role === 2)
+    return BUILDINGS.some(
+      (b, id) =>
+        s.buildings[id] &&
+        !p.city.some((c) => c.id === id) &&
+        citySize(p) + b.size <= 12 &&
+        p.money >= Math.max(0, b.cost - 1),
+    )
+      ? 7
+      : -5;
+  if (role === 3)
+    return sum(prod.map((v, g) => Math.min(v, s.bank[g]))) > 0 ? 6 - Math.min(sum(p.goods), 4) : -5;
+  if (role === 4)
+    return s.trade.length < 4 &&
+      p.goods.some((n, g) => n && (!s.trade.includes(g) || active(p, 'office')))
+      ? 6 + Math.max(...p.goods.map((n, g) => (n ? g : 0)))
+      : -5;
+  if (role === 5) return sum(p.goods) > 0 ? 5 + Math.min(sum(p.goods), 5) : -5;
+  return 1;
+}
+function actions(s, index) {
+  if (index !== s.current || s.phase === 'finished') return [];
+  const p = s.players[index],
+    result = [];
+  if (s.phase === 'role')
+    return s.roles
+      .map((r, role) => ({ r, role }))
+      .filter((x) => x.r.owner === null)
+      .sort((a, b) => roleValue(s, p, b.role) + b.r.money - roleValue(s, p, a.role) - a.r.money)
+      .map((x) => ({ type: 'role', role: x.role, privilege: true }));
+  if (s.phase === 'settle') {
+    if (p.island.length < 12) {
+      if (!s.hacienda && active(p, 'hacienda') && (s.deck.length || s.discard.length))
+        result.push({ type: 'hacienda' });
+      if (s.quarries && ((index === s.chooser && s.privilege) || active(p, 'construction_hut')))
+        result.push({ type: 'settle', good: 5, worker: true });
+      [...new Set(s.market)]
+        .sort((a, b) => a - b)
+        .forEach((g) => result.push({ type: 'settle', good: g, worker: true }));
+    }
+  } else if (s.phase === 'assign') {
+    result.push(assignment(p));
+    const alternate = assignment(p, true);
+    if (JSON.stringify(alternate) !== JSON.stringify(result[0])) result.push(alternate);
+    return result;
+  } else if (s.phase === 'build') {
+    BUILDINGS.forEach((b, id) => {
+      if (
+        s.buildings[id] &&
+        citySize(p) + b.size <= 12 &&
+        !p.city.some((c) => c.id === id) &&
+        p.money >= cost(s, p, id)
+      )
+        result.push({ type: 'build', building: id, worker: true });
+    });
+    const priority = (id) => {
+      const b = BUILDINGS[id];
+      if (
+        b.good >= 0 &&
+        p.island.some((t) => t.good === b.good) &&
+        !p.city.some((c) => BUILDINGS[c.id].good === b.good)
+      )
+        return 30;
+      if (b.size === 2) return 20;
+      return b.points * 2 - b.cost / 2;
+    };
+    result.sort((a, b) => priority(b.building) - priority(a.building));
+  } else if (s.phase === 'produce') {
+    if (production(p).some((n, g) => n && s.bank[g])) result.push({ type: 'produce' });
+  } else if (s.phase === 'bonus') {
+    s.produced.forEach((n, g) => {
+      if (n && s.bank[g]) result.unshift({ type: 'bonus', good: g });
+    });
+  } else if (s.phase === 'trade') {
+    if (s.trade.length < 4)
+      p.goods.forEach((n, g) => {
+        if (n && (!s.trade.includes(g) || active(p, 'office')))
+          result.unshift({ type: 'sell', good: g });
+      });
+  } else if (s.phase === 'ship') {
+    const shipments = shippingActions(s, index);
+    return shipments.some((a) => a.ship !== 3) ? shipments : [...shipments, { type: 'pass' }];
+  } else if (s.phase === 'store') return storageActions(p);
+  result.push({ type: 'pass' });
+  return result;
+}
+function parseAction(a) {
+  requireRule(a && typeof a === 'object' && !Array.isArray(a));
+  const keys = {
+    role: ['role', 'privilege'],
+    settle: ['good', 'worker'],
+    hacienda: [],
+    build: ['building', 'worker'],
+    assign: ['island', 'city'],
+    produce: [],
+    bonus: ['good'],
+    sell: ['good'],
+    ship: ['good', 'ship'],
+    store: ['keep'],
+    pass: [],
+  };
+  requireRule(
+    Object.hasOwn(keys, a.type) &&
+      Object.keys(a).length === keys[a.type].length + 1 &&
+      keys[a.type].every((k) => Object.hasOwn(a, k)),
+  );
+  if ('good' in a) requireRule(integer(a.good, 0, a.type === 'settle' ? 5 : 4));
+  if ('role' in a) requireRule(integer(a.role, 0, 7) && typeof a.privilege === 'boolean');
+  if ('building' in a) requireRule(integer(a.building, 0, 22));
+  if ('worker' in a) requireRule(typeof a.worker === 'boolean');
+  if ('ship' in a) requireRule(integer(a.ship, 0, 3));
+  for (const k of ['island', 'city', 'keep'])
+    if (k in a)
+      requireRule(Array.isArray(a[k]) && a[k].length <= 12 && a[k].every((n) => integer(n, 0, 12)));
+  if ('keep' in a) requireRule(a.keep.length === 5);
+  return copy(a);
+}
+function validate(s, actor, raw) {
+  const a = parseAction(raw);
+  requireRule(
+    actor.kind === 'seat' && s.seats[s.current] === actor.seatId && s.phase !== 'finished',
+  );
+  const p = s.players[s.current];
+  if (a.type === 'assign') {
+    requireRule(
+      s.phase === 'assign' &&
+        a.island.length === p.island.length &&
+        a.city.length === p.city.length,
+    );
+    requireRule(
+      a.island.every((n) => n <= 1) && a.city.every((n, i) => n <= BUILDINGS[p.city[i].id].slots),
+    );
+    requireRule(sum(a.island) + sum(a.city) === Math.min(workerCount(p), capacity(p)));
+    return;
+  }
+  if (a.type === 'store') {
+    requireRule(s.phase === 'store' && a.keep.every((n, g) => n <= p.goods[g]));
+    const sorted = a.keep.slice().sort((a, b) => b - a);
+    requireRule(sum(sorted.slice(warehouseCount(p))) <= 1);
+    return;
+  }
+  const normalised = copy(a);
+  if ('worker' in normalised) normalised.worker = true;
+  if ('privilege' in normalised) normalised.privilege = true;
+  requireRule(
+    actions(s, s.current).some((candidate) =>
+      Object.keys(candidate).every(
+        (k) => JSON.stringify(candidate[k]) === JSON.stringify(normalised[k]),
+      ),
+    ),
+  );
+}
+function apply(s, actor, raw, rng) {
+  validate(s, actor, raw);
+  const a = parseAction(raw);
+  s = copy(s);
+  const index = s.current,
+    p = s.players[index],
+    events = [];
+  s.move++;
+  const emit = (type, data = {}) => events.push({ type, player: index, ...data });
+  if (a.type === 'role') {
+    s.role = a.role;
+    s.chooser = index;
+    s.privilege = a.privilege;
+    s.step = 0;
+    p.money += s.roles[a.role].money;
+    s.roles[a.role].money = 0;
+    s.roles[a.role].owner = index;
+    s.hacienda = false;
+    s.produced = [0, 0, 0, 0, 0];
+    emit('role', { role: a.role });
+    s.phase = ['settle', 'assign', 'build', 'produce', 'trade', 'ship', 'role', 'role'][a.role];
+    if (a.role >= 6) {
+      if (a.privilege) p.money++;
+      finishRole(s, rng, events);
+    } else if (a.role === 1) {
+      if (a.privilege && s.workers) {
+        s.workers--;
+        p.idle++;
+      }
+      for (let i = 0; i < s.workerShip; i++) s.players[(index + i) % s.seats.length].idle++;
+      s.workerShip = 0;
+    } else if (a.role === 5) {
+      s.wharves.fill(false);
+      s.captainBonus = false;
+      seekShipper(s, rng, events);
+    }
+  } else if (a.type === 'hacienda') {
+    const good = drawTile(s, rng);
+    requireRule(good !== null);
+    p.island.push({ good, workers: 0 });
+    s.hacienda = true;
+    emit('settle', { good, blind: true });
+  } else if (a.type === 'settle') {
+    if (a.good === 5) s.quarries--;
+    else s.market.splice(s.market.indexOf(a.good), 1);
+    const workers = a.worker && active(p, 'hospice') ? takeWorker(s) : 0;
+    p.island.push({ good: a.good, workers });
+    emit('settle', { good: a.good, blind: false });
+    nextPlayer(s, rng, events);
+  } else if (a.type === 'assign') {
+    const total = workerCount(p);
+    p.island.forEach((t, i) => {
+      t.workers = a.island[i];
+    });
+    p.city.forEach((b, i) => {
+      b.workers = a.city[i];
+    });
+    p.idle = total - sum(a.island) - sum(a.city);
+    emit('assign');
+    nextPlayer(s, rng, events);
+  } else if (a.type === 'build') {
+    const paid = cost(s, p, a.building),
+      workers = a.worker && active(p, 'university') ? takeWorker(s) : 0;
+    p.money -= paid;
+    s.buildings[a.building]--;
+    p.city.push({ id: a.building, workers });
+    if (citySize(p) === 12) s.ending = true;
+    emit('build', { building: a.building, paid });
+    nextPlayer(s, rng, events);
+  } else if (a.type === 'produce') {
+    const quantities = production(p).map((n, g) => Math.min(n, s.bank[g]));
+    quantities.forEach((n, g) => {
+      p.goods[g] += n;
+      s.bank[g] -= n;
+    });
+    if (index === s.chooser) s.produced = quantities;
+    if (active(p, 'factory')) p.money += [0, 0, 1, 2, 3, 5][quantities.filter((n) => n > 0).length];
+    emit('produce', { goods: quantities });
+    nextPlayer(s, rng, events);
+  } else if (a.type === 'bonus') {
+    s.bank[a.good]--;
+    p.goods[a.good]++;
+    emit('bonus', { good: a.good });
+    finishRole(s, rng, events);
+  } else if (a.type === 'sell') {
+    const money =
+      a.good +
+      Number(index === s.chooser && s.privilege) +
+      Number(active(p, 'small_market')) +
+      2 * Number(active(p, 'large_market'));
+    p.goods[a.good]--;
+    s.trade.push(a.good);
+    p.money += money;
+    emit('sell', { good: a.good, money });
+    nextPlayer(s, rng, events);
+  } else if (a.type === 'ship') {
+    let quantity;
+    if (a.ship === 3) {
+      quantity = p.goods[a.good];
+      s.bank[a.good] += quantity;
+      s.wharves[index] = true;
+    } else {
+      const ship = s.ships[a.ship];
+      quantity = Math.min(p.goods[a.good], ship.capacity - ship.load);
+      ship.load += quantity;
+      ship.good = a.good;
+    }
+    p.goods[a.good] -= quantity;
+    let points = quantity + Number(active(p, 'harbor'));
+    if (index === s.chooser && s.privilege && !s.captainBonus) {
+      points++;
+      s.captainBonus = true;
+    }
+    p.vp += points;
+    s.vp -= points;
+    if (s.vp <= 0) s.ending = true;
+    emit('ship', { good: a.good, quantity, ship: a.ship }); // VP chips remain private.
+    s.current = (index + 1) % s.seats.length;
+    seekShipper(s, rng, events);
+  } else if (a.type === 'store') {
+    p.goods.forEach((n, g) => {
+      s.bank[g] += n - a.keep[g];
+    });
+    p.goods = a.keep;
+    emit('store');
+    nextPlayer(s, rng, events);
+    while (s.phase === 'store' && sum(s.players[s.current].goods) <= 1) nextPlayer(s, rng, events);
+  } else if (a.type === 'pass') {
+    emit('pass');
+    if (s.phase === 'bonus') finishRole(s, rng, events);
+    else if (s.phase === 'ship') {
+      // With no public cargo, declining a private wharf remains optional for this phase.
+      s.wharves[index] = true;
+      s.current = (index + 1) % s.seats.length;
+      seekShipper(s, rng, events);
+    } else nextPlayer(s, rng, events);
+  }
+  return { state: s, events };
+}
+function view(s, viewer) {
+  const you = viewer.kind === 'seat' ? s.seats.indexOf(viewer.seatId) : -1;
+  return {
+    you,
+    seats: s.seats,
+    phase: s.phase,
+    round: s.round,
+    governor: s.governor,
+    selected: s.selected,
+    current: s.current,
+    chooser: s.chooser,
+    privilege: s.privilege,
+    role: s.role,
+    move: s.move,
+    ending: s.ending,
+    roles: copy(s.roles),
+    market: s.market.slice(),
+    deckCount: s.deck.length,
+    discardCount: s.discard.length,
+    quarries: s.quarries,
+    buildings: s.buildings.slice(),
+    bank: s.bank.slice(),
+    workers: s.workers,
+    workerShip: s.workerShip,
+    vp: Math.max(0, s.vp),
+    ships: copy(s.ships),
+    trade: s.trade.slice(),
+    wharves: s.wharves.slice(),
+    players: s.players.map((p, i) => ({
+      money: p.money,
+      goods: p.goods.slice(),
+      idle: p.idle,
+      island: copy(p.island),
+      city: copy(p.city),
+      vp: i === you || s.phase === 'finished' ? p.vp : null,
+      result: i === you || s.phase === 'finished' ? score(p) : null,
+      production: production(p),
+      workers: workerCount(p),
+    })),
+    actions: actions(s, you),
+    outcome: outcome(s),
+    costs: BUILDINGS.map((_, id) => (you >= 0 ? cost(s, s.players[you], id) : null)),
+  };
+}
+function deserialize(value) {
+  const s = copy(value),
+    n = s?.seats?.length;
+  requireRule(
+    integer(n, 3, 5) &&
+      s.seats.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 128) &&
+      new Set(s.seats).size === n,
+  );
+  const keys = [
+    'schema',
+    'seats',
+    'players',
+    'governor',
+    'chooser',
+    'current',
+    'selected',
+    'round',
+    'move',
+    'role',
+    'phase',
+    'step',
+    'privilege',
+    'hacienda',
+    'produced',
+    'wharves',
+    'captainBonus',
+    'ending',
+    'roles',
+    'market',
+    'deck',
+    'discard',
+    'quarries',
+    'buildings',
+    'bank',
+    'workers',
+    'workerShip',
+    'vp',
+    'ships',
+    'trade',
+  ];
+  requireRule(
+    s.schema === 1 &&
+      Object.keys(s).length === keys.length &&
+      keys.every((k) => Object.hasOwn(s, k)),
+  );
+  requireRule(
+    [
+      'role',
+      'settle',
+      'assign',
+      'build',
+      'produce',
+      'bonus',
+      'trade',
+      'ship',
+      'store',
+      'finished',
+    ].includes(s.phase),
+  );
+  for (const key of ['governor', 'chooser', 'current']) requireRule(integer(s[key], 0, n - 1));
+  requireRule(
+    integer(s.selected, 0, n) &&
+      integer(s.step, 0, n) &&
+      integer(s.round, 1, 100000) &&
+      integer(s.move, 0, 1000000),
+  );
+  requireRule(s.role === null || integer(s.role, 0, n + 2));
+  for (const key of ['privilege', 'hacienda', 'captainBonus', 'ending'])
+    requireRule(typeof s[key] === 'boolean');
+  requireRule(
+    Array.isArray(s.wharves) &&
+      s.wharves.length === n &&
+      s.wharves.every((v) => typeof v === 'boolean'),
+  );
+  const vector = (v, length, max) =>
+    Array.isArray(v) && v.length === length && v.every((x) => integer(x, 0, max));
+  requireRule(vector(s.produced, 5, 12) && vector(s.bank, 5, 11) && vector(s.buildings, 23, 4));
+  requireRule(
+    Array.isArray(s.roles) &&
+      s.roles.length === n + 3 &&
+      s.roles.every(
+        (r) => integer(r.money, 0, 100000) && (r.owner === null || integer(r.owner, 0, n - 1)),
+      ),
+  );
+  requireRule(
+    integer(s.workers, 0, 100) &&
+      integer(s.workerShip, 0, 100) &&
+      integer(s.quarries, 0, 8) &&
+      integer(s.vp, -10000, 122),
+  );
+  requireRule(Array.isArray(s.players) && s.players.length === n);
+  s.players.forEach((p) => {
+    requireRule(
+      p &&
+        integer(p.money, 0, 1000000) &&
+        integer(p.vp, 0, 10000) &&
+        integer(p.idle, 0, 100) &&
+        vector(p.goods, 5, 11),
+    );
+    requireRule(
+      Array.isArray(p.island) &&
+        p.island.length >= 1 &&
+        p.island.length <= 12 &&
+        p.island.every((t) => integer(t.good, 0, 5) && integer(t.workers, 0, 1)),
+    );
+    requireRule(
+      Array.isArray(p.city) &&
+        p.city.length <= 12 &&
+        p.city.every((b) => integer(b.id, 0, 22) && integer(b.workers, 0, BUILDINGS[b.id].slots)),
+    );
+    requireRule(new Set(p.city.map((b) => b.id)).size === p.city.length && citySize(p) <= 12);
+  });
+  requireRule(
+    s.workers + s.workerShip + sum(s.players.map(workerCount)) === [55, 75, 95][n - 3] + n,
+  );
+  requireRule(s.vp + sum(s.players.map((p) => p.vp)) === [75, 100, 122][n - 3]);
+  for (const [key, max] of [
+    ['deck', 50],
+    ['discard', 50],
+    ['market', n + 1],
+    ['trade', 4],
+  ])
+    requireRule(
+      Array.isArray(s[key]) && s[key].length <= max && s[key].every((g) => integer(g, 0, 4)),
+    );
+  TILE_TOTALS.forEach((total, g) =>
+    requireRule(
+      total ===
+        sum(s.players.map((p) => p.island.filter((t) => t.good === g).length)) +
+          (g === 5
+            ? s.quarries
+            : [...s.deck, ...s.discard, ...s.market].filter((t) => t === g).length),
+    ),
+  );
+  BUILDINGS.forEach((b, id) =>
+    requireRule(
+      s.buildings[id] + s.players.filter((p) => p.city.some((c) => c.id === id)).length === b.count,
+    ),
+  );
+  requireRule(Array.isArray(s.ships) && s.ships.length === 3);
+  s.ships.forEach((ship, i) =>
+    requireRule(
+      ship.capacity === n + i + 1 &&
+        integer(ship.load, 0, ship.capacity) &&
+        (ship.load === 0 ? ship.good === null : integer(ship.good, 0, 4)),
+    ),
+  );
+  const cargo = s.ships.filter((ship) => ship.good !== null).map((ship) => ship.good);
+  requireRule(new Set(cargo).size === cargo.length);
+  GOOD_TOTALS.forEach((total, g) =>
+    requireRule(
+      s.bank[g] +
+        sum(s.players.map((p) => p.goods[g])) +
+        s.trade.filter((t) => t === g).length +
+        sum(s.ships.filter((ship) => ship.good === g).map((ship) => ship.load)) ===
+        total,
+    ),
+  );
+  if (s.phase === 'role')
+    requireRule(
+      s.role === null &&
+        s.selected < n &&
+        s.current === (s.governor + s.selected) % n &&
+        s.roles.filter((r) => r.owner !== null).length === s.selected,
+    );
+  else {
+    requireRule(s.role !== null && s.roles[s.role].owner === s.chooser);
+    const phases = [
+      ['settle'],
+      ['assign'],
+      ['build'],
+      ['produce', 'bonus'],
+      ['trade'],
+      ['ship', 'store'],
+      [],
+      [],
+    ];
+    requireRule(s.phase === 'finished' || phases[s.role].includes(s.phase));
+    if (s.phase === 'bonus') requireRule(s.current === s.chooser && s.step === n);
+    else if (!['ship', 'finished'].includes(s.phase))
+      requireRule(s.step < n && s.current === (s.chooser + s.step) % n);
+    if (s.phase === 'finished') requireRule(s.ending && s.selected === n);
+  }
+  return s;
+}
+const game = {
+  manifest: {
+    id: 'online.puerto-rico',
+    version: '1.0.0',
+    sdkRange: '^0.1.0',
+    contentVersion: '1.0.0',
+    name: '波多黎各',
+    description: '经典 3–5 人策略桌游：选择角色，经营种植园与城市，将货物装船，建设繁荣海港。',
+    players: { min: 3, max: 5 },
+    mode: 'rules-driven',
+    capabilities: ['private-view', 'turn-based'],
+    defaultAssetPack: { id: 'puerto-rico.original', version: '1.0.0' },
+    developmentOnly: false,
+  },
+  validateOptions(value) {
+    requireRule(
+      value &&
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        Object.keys(value).length === 0,
+    );
+    return {};
+  },
+  parseAction,
+  setup({ seats, options, rng }) {
+    this.validateOptions(options);
+    requireRule(
+      Array.isArray(seats) && integer(seats.length, 3, 5) && new Set(seats).size === seats.length,
+    );
+    const n = seats.length,
+      governor = rng.nextInt(0, n),
+      deck = [];
+    TILE_TOTALS.slice(0, 5).forEach((count, g) => {
+      for (let i = 0; i < count; i++) deck.push(g);
+    });
+    const players = seats.map((_, i) => {
+      const order = (i - governor + n) % n,
+        good = order < (n === 5 ? 3 : 2) ? 1 : 0;
+      deck.splice(deck.indexOf(good), 1);
+      return {
+        money: n - 1,
+        vp: 0,
+        idle: 0,
+        goods: [0, 0, 0, 0, 0],
+        island: [{ good, workers: 0 }],
+        city: [],
+      };
+    });
+    const state = {
+      schema: 1,
+      seats: seats.slice(),
+      players,
+      governor,
+      chooser: governor,
+      current: governor,
+      selected: 0,
+      round: 1,
+      move: 0,
+      role: null,
+      phase: 'role',
+      step: 0,
+      privilege: true,
+      hacienda: false,
+      produced: [0, 0, 0, 0, 0],
+      wharves: seats.map(() => false),
+      captainBonus: false,
+      ending: false,
+      roles: Array.from({ length: n + 3 }, () => ({ money: 0, owner: null })),
+      market: [],
+      deck: shuffled(deck, rng),
+      discard: [],
+      quarries: 8,
+      buildings: BUILDINGS.map((b) => b.count),
+      bank: GOOD_TOTALS.slice(),
+      workers: [55, 75, 95][n - 3],
+      workerShip: n,
+      vp: [75, 100, 122][n - 3],
+      ships: Array.from({ length: 3 }, (_, i) => ({ capacity: n + i + 1, good: null, load: 0 })),
+      trade: [],
+    };
+    refill(state, rng);
+    return { state, events: [{ type: 'started', governor }] };
+  },
+  getView: view,
+  getActionSpec(s, viewer) {
+    return {
+      phase: s.phase,
+      actions: actions(s, viewer.kind === 'seat' ? s.seats.indexOf(viewer.seatId) : -1),
+      custom:
+        s.phase === 'assign'
+          ? 'assign all available workers across island/city slots'
+          : s.phase === 'store'
+            ? 'keep warehouse types plus one barrel'
+            : null,
+    };
+  },
+  validateAction: validate,
+  applyAction: apply,
+  projectEvents(events) {
+    return copy(events);
+  },
+  getOutcome: outcome,
+  serialize(s) {
+    return copy(s);
+  },
+  deserialize,
+  getFallbackAction(v) {
+    return v.actions[0] || null;
+  },
+  getDecisionContext(s, viewer) {
+    const legalActions = actions(s, viewer.kind === 'seat' ? s.seats.indexOf(viewer.seatId) : -1);
+    return legalActions.length
+      ? { decisionKey: `move:${s.move}:${s.phase}:${s.current}`, legalActions }
+      : null;
+  },
+};
