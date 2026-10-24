@@ -2,7 +2,7 @@
 
 顶尖桌游联盟的桌游平台，支持多人实时对局、脚本与模型 AI、在线游戏扩展。先选游戏，再开一桌，让朋友在浏览器里一起玩。
 
-**平台版本 `0.15.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
+**平台版本 `0.16.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
 
 [快速开始](#快速开始) · [游戏列表](#游戏列表) · [部署与更新](#部署与更新) · [开发者文档](#开发者文档) · [开发进度](docs/progress.md)
 
@@ -41,6 +41,7 @@
 | 游戏         | 人数 | 打包命令                            | 规则与说明                                   |
 | ------------ | ---- | ----------------------------------- | -------------------------------------------- |
 | UNO · 休闲版 | 2–4  | `node scripts/package-uno.mjs`      | [上传包说明](game-packages/uno/README.md)    |
+| UNO · 毫不留情 | 2–6 | `node scripts/package-uno.mjs no-mercy` | [游戏指南](docs/games/uno.md) |
 | 五子棋       | 2    | `node scripts/package-gomoku.mjs`   | [上传包说明](game-packages/gomoku/README.md) |
 | 拉密         | 2–4  | `node scripts/package-rummikub.mjs` | [游戏指南](docs/games/rummikub.md)           |
 | 波多黎各     | 3–5  | `node scripts/package-puerto-rico.mjs` | [游戏指南](docs/games/puerto-rico.md) |
