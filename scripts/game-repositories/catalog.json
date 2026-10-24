@@ -1,0 +1,43 @@
+{
+  "platform": "Rst307/PlayBoardgameTogether",
+  "games": {
+    "uno": {
+      "repository": "playboard-game-uno",
+      "name": "UNO",
+      "scripts": ["package-uno.mjs", "uno-package.mjs", "check-uno-package.mjs"],
+      "tests": ["uno-package.test.ts", "uno-no-mercy.test.ts"],
+      "assets": [
+        { "id": "online.uno", "archive": "uno" },
+        { "id": "online.uno-no-mercy", "archive": "uno-no-mercy" }
+      ]
+    },
+    "gomoku": {
+      "repository": "playboard-game-gomoku",
+      "name": "五子棋",
+      "scripts": ["package-gomoku.mjs"],
+      "tests": ["gomoku-package.test.ts"],
+      "assets": [{ "id": "online.gomoku", "archive": "gomoku" }]
+    },
+    "rummikub": {
+      "repository": "playboard-game-rummikub",
+      "name": "拉密",
+      "scripts": ["package-rummikub.mjs", "rummikub-package.mjs"],
+      "tests": ["rummikub-package.test.ts"],
+      "assets": [{ "id": "online.rummikub", "archive": "rummikub" }]
+    },
+    "catan": {
+      "repository": "playboard-game-catan",
+      "name": "卡坦岛",
+      "scripts": ["package-catan.mjs", "catan-package.mjs"],
+      "tests": ["catan-package.test.ts"],
+      "assets": [{ "id": "online.catan", "archive": "catan" }]
+    },
+    "puerto-rico": {
+      "repository": "playboard-game-puerto-rico",
+      "name": "波多黎各",
+      "scripts": ["package-puerto-rico.mjs", "puerto-rico-package.mjs"],
+      "tests": ["puerto-rico-package.test.ts"],
+      "assets": [{ "id": "online.puerto-rico", "archive": "puerto-rico" }]
+    }
+  }
+}

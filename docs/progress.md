@@ -1,5 +1,21 @@
 # 开发进度
 
+## ZIP 游戏独立仓库导出与发布工具（2026-10-25，平台版本不变）
+
+- 新增 `scripts/game-repositories/catalog.json` 与 `scripts/export-game-repositories.mjs`，为 UNO（含两种玩法）、五子棋、拉密、卡坦岛、波多黎各生成五个独立项目。来源锁定经过核对的 `origin/main@471501e93949da34c9c7a17e4b9902b2f5713090`；不读取工作区未提交规则，不导出会话/数据库/根 .env，目标目录已存在时拒绝覆盖。原始路径、摘要、完整 SHA 与类型导入适配记录在各项目 SOURCE.json。
+- 每个项目含原游戏源码/素材、规则回归、独立 package.json/锁文件和 GitHub Actions；固定 SDK、ZIP 解析器、PNG 校验和 QuickJS 快照仅用于测试，不需要平台 workspace 或数据库。普通推送/PR/手动工作流只构建，精确游戏标签才发布对应 ZIP、SHA256SUMS 和 release.json；不覆盖现有 Release、不自动上架游戏。发布步骤仅配置，尚无实际 GitHub Release 验收。
+- 保留主仓库中游戏源码、原打包和集成/E2E 入口。待分仓创建、GitHub CI/首次 Release 和平台审核安装确认后，再迁走主仓库副本及切换测试夹具；本批不宣称已完成物理拆仓。内置 games/*、生产 API/WS/SDK、规则版本与数据库均未变。
+
+本轮实际验证：
+
+- 新导出回归 `pnpm --config.verify-deps-before-run=false exec vitest run tests/unit/game-repositories.test.ts`：3/3，通过真实临时克隆中的脏规则/未跟踪测试秘密文件验证提交快照隔离，并检查来源摘要、无 workspace 依赖、已有目标和错误输入保护。
+- 五个独立项目分别用自身锁文件完成冻结安装；分别执行 `pnpm ... test`，6 个规则测试文件、73/73 通过，无 skip（UNO 23、五子棋 10、拉密 11、卡坦岛 13、波多黎各 16）。真实 QuickJS 内含不同人数脚本完整对局与每步恢复，未调用付费模型。
+- 五个项目各自 `pnpm ... build` 成功，生成六份带内嵌图片的三文件 ZIP；各自 `pnpm ... verify` 5/5，通过平台包解析器、原 QuickJS 及最小/最大人数生命周期检查。UNO 休闲版/毫不留情的实际 ZIP 为 204246/132609 字节；五子棋 146309、拉密 537150、卡坦岛 369574、波多黎各 94559 字节。产物保持忽略。
+- `GITHUB_REF_TYPE=tag GITHUB_REF_NAME=uno-no-mercy-v9.9.9 pnpm ... verify` 按预期失败，明确拒绝不存在的版本；对应 `uno-no-mercy-v1.0.0` 通过，实际 dist/release 只有毫不留情 ZIP 和两份元数据，没有夹带休闲版。
+- 独立平台候选 `pnpm ... typecheck`、`pnpm ... lint` 通过（20 个源码根目录 AST 边界及现有格式检查）；新增工具/模板/测试另作定向 ESLint/Prettier 与差异检查。初次 typecheck 因候选没有 workspace 依赖失败，随后按原冻结锁文件补齐依赖后通过，未修改检查规则或主锁文件。
+
+交付边界与下一步：当前 GitHub 应用可写已有主仓库，但没有建仓/Release 接口；命令行无可用 GitHub 推送登录，已请用户创建并授权五个目标仓库。本地五套候选已验证，远程分仓、Actions 实际运行、正式 Release 和管理员安装未验证。未运行无关数据库集成/E2E或平台全量生产 build；本批仅开发发布工具和内部文档，平台版本保持 0.16.0，不重启生产服务、不声称已上线。主仓库提交、PR 与远程结果以本轮最终交付链接为准。
+
 ## UNO 可扩展玩法与毫不留情（2026-10-24，0.16.0）
 
 实现独立 UNO 扩展目录 `game-packages/uno/editions.json` 和统一打包工具；保留休闲版 `online.uno@1.2.0`（规则内容仍为 1.1.0），新增 `online.uno-no-mercy@1.0.0`、2–6 人、168 张牌。建房沿用游戏与版本选择，不要求玩家编辑 JSON；每局锁定一个玩法和精确版本，后续扩展可登记自己的规则、桌面和美术，无平台 gameId 分支或任意混搭开关。
