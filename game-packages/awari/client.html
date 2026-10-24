@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>阿瓦里 · 播种棋</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        color: #fff1d6;
+        background: #23180f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        min-height: 44px;
+      }
+      button:disabled {
+        cursor: default;
+        opacity: 0.55;
+      }
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #83f2bb;
+        outline-offset: 3px;
+      }
+      #table {
+        max-width: 920px;
+        margin: auto;
+        padding: 20px;
+        background: radial-gradient(ellipse at 50% 30%, #63412488, transparent 75%);
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0;
+        letter-spacing: 0.12em;
+      }
+      .eyebrow {
+        color: #edc98c;
+        font-size: 12px;
+        margin: 4px 0 0;
+      }
+      .help {
+        border: 1px solid #b98a55;
+        background: #392719;
+        border-radius: 24px;
+        padding: 8px 16px;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 16px;
+        margin: 20px 0 16px;
+      }
+      .score {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .score:last-child {
+        justify-content: flex-end;
+      }
+      .score strong {
+        font-size: 32px;
+        color: #ffcf79;
+        font-variant-numeric: tabular-nums;
+      }
+      .score small {
+        color: #e8c9a6;
+      }
+      .target {
+        font-size: 12px;
+        color: #e8c9a6;
+        text-align: center;
+      }
+      #status {
+        min-height: 28px;
+        margin: 0;
+        text-align: center;
+        font-weight: 700;
+        color: #a3f2c4;
+      }
+      .direction {
+        margin: 7px 0;
+        font-size: 12px;
+        color: #edc98c;
+        text-align: center;
+      }
+      #board {
+        padding: 18px;
+        border: 2px solid #bc8a4a;
+        border-radius: 36px;
+        background: repeating-linear-gradient(
+          3deg,
+          #684326 0,
+          #684326 3px,
+          #624023 5px,
+          #6d4829 12px
+        );
+        box-shadow:
+          inset 0 2px 0 #e6b66b66,
+          0 12px 30px #0005;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .row + .row {
+        margin-top: 18px;
+      }
+      .pit {
+        position: relative;
+        border: 2px solid #ad7941;
+        border-radius: 50%;
+        background: radial-gradient(ellipse at 50% 60%, #3a2112, #26160c);
+        aspect-ratio: 1.1;
+        padding: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        box-shadow: inset 0 4px 10px #0008;
+      }
+      .pit[aria-disabled='true'] {
+        cursor: default;
+      }
+      .pit.legal {
+        border-color: #8ddbb0;
+      }
+      .pit.selected {
+        border-color: #ffd07d;
+        outline: 3px solid #ffd07d;
+        outline-offset: 2px;
+      }
+      .pit.landing {
+        background: radial-gradient(ellipse, #5c6334, #27331c);
+      }
+      .pit.capture {
+        border-color: #ffba84;
+        box-shadow: inset 0 0 0 3px #ecae6f;
+      }
+      .pit.last {
+        border-style: dashed;
+      }
+      .pit.pulse {
+        animation: seed-pulse 0.55s ease-out;
+      }
+      .incoming {
+        position: absolute;
+        top: 0;
+        right: 0;
+        border-radius: 12px;
+        background: #f4cd86;
+        color: #302116;
+        padding: 1px 4px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .incoming:empty {
+        display: none;
+      }
+      .count {
+        z-index: 1;
+        color: #fff8e7;
+        font-size: clamp(20px, 3.8vw, 34px);
+        font-weight: 750;
+        text-shadow: 0 2px 4px #000;
+        font-variant-numeric: tabular-nums;
+      }
+      .label {
+        font-size: 12px;
+        color: #edc98c;
+        z-index: 1;
+      }
+      .seeds {
+        position: absolute;
+        inset: 15%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        align-content: center;
+        justify-content: center;
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .seed {
+        width: 8px;
+        height: 11px;
+        border-radius: 65% 40% 60% 40%;
+        background: #eec16e;
+        transform: rotate(25deg);
+      }
+      #preview {
+        min-height: 44px;
+        margin: 18px 0 12px;
+        text-align: center;
+        line-height: 1.5;
+      }
+      .actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+      }
+      #confirm {
+        background: #278351;
+        border: 1px solid #96edb7;
+        border-radius: 28px;
+        padding: 12px 26px;
+        font-weight: 700;
+        min-width: 156px;
+      }
+      #cancel {
+        background: transparent;
+        border: 1px solid #b98a55;
+        border-radius: 28px;
+        padding: 10px 20px;
+      }
+      #last {
+        color: #e8c9a6;
+        font-size: 13px;
+        text-align: center;
+        min-height: 20px;
+        margin: 14px 0 0;
+      }
+      dialog {
+        max-width: min(560px, calc(100% - 28px));
+        max-height: 85vh;
+        border: 1px solid #b98a55;
+        border-radius: 20px;
+        background: #302116;
+        color: #fff1d6;
+        padding: 24px;
+        line-height: 1.65;
+      }
+      dialog::backdrop {
+        background: #000a;
+      }
+      dialog h2 {
+        margin-top: 0;
+        font-size: 20px;
+      }
+      dialog p {
+        margin: 12px 0;
+      }
+      @keyframes seed-pulse {
+        0% {
+          box-shadow: inset 0 0 0 5px #ffdc87;
+        }
+        100% {
+          box-shadow: inset 0 4px 10px #0008;
+        }
+      }
+      @media (max-width: 600px) {
+        #table {
+          padding: 12px 8px;
+        }
+        h1 {
+          font-size: 20px;
+        }
+        .help {
+          padding: 8px 12px;
+        }
+        .scoreboard {
+          gap: 8px;
+          margin: 12px 0;
+        }
+        .score {
+          gap: 5px;
+          font-size: 13px;
+        }
+        .score strong {
+          font-size: 26px;
+        }
+        .score small {
+          width: 100%;
+        }
+        .score:last-child small {
+          text-align: right;
+        }
+        #board {
+          padding: 12px 7px;
+          border-radius: 24px;
+        }
+        .row {
+          gap: 4px;
+        }
+        .row + .row {
+          margin-top: 14px;
+        }
+        .pit {
+          aspect-ratio: 0.85;
+          min-height: 52px;
+        }
+        .seeds {
+          inset: 20% 10%;
+          gap: 2px;
+        }
+        .seed {
+          width: 5px;
+          height: 8px;
+        }
+        #preview {
+          font-size: 14px;
+          margin-top: 12px;
+        }
+        #last {
+          font-size: 12px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pit.pulse {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="table">
+      <header>
+        <div>
+          <h1>阿瓦里</h1>
+          <p class="eyebrow">AWARI · 播下种子，收获胜机</p>
+        </div>
+        <button class="help" id="help">玩法说明</button>
+      </header>
+      <div class="scoreboard">
+        <div class="score">
+          <span id="my-name">你</span><strong id="my-score">0</strong><small>已收获</small>
+        </div>
+        <div class="target">25 子<br />赢得对局</div>
+        <div class="score">
+          <span id="their-name">对手</span><strong id="their-score">0</strong><small>已收获</small>
+        </div>
+      </div>
+      <p id="status" role="status">正在同步棋盘…</p>
+      <p class="direction">← 对方一侧 · 逆时针播种</p>
+      <div id="board" aria-label="阿瓦里棋盘">
+        <div id="opponent" class="row" role="group" aria-label="对方六坑"></div>
+        <div id="mine" class="row" role="group" aria-label="本人六坑"></div>
+      </div>
+      <p class="direction">本人一侧 · 播种方向 →</p>
+      <p id="preview" aria-live="polite">选择下排一个亮边的坑，预览这一手。</p>
+      <div class="actions">
+        <button id="cancel" disabled>取消</button><button id="confirm" disabled>确认播种</button>
+      </div>
+      <p id="last"></p>
+    </main>
+    <dialog id="rules" aria-labelledby="rules-title">
+      <h2 id="rules-title">阿瓦里 · 玩法说明</h2>
+      <p>
+        两人各六坑，每坑四子。轮到你时，选自己一个非空坑，把全部棋子逆时针逐坑播下；绕圈时跳过出发坑，得分仓不参与播种。
+      </p>
+      <p>
+        最后一子落在对方坑并凑成 2 或 3 子，就吃掉该坑。向后连续遇到对方 2 或 3
+        子坑可继续吃；如果会吃光对方，本次吃子全部取消，播种仍生效。
+      </p>
+      <p>对方六坑为空时必须送子；无子可送则各收自己一侧余子并结束。吃到 25 子获胜，24:24 平局。</p>
+      <p>
+        线上残局约定：同一局面第三次出现，或连续 200
+        手无人吃子时，各收己方余子比较得分。该约定用于自动结束循环残局。
+      </p>
+      <p>
+        点坑查看末子落点和预计吃子，再确认。数字为准确子数，金色种子仅作装饰。绿色边框表示可选，暖金外圈表示已选。
+      </p>
+      <button class="help" id="close-help">关闭说明</button>
+    </dialog>
+    <script>
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        const label = (pit) => String.fromCharCode(65 + pit);
+        const reasons = {
+          majority: '已收获至少 25 子',
+          draw: '双方各 24 子',
+          'no-feed': '无法送子，已收取双方余子',
+          repetition: '三次重复局面，已收取双方余子',
+          'quiet-limit': '连续 200 手无人吃子，已收取双方余子',
+        };
+        let view = null,
+          busy = true,
+          selected = null,
+          submitted = false,
+          stamp = '',
+          lastHeight = 0;
+        const nodes = new Map();
+        function canAct() {
+          return view && !busy && !submitted && view.you !== null && view.you === view.currentSeat;
+        }
+        function preview() {
+          return view && view.previews.find((item) => item.pit === selected);
+        }
+        function build() {
+          const mine = view.yourIndex === 1 ? 1 : 0;
+          for (const [id, player, reverse] of [
+            ['opponent', 1 - mine, true],
+            ['mine', mine, false],
+          ]) {
+            const row = $(id);
+            row.replaceChildren();
+            const pits = Array.from({ length: 6 }, (_, index) => player * 6 + index);
+            if (reverse) pits.reverse();
+            for (const pit of pits) {
+              const button = document.createElement('button');
+              button.type = 'button';
+              button.className = 'pit';
+              button.dataset.pit = String(pit);
+              const seeds = document.createElement('span');
+              seeds.className = 'seeds';
+              seeds.setAttribute('aria-hidden', 'true');
+              const count = document.createElement('span');
+              count.className = 'count';
+              const name = document.createElement('span');
+              name.className = 'label';
+              name.textContent = label(pit);
+              const incoming = document.createElement('span');
+              incoming.className = 'incoming';
+              incoming.setAttribute('aria-hidden', 'true');
+              button.append(seeds, count, name, incoming);
+              button.addEventListener('click', () => {
+                if (!canAct() || !view.actions.some((action) => action.pit === pit)) return;
+                selected = pit;
+                render();
+              });
+              row.append(button);
+              nodes.set(pit, button);
+            }
+          }
+        }
+        function render() {
+          if (!view) return;
+          const mine = view.yourIndex === 1 ? 1 : 0;
+          $('my-name').textContent = view.you === null ? '座位 1' : '你';
+          $('their-name').textContent = view.you === null ? '座位 2' : '对手';
+          $('my-score').textContent = view.players[mine].score;
+          $('their-score').textContent = view.players[1 - mine].score;
+          const ended = view.outcome.status === 'finished';
+          $('status').textContent = ended
+            ? view.outcome.winners.length === 0
+              ? '平局'
+              : view.you === null
+                ? '座位 ' +
+                  (view.players.findIndex((p) => p.seatId === view.outcome.winners[0]) + 1) +
+                  ' 获胜'
+                : view.outcome.winners.includes(view.you)
+                  ? '你获胜了'
+                  : '对手获胜'
+            : busy || submitted
+              ? '正在同步这一手…'
+              : canAct()
+                ? view.mustFeed
+                  ? '轮到你播种 · 必须送子给对手'
+                  : '轮到你播种'
+                : '等待对手播种';
+          const planned = preview();
+          for (const [pit, button] of nodes) {
+            const legal = canAct() && view.actions.some((action) => action.pit === pit);
+            const incoming = planned ? planned.path.filter((index) => index === pit).length : 0;
+            button.setAttribute('aria-disabled', String(!legal));
+            button.setAttribute('aria-pressed', String(selected === pit));
+            button.setAttribute(
+              'aria-label',
+              label(pit) +
+                ' 坑，' +
+                view.pits[pit] +
+                ' 子' +
+                (legal ? '，可播种' : '') +
+                (incoming ? '，将播入 ' + incoming + ' 子' : ''),
+            );
+            button.classList.toggle('legal', legal);
+            button.classList.toggle('selected', selected === pit);
+            button.classList.toggle('landing', !!planned && planned.lastPit === pit);
+            button.classList.toggle('capture', !!planned && planned.capturedPits.includes(pit));
+            button.classList.toggle('last', !planned && !!view.last && view.last.lastPit === pit);
+            button.querySelector('.count').textContent = view.pits[pit];
+            button.querySelector('.incoming').textContent = incoming ? '+' + incoming : '';
+            const seeds = button.querySelector('.seeds');
+            seeds.replaceChildren();
+            for (let index = 0; index < Math.min(view.pits[pit], 8); index++) {
+              const seed = document.createElement('i');
+              seed.className = 'seed';
+              seeds.append(seed);
+            }
+          }
+          $('preview').textContent = ended
+            ? reasons[view.endReason]
+            : planned
+              ? label(selected) +
+                ' 坑播出 ' +
+                view.pits[selected] +
+                ' 子 → 末子落在 ' +
+                label(planned.lastPit) +
+                ' 坑 · ' +
+                (planned.grandSlam
+                  ? '会吃光对方，本次不吃子'
+                  : '预计收获 ' + planned.captured + ' 子')
+              : canAct()
+                ? '选择下排一个亮边的坑，预览这一手。'
+                : '棋盘实时同步，轮到你后可选坑。';
+          $('confirm').disabled = !canAct() || !planned;
+          $('cancel').disabled = selected === null || busy || submitted;
+          $('last').textContent = view.last
+            ? '第 ' +
+              view.moveCount +
+              ' 手 · ' +
+              (view.last.player === mine ? '己方' : '对方') +
+              '从 ' +
+              label(view.last.pit) +
+              ' 坑播出 ' +
+              view.last.sown +
+              ' 子，收获 ' +
+              view.last.captured +
+              ' 子' +
+              (view.last.grandSlam ? '（吃光取消）' : '')
+            : '每坑四子 · 共 48 子';
+        }
+        function receive(event) {
+          if (event.source !== parent || event.data?.type !== 'boardgame:view') return;
+          const next = event.data.view;
+          if (
+            !next ||
+            !Array.isArray(next.pits) ||
+            next.pits.length !== 12 ||
+            !Array.isArray(next.players) ||
+            !Array.isArray(next.actions) ||
+            !Array.isArray(next.previews)
+          )
+            return;
+          const nextStamp = JSON.stringify([
+            next.moveCount,
+            next.currentSeat,
+            next.you,
+            next.pits,
+            next.endReason,
+          ]);
+          const changed = nextStamp !== stamp;
+          if (changed || (busy && event.data.busy !== true)) {
+            selected = null;
+            submitted = false;
+          }
+          const rebuild = !view || next.yourIndex !== view.yourIndex;
+          view = next;
+          busy = event.data.busy === true;
+          stamp = nextStamp;
+          if (busy) selected = null;
+          if (rebuild) {
+            nodes.clear();
+            build();
+          }
+          render();
+          // Only animate an observed forward move with projected events; refresh/catch-up stays still.
+          if (
+            changed &&
+            !busy &&
+            event.data.events?.some((item) => item.type === 'seeds.sown') &&
+            view.last
+          ) {
+            const node = nodes.get(view.last.lastPit);
+            node.classList.remove('pulse');
+            void node.offsetWidth;
+            node.classList.add('pulse');
+          }
+        }
+        $('confirm').addEventListener('click', () => {
+          if (!canAct() || !preview()) return;
+          const action = view.actions.find((item) => item.pit === selected);
+          submitted = true;
+          selected = null;
+          render();
+          parent.postMessage({ type: 'boardgame:action', action }, '*');
+        });
+        $('cancel').addEventListener('click', () => {
+          if (!busy && !submitted) {
+            selected = null;
+            render();
+          }
+        });
+        $('help').addEventListener('click', () => $('rules').showModal());
+        $('close-help').addEventListener('click', () => $('rules').close());
+        $('rules').addEventListener('close', () => $('help').focus());
+        const observer = new ResizeObserver(() => {
+          const height = Math.ceil($('table').getBoundingClientRect().height);
+          if (height !== lastHeight) {
+            lastHeight = height;
+            parent.postMessage({ type: 'boardgame:resize', height: Math.max(320, height) }, '*');
+          }
+        });
+        observer.observe($('table'));
+        addEventListener('message', receive);
+        addEventListener(
+          'pagehide',
+          () => {
+            observer.disconnect();
+            removeEventListener('message', receive);
+          },
+          { once: true },
+        );
+        parent.postMessage({ type: 'boardgame:ready' }, '*');
+      })();
+    </script>
+  </body>
+</html>
