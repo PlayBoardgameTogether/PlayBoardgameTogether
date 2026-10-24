@@ -50,6 +50,7 @@
 | 房间、登录、权限   | [房间](docs/rooms.md)、[认证](docs/auth.md)、[ADR-001](docs/adr/001-stage-2-identity-rooms.md)                      |
 | API、WS、持久化    | [协议](docs/protocol.md)、[数据模型](docs/data-model.md)                                                            |
 | 新游戏、正式动作   | [SDK](docs/game-sdk.md)、[阶段 3 交接](docs/stage-3-handoff.md)                                                     |
+| 桌游双端体验、成就感、沉浸感 | [桌游体验开发指南](docs/game-experience-guidelines.md)；涉及成长徽章时补读 [玩家徽章](docs/badges.md) |
 | 重构或架构评估     | [审查与改进计划](docs/architecture-review-2026-09-24.md)、[决策记录](docs/decisions.md)                             |
 | AI、资源、音效     | [AI 契约](docs/ai-contract.md)、[资源音效](docs/assets-audio.md)，以及任务书对应章节                                |
 | 在线游戏 ZIP       | [ADR-005](docs/adr/005-runtime-game-packages.md)、[包格式](apps/web/public/developer-docs/game-packages.md)、对应 `game-packages/*/README.md` |
@@ -196,6 +197,7 @@ pnpm dev
 ## UI/UX 工作要求
 
 - 新增页面、交互流程变化或较大布局/视觉修改，编码前必读 [UI/UX 设计规范](docs/ui-ux-guidelines.md)、[界面系统](docs/ui-system.md) 和 [UI 开发与回归](docs/ui-development.md)。纯后端、测试、文档及不改变交互的小型样式修复不要求完整设计流程。
+- 新游戏接入、棋桌交互或布局改进，以及结算、成长、音画反馈相关工作，按影响补读 [桌游体验开发指南](docs/game-experience-guidelines.md)。双端共享权威规则，手机与电脑分别组织信息和操作；关注行动反馈、可核验的单局收获与长期成长，以及主题和节奏的一致。复用现有徽章与表现通道，保持隐私和恢复边界，不因读取指南自动扩大实现范围。
 - 中大型 UI 工作编码前明确用户目标、内容取舍、页面/路由结构、核心步骤、布局及视觉方向，输出与任务规模相称的简要方案。已有设计稿或确认方案直接复用，只补齐缺项；已有页面优先延续既定体系，新视觉探索按需要比较方向并自主选择、说明理由。
 - 页面默认围绕一个核心任务，明确视觉与操作层级；棋桌、多步表单等可同时承载紧密关联的任务和多个必要操作，不以任务或按钮数量作为硬指标。低频功能按使用频率与可发现性决定是否收纳，不机械地隐藏操作或包装成 Card。
 - 玩家平台确立采用 **PlayBoard 暖阳桌游乐园与沉浸棋桌** 设计语言（大厅为暖阳象牙米白、琥珀暖金高亮、圆润胶囊药丸、鲜活翠绿交互与桌游米宝色彩；棋桌为深木沉浸暖光与高对比行动键），避免冷峻单调的 SaaS 模板外观；管理员后台优先准确、高效的管理流程。保留亮/暗主题切换与无障碍对比度，鼓励根据 PlayBoard 官方视觉基线演进主题与交互样式，不拘泥于历史单一灰阶限制。
