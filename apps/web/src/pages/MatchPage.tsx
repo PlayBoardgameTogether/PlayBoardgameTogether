@@ -1,6 +1,7 @@
 import { MatchResultPanel } from '../matches/MatchResultPanel.js';
 import { useMatchSession } from '../matches/useMatchSession.js';
 import { GameRules } from './GameRules.js';
+import { useGameCatalog } from './game-catalog.js';
 import { type MatchView } from '@boardgame/protocol';
 import { navigate } from '../platform.js';
 import { clientGame, type GameBoard } from '../game-registry.js';
@@ -56,6 +57,12 @@ export function MatchPage({ id }: { id: string }) {
     confirmPending,
     audio,
   } = useMatchSession(id);
+  const { games } = useGameCatalog();
+  const game = data && clientGame(data.gameId, data.gameVersion);
+  const gameName =
+    data &&
+    (games?.find((item) => item.id === data.gameId && item.version === data.gameVersion)?.name ??
+      (game?.name !== data.gameId ? game?.name : '游戏对局'));
   if (connection === 'auth-expired')
     return (
       <div className="empty">
@@ -83,7 +90,7 @@ export function MatchPage({ id }: { id: string }) {
       <section className="page-heading match-heading">
         <div>
           <p className="eyebrow">{data.status === 'active' ? '正在对局' : '对局已结束'}</p>
-          <h1>{clientGame(data.gameId, data.gameVersion)?.name ?? '游戏版本不可用'}</h1>
+          <h1>{gameName}</h1>
           <p>
             你的座位 {data.seatIndex + 1} ·{' '}
             {data.status === 'finished'

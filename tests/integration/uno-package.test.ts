@@ -15,7 +15,10 @@ type Headers = {
     origin: string;
     'x-csrf-token': string;
 };
-describe('UNO online package artwork and real AI', () => {
+describe.each([
+    { edition: 'casual' as const, gameId: 'online.uno', version: '1.2.0' },
+    { edition: 'no-mercy' as const, gameId: 'online.uno-no-mercy', version: '1.0.0' },
+])('UNO $edition artwork, restoration and real AI', ({ edition, gameId, version }) => {
     let db: Database, app: Awaited<ReturnType<typeof createApp>>;
     let admin: Headers, alice: Headers;
     const config = { NODE_ENV: 'test' as const, API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: url!, WEB_ORIGIN: origin,
@@ -33,22 +36,22 @@ describe('UNO online package artwork and real AI', () => {
     beforeAll(async () => {
         db = createDatabase(url!);
         await db.query('TRUNCATE accounts CASCADE');
-        await db.query("DELETE FROM game_package_receipts; DELETE FROM game_presentations WHERE game_id='online.uno'; DELETE FROM game_packages WHERE game_id='online.uno'; DELETE FROM game_installations WHERE game_id='online.uno'");
+        await db.query(`DELETE FROM game_package_receipts; DELETE FROM game_presentations WHERE game_id='${gameId}'; DELETE FROM game_packages WHERE game_id='${gameId}'; DELETE FROM game_installations WHERE game_id='${gameId}'`);
         app = await createApp({ db, config, registry: createRegistry(false) });
         await createAccount(db, { username: 'uno_admin', displayName: 'admin', password: 'uno package password', role: 'administrator' });
         await createAccount(db, { username: 'uno_alice', displayName: 'Alice', password: 'uno package password', role: 'user' });
         admin = await login('uno_admin');
         alice = await login('uno_alice');
-        const installed = await app.inject({ method: 'POST', url: `/api/v1/admin/game-packages?requestId=${randomUUID()}`, headers: { ...admin, 'content-type': 'application/zip' }, payload: await unoPackageZip() });
+        const installed = await app.inject({ method: 'POST', url: `/api/v1/admin/game-packages?requestId=${randomUUID()}`, headers: { ...admin, 'content-type': 'application/zip' }, payload: await unoPackageZip(edition) });
         expect(installed.statusCode).toBe(200);
     });
     afterAll(async () => {
         await db.query('TRUNCATE accounts CASCADE');
-        await db.query("DELETE FROM game_presentations WHERE game_id='online.uno'; DELETE FROM game_packages WHERE game_id='online.uno'; DELETE FROM game_installations WHERE game_id='online.uno'");
+        await db.query(`DELETE FROM game_presentations WHERE game_id='${gameId}'; DELETE FROM game_packages WHERE game_id='${gameId}'; DELETE FROM game_installations WHERE game_id='${gameId}'`);
         await app.close();
     });
     it('persists embedded art, respects admin overrides and restores defaults/AI after API restart', async () => {
-        const readArt = () => app.inject({ url: '/api/v1/game-packages/online.uno/versions/1.1.0/art/cover.png' });
+        const readArt = () => app.inject({ url: `/api/v1/game-packages/${gameId}/versions/${version}/art/cover.png` });
         let response = await readArt();
         expect(response.statusCode).toBe(200);
         expect(response.headers['content-type']).toContain('image/png');
@@ -56,24 +59,24 @@ describe('UNO online package artwork and real AI', () => {
         expect(response.rawPayload).toEqual(Buffer.from(packagePng.split(',')[1]!, 'base64'));
         const presentations = async () => (await app.inject({ url: '/api/v1/games/presentations' })).json().data.find((item: {
             gameId: string;
-        }) => item.gameId === 'online.uno');
-        expect(await presentations()).toMatchObject({ coverUrl: '/api/v1/game-packages/online.uno/versions/1.1.0/art/cover.png', revision: 0 });
-        const changed = await write('/games/online.uno/versions/1.1.0/presentation', admin, { expectedRevision: 0, iconUrl: null, coverUrl: '/game-art/color-match-cover.svg', backgroundUrl: null }, 'PUT');
+        }) => item.gameId === gameId);
+        expect(await presentations()).toMatchObject({ coverUrl: `/api/v1/game-packages/${gameId}/versions/${version}/art/cover.png`, revision: 0 });
+        const changed = await write(`/games/${gameId}/versions/${version}/presentation`, admin, { expectedRevision: 0, iconUrl: null, coverUrl: '/game-art/color-match-cover.svg', backgroundUrl: null }, 'PUT');
         // The existing presentation API owns overrides, separate from immutable package bytes.
         expect(changed.statusCode).toBe(200);
         expect((await presentations()).coverUrl).toBe('/game-art/color-match-cover.svg');
-        expect((await write('/games/online.uno/versions/1.1.0/presentation', admin, { expectedRevision: 1, iconUrl: null, coverUrl: null, backgroundUrl: null }, 'PUT')).statusCode).toBe(200);
+        expect((await write(`/games/${gameId}/versions/${version}/presentation`, admin, { expectedRevision: 1, iconUrl: null, coverUrl: null, backgroundUrl: null }, 'PUT')).statusCode).toBe(200);
         await app.close();
         await start();
         response = await readArt();
         expect(response.statusCode).toBe(200);
         expect((await presentations()).coverUrl).toContain('/art/cover.png');
-        const policies = await app.inject({ url: '/api/v1/games/online.uno/ai-policies' });
+        const policies = await app.inject({ url: `/api/v1/games/${gameId}/ai-policies` });
         expect(policies.json().data).toContainEqual({ id: 'basic-v1', version: '1.0.0', name: '基础脚本 AI' });
     });
     for (const controllerType of ['script', 'model'] as const) {
         it(`uploads and completes a real UNO match with a ${controllerType} bot`, async () => {
-            const created = await write('/rooms', alice, { requestId: randomUUID(), name: 'UNO ' + controllerType, gameId: 'online.uno', version: '1.1.0', options: {}, seatCount: 2 });
+            const created = await write('/rooms', alice, { requestId: randomUUID(), name: 'UNO ' + controllerType, gameId, version, options: {}, seatCount: 2 });
             expect(created.statusCode).toBe(200);
             const { roomId, room } = created.json().data;
             const botSeat = room.seats[1].seatId;
@@ -91,6 +94,11 @@ describe('UNO online package artwork and real AI', () => {
             const started = await write(`/rooms/${roomId}/start`, alice, { requestId: randomUUID(), expectedRoomRevision: ready.json().data.roomRevision });
             expect(started.statusCode).toBe(200);
             const matchId = started.json().data.matchId;
+            const before = (await db.query('SELECT state,rng_state,revision FROM matches WHERE id=$1', [matchId])).rows[0];
+            expect((await app.inject({ url: `/api/v1/matches/${matchId}/view`, headers: admin })).statusCode).toBe(404);
+            const illegal = await write(`/matches/${matchId}/actions`, alice, { requestId: randomUUID(), expectedRevision: 0, action: { type: 'play', cardId: 'not-owned', color: null, uno: true } });
+            expect(illegal.statusCode).toBe(422);
+            expect((await db.query('SELECT state,rng_state,revision FROM matches WHERE id=$1', [matchId])).rows[0]).toEqual(before);
             const deadline = Date.now() + 60000;
             let finished = false;
             while (Date.now() < deadline) {
@@ -104,8 +112,17 @@ describe('UNO online package artwork and real AI', () => {
                     break;
                 }
                 if (snapshot.view.actions.length) {
-                    const result = await write(`/matches/${matchId}/actions`, alice, { requestId: randomUUID(), expectedRevision: snapshot.revision, action: snapshot.view.actions[0] });
+                    const command = { requestId: randomUUID(), expectedRevision: snapshot.revision, action: snapshot.view.actions[0] };
+                    const result = await write(`/matches/${matchId}/actions`, alice, command);
                     expect(result.statusCode).toBe(200);
+                    if (snapshot.revision === 0) {
+                        // The same original request must succeed even after the bot advances revision.
+                        const retried = await write(`/matches/${matchId}/actions`, alice, command);
+                        expect(retried.statusCode).toBe(200);
+                        expect(retried.json().data).toEqual({ ...result.json().data, events: [] });
+                        const conflict = await write(`/matches/${matchId}/actions`, alice, { ...command, action: { type: 'nonexistent' } });
+                        expect(conflict.statusCode).toBe(409);
+                    }
                 }
                 else
                     await new Promise(resolve => setTimeout(resolve, 30));
