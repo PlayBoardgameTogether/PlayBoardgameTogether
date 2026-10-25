@@ -1,37 +1,60 @@
-# 平台主仓库与独立游戏仓库
+# 平台与独立游戏仓库
 
-本批为现有 ZIP 游戏提供独立项目导出及发布工作流。平台网站、账号、房间、对局事务、管理后台、SDK 和 ZIP 运行时继续由本仓库维护。`games/*` 的内置扩展仍随平台构建，不能直接挪走。
+2026-10-25 用户确认：游戏统一放在 [PlayBoardgameTogether 组织](https://github.com/orgs/PlayBoardgameTogether)，**每个游戏单独一个仓库，以后也沿用此规则**。平台主仓库继续维护网站、认证、房间、对局事务、数据库、通用 SDK、游戏运行时、管理员安装及部署。
 
-## 仓库清单
+## 已创建的游戏仓库
 
-平台主仓库已迁至 `PlayBoardgameTogether/PlayBoardgameTogether`。下表使用同名组织作为导出模板的建议目标，具体游戏仓库地址仍须用户确认，不表示仓库已经创建或发布成功，也不构成创建仓库的授权；实际结果记录在本轮进度与交付说明中。
+| 游戏           | 仓库                                                                                              | 现有游戏版本  | 发布格式         |
+| -------------- | ------------------------------------------------------------------------------------------------- | ------------- | ---------------- |
+| UNO 及毫不留情 | [playboard-game-uno](https://github.com/PlayBoardgameTogether/playboard-game-uno)                 | 1.2.0 / 1.0.0 | 分别发布安装 ZIP |
+| 五子棋         | [playboard-game-gomoku](https://github.com/PlayBoardgameTogether/playboard-game-gomoku)           | 1.0.3         | 安装 ZIP         |
+| 拉密           | [playboard-game-rummikub](https://github.com/PlayBoardgameTogether/playboard-game-rummikub)       | 1.0.3         | 安装 ZIP         |
+| 卡坦岛         | [playboard-game-catan](https://github.com/PlayBoardgameTogether/playboard-game-catan)             | 1.0.1         | 安装 ZIP         |
+| 波多黎各       | [playboard-game-puerto-rico](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico) | 1.0.0         | 安装 ZIP         |
+| 阿瓦里         | [playboard-game-awari](https://github.com/PlayBoardgameTogether/playboard-game-awari)             | 1.0.0         | 安装 ZIP         |
+| Color Match    | [playboard-game-color-match](https://github.com/PlayBoardgameTogether/playboard-game-color-match) | 1.0.0         | 可信内置集成 tgz |
+| Grid Garden    | [playboard-game-grid-garden](https://github.com/PlayBoardgameTogether/playboard-game-grid-garden) | 1.0.0         | 可信内置集成 tgz |
+| 璀璨宝石       | [playboard-game-splendor](https://github.com/PlayBoardgameTogether/playboard-game-splendor)       | 1.0.0         | 可信内置集成 tgz |
+| 花砖物语       | [playboard-game-azul](https://github.com/PlayBoardgameTogether/playboard-game-azul)               | 1.0.0         | 可信内置集成 tgz |
 
-| 游戏           | 目标仓库                            | 发布标签示例                        |
-| -------------- | ----------------------------------- | ----------------------------------- |
-| UNO 及扩展玩法 | `PlayBoardgameTogether/playboard-game-uno`         | `uno-v1.2.0`、`uno-no-mercy-v1.0.0` |
-| 五子棋         | `PlayBoardgameTogether/playboard-game-gomoku`      | `gomoku-v1.0.3`                     |
-| 拉密           | `PlayBoardgameTogether/playboard-game-rummikub`    | `rummikub-v1.0.3`                   |
-| 卡坦岛         | `PlayBoardgameTogether/playboard-game-catan`       | `catan-v1.0.1`                      |
-| 波多黎各       | `PlayBoardgameTogether/playboard-game-puerto-rico` | `puerto-rico-v1.0.0`                |
+源码已分别提交并推送。各仓库完整提交、兼容平台/SDK 版本及集成文件的 Git blob SHA 记录在 [来源锁](../game-repositories.lock.json)，实际验证与发布结果记录在 [开发进度](progress.md)。开发实验台和身份验收用 Test Counter 留在平台。UNO 相关玩法共用一个仓库，分别维护游戏 ID、版本和 Release 标签。
 
-同一游戏的相关扩展留在一个仓库，分别使用自己的游戏 ID、版本和 Release 标签。无需 Git submodule，也不让生产启动依赖临时拉取多个游戏源码仓库。
+## 唯一维护来源与平台副本
 
-## 从已提交的版本导出
+游戏仓库拥有游戏源码、棋桌、AI 策略、资源契约、规则测试、打包脚本和游戏说明。主仓库现有 `games/*`、`game-packages/*` 以及锁文件列出的脚本、测试和游戏说明保留为**锁定集成副本**，供既有 registry、workspace、测试准备及生产构建使用，不再在平台直接开发游戏。
 
-先获取和审查远程 main，选择完整提交 SHA：
+这是源码所有权与发布分离，平台 Git 中仍保留集成快照，并非已物理清空游戏目录。游戏原始字节、ID、版本、registry 路径和旧对局恢复能力保持；平台检出后不需要在启动时联网拉取游戏仓库。内置游戏继续构建装配，未转换成在线包，不支持独立热更新。取舍见 [ADR-009](adr/009-independent-game-repositories.md)。
 
 ```powershell
-git fetch origin main
-node scripts/export-game-repositories.mjs --ref origin/main --output .data/game-exports
+# 本地比较 Git blob，兼容 Windows 行尾。
+node scripts/check-game-repositories.mjs
+
+# 再与 GitHub 精确提交的 tree 核对，需可用的 gh 登录。
+node scripts/check-game-repositories.mjs --remote
 ```
 
-默认导出全部五个项目，也可在命令末尾指定 `uno gomoku` 等键。默认来源为 HEAD；`--ref` 可以是已审查分支或提交。输出目录必须尚不存在，不能覆盖原目录。工具始终读取 Git 提交对象，不读取工作区中的未提交游戏改动，也不复制根目录 `.env`、会话、数据库或构建产物。完整 SHA、原始文件摘要及唯一的类型导入适配记录在每个项目的 `SOURCE.json` 中；这不是完整 Git 历史迁移。
+主仓库 CI 自动执行远程核对，拒绝副本漂移、未锁定文件和未登记的玩家游戏。通用 SDK 与解析器只在平台维护；游戏仓库中的固定快照仅用于独立构建/兼容性测试，不启动平台服务、不读取数据库，也不代表 SDK 已发布到 npm。
 
-每个项目包含自己的源码、素材、原规则单元测试、打包脚本、独立 package.json 和 GitHub Actions。固定版本的 SDK、ZIP 解析器、图像校验和 QuickJS 适配器仅作为兼容性测试快照，不包含网站或数据库服务，也不从平台工作区加载依赖。初始导出不承诺 npm SDK 已发布。
+## 后续开发与平台引入
 
-## 首次建仓与验证
+1. 在对应游戏仓库获取 main，创建功能分支，修改游戏、验证、提交、推送并通过 PR 交付。游戏变化维护自身版本，不因此提升平台版本；已发布精确版本不能覆盖。
+2. 如需更新平台的内置集成或 ZIP 回归夹具，在平台获取 main 并审查变更，再引入已经审查的游戏完整提交 SHA：
 
-每个导出项目已包含单独验证的 `pnpm-lock.yaml`，不使用平台根目录锁文件。本地与 CI 都运行：
+   ```powershell
+   git -C <独立游戏目录> fetch origin main
+   node scripts/import-game-repository.mjs <游戏键> <独立游戏目录> <40位已审查提交SHA>
+   node scripts/check-game-repositories.mjs --remote
+   ```
+
+   导入器核对已登记 origin、精确提交和文件范围，拒绝覆盖本地修改，不执行外部游戏代码。审查差异、运行受影响的平台验证，再提交包含副本及来源锁的平台 PR。导入器不会自动迁移已有对局，也不会保留被替换版本的全部装配；规则版本升级时，必须额外审查精确版本 registry 和旧局恢复方案，不能静默替换旧版本。
+
+3. 在线 ZIP 的生产安装仍由管理员下载、核对摘要、检查并审核；平台副本更新、游戏仓库推送或 Release 均不代表已经安装或上架。
+
+新游戏采用 `PlayBoardgameTogether/playboard-game-<英文游戏名>` 的独立仓库，不把无关游戏放在一起。平台只接收通用能力及经过审查的集成变更。添加玩家游戏集成时，同时登记 catalog、来源锁、装配和测试，不在平台开设第二处开发来源。
+
+## 独立构建与发布
+
+每个游戏仓库自带 README、AGENTS.md、冻结锁文件和 GitHub Actions。使用 Node.js 22、pnpm 11.15.1；在线包仓库运行：
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -41,33 +64,20 @@ pnpm build
 pnpm verify
 ```
 
-Linux CI 使用 `playwright install --with-deps chromium`。首次安装只安装工具依赖；不执行游戏 ZIP 内的 npm 或 shell 脚本。
+内置仓库不需要 Playwright，额外执行 `pnpm typecheck`。内置 `pnpm verify` 校验 manifest 与包版本一致，生成 tgz 和摘要；在线包把最终 ZIP 交给平台固定版本解析器和真实 QuickJS，验证最小/最大人数、恢复、本人视图和合法初始动作。原游戏规则测试一并运行。这些是独立兼容性检查，不冒充全平台 HTTP、权限、数据库、手机或真实联机验收。
 
-仅在用户确认目标地址并授权创建对应仓库后，使用已登录且具备建仓权限的 GitHub CLI，验证和审查完成后可在各独立项目目录初始化新的游戏仓库，再执行：
+普通 main 推送、PR 和手动工作流只验证并提供短期 Actions artifact；推送 `<archive>-v<精确版本>` 标签，在检查通过后创建 GitHub Release，附件包含游戏 ZIP 或内置 tgz、`SHA256SUMS` 和 `release.json`。例如 `gomoku-v1.0.3`、`azul-v1.0.0`，UNO 分别使用 `uno-v1.2.0`、`uno-no-mercy-v1.0.0`。已存在的 Release 不覆盖；不同系统的 PNG 字体渲染可能产生不同 ZIP 摘要，核对该次实际附件。
+
+**GitHub 自动提供的 Source code.zip 和内置 tgz 不能在在线 ZIP 管理中安装。** 内置 tgz 是可信构建集成产物，不是公开 npm SDK，不授予上传代码进入 Node.js 的权限。
+
+## 来源与导出工具
+
+首次源码来自平台提交 `a7e36d32e2febeb5bd7013752f099d01d0502316`（平台 0.17.0、SDK 0.1.0），未包含当时工作区的未提交改动。每个 SOURCE.json 记录原文件摘要、兼容快照及必要类型导入适配。这是精确初始源码归档，不是全部 Git 历史迁移；平台历史继续保留。
+
+`scripts/export-game-repositories.mjs` 为首次拆仓/复现保留：
 
 ```powershell
-git init -b main
-git add README.md package.json pnpm-lock.yaml .gitignore .github scripts tests game-packages packages apps SOURCE.json release.config.json vitest.config.mjs
-git commit -m "chore: initialize independent game repository"
-gh repo create PlayBoardgameTogether/playboard-game-gomoku --public --source . --remote origin --push
+node scripts/export-game-repositories.mjs --ref <已审查平台提交> --output <尚不存在的目录>
 ```
 
-示例针对五子棋，其他项目替换仓库名；只在新导出目录执行，不对现有平台仓库初始化。创建为公开仓库前核对素材分发权限与待提交文件。若仓库已创建，则添加已确认的远程并正常推送，不重复创建或强制覆盖。当前连接如没有建仓/发布能力，应先由有权限的用户创建并授权访问；不能把本地导出计为 GitHub 分仓完成。
-
-## 发布与平台安装
-
-普通推送、PR 和手动工作流只测试、构建并提供短期 Actions artifact；推送与包内版本一致的 `<archive>-v<version>` 标签，才会创建正式 Release。UNO 同次构建两份 ZIP，标签发布时只选择对应玩法。工作流先跑原游戏规则测试，再将最终带图片的 ZIP 送入平台解析器与真实 QuickJS，覆盖最小/最大人数、序列化恢复、本人视图和合法初始动作。它不是全部规则、隐私或完整浏览器联机验收的替代品。
-
-正式附件为游戏 ZIP、`SHA256SUMS`、`release.json`。标签不匹配、文件名与 manifest 版本不匹配、漏包/重复包或包校验失败均阻止发布。工作流不使用 `--clobber`，不覆盖已有 Release；重新打包的浏览器/字体环境仍可能影响 PNG 和 ZIP 字节，校验和用于核对该次发布，不承诺跨环境字节一致。
-
-下载 Release 中命名的安装 ZIP，核对摘要后由平台管理员检查和审核安装。GitHub 自带的 `Source code.zip` 不是安装包。Release 不会自动上架游戏，不会更新数据库里已安装的包；旧对局继续锁定原游戏版本。没有新增跨仓凭据、自动生产安装或绕过管理员的接口。
-
-## 迁移顺序与当前边界
-
-1. 生成并验证五个独立项目，创建目标仓库、提交锁文件及工作流。
-2. 验证 GitHub 上的 CI 和首个 Release，确认平台仍可审核安装该产物。
-3. 确认分仓成为唯一维护来源后，再迁走主仓库内对应源码/打包脚本；平台集成与 E2E 改用经审查、锁定版本和摘要的测试夹具。
-
-在第二步完成前，主仓库保留 `game-packages/*` 和原测试入口作为迁移副本，避免破坏现有准备脚本。不得在两处长期独立修改同一版本。主仓库当前仍包含这些源码，不宣称已经完成物理移除。
-
-本批仅开发/发布工具与内部文档，不改变平台产品行为，因此不递增平台版本，也不要求生产应用重启。未来分仓中的规则、桌面、美术变化应按游戏自身版本发布；平台仅在自身运行代码变化时升平台版本。
+默认导出全部 10 个仓库，也可指定游戏键。工具读取 Git 提交对象，不读取未提交游戏修改，不复制 .env、会话、数据库、第三方本机资源或生成物。后续维护使用已建立的游戏仓库，不反复导出覆盖独立仓库。本批只改变开发/发布工具与内部文档，不改变平台运行行为，平台版本保持 0.17.0。

@@ -1,5 +1,17 @@
 # 开发进度
 
+## 游戏逐仓发布与平台来源锁（2026-10-25，平台仍为 0.17.0）
+
+- 按用户明确授权，在 PlayBoardgameTogether 组织创建并分别推送 10 个游戏仓库：UNO（含毫不留情）、五子棋、拉密、卡坦岛、波多黎各、阿瓦里、Color Match、Grid Garden、璀璨宝石、花砖物语。每仓包含自己的源码、规则回归、构建/打包工具、冻结锁文件、开发指引和 CI；相关玩法在同一游戏仓库分别维护 ID/版本/标签。实际地址见 [仓库清单](game-repositories.md)，各仓完整提交及兼容平台 0.17.0 / SDK 0.1.0 记录在 `game-repositories.lock.json`。
+- 初始来源为已审查平台提交 `a7e36d32e2febeb5bd7013752f099d01d0502316`。逐文件核对原始 SHA-256 与 Git blob，游戏原始规则、棋桌、资源、ID 和版本保持不变；SOURCE.json 保留精确来源，平台 Git 历史保留。这是初始快照迁移，不宣称已迁走全部历史。原工作区的大厅预览、资源和测试配置整理等未提交改动全部保留；本批在 `.data/repository-split/platform` 的 `codex/separate-game-repositories` 隔离副本完成，没有夹带无关内容。
+- 平台保留 142 个锁定集成文件，供现有 registry、workspace、资源准备和回归使用，独立游戏仓库为唯一开发来源。新增 `check-game-repositories.mjs` 对照工作区与 GitHub 精确 tree 防止漂移、漏文件或未登记游戏；CI 使用只读权限核对。`import-game-repository.mjs` 仅引入已登记 origin 的完整已审查 SHA，提前拒绝本地修改和新文件覆盖，不执行游戏代码。内置游戏仍随平台构建；在线 ZIP 仍经管理员检查审核，不改变对局事务、隐私、存档、资源或旧版本恢复。
+- 各游戏独立目录实际执行冻结安装、`pnpm ... test`、`build`、`verify`：10 仓合计 **140/140 原规则/教程/表现测试通过**，6 个 ZIP 发布包校验测试通过，无测试 skip；4 个内置仓库额外 typecheck 通过并生成可信 npm 集成 tgz。最终 ZIP 在真实固定版本解析器与 QuickJS 中验证最小/最大人数、恢复、本人视图和合法初始动作，产物未提交 Git。首次 pnpm 11 安装要求显式 `allowBuilds.esbuild: true`，已补齐独立 workspace 配置，没有放宽游戏 VM 限额。
+- 卡坦岛最初与其他构建并发运行时，一项完整对局回归触发固定 VM 时间上限；单独串行重跑后 13/13 通过，未更改执行限额或断言。导出测试包含多个真实 Git 子进程，新内置导出和原脏工作区用例按 I/O 范围设 20 秒超时，保留原有字节、敏感文件排除和覆盖保护断言。平台隔离副本初次 typecheck 缺少子 workspace 依赖链接，补齐与既有安装的链接后通过，没有升级平台依赖或修改第三方锁。
+- 平台本轮 `pnpm --config.verify-deps-before-run=false typecheck`、同选项 `lint` 全部通过（20 源目录 AST 边界及既有格式检查）；`pnpm ... exec vitest run tests/unit/game-repositories.test.ts tests/unit/game-repository-pins.test.ts` **6/6 通过**，覆盖内置/ZIP 精确导出、脏工作区与秘密排除、已有目标保护、锁定副本增改删拒绝、来源/完整 SHA 校验及导入前保护本地修改。`node scripts/check-game-repositories.mjs --remote` 实际核对 10 仓、142 文件通过。
+- 所有 10 仓首次 main CI 通过后，按各现有版本推送 11 个精确标签并完成独立 Release：`uno-v1.2.0`、`uno-no-mercy-v1.0.0`、`gomoku-v1.0.3`、`rummikub-v1.0.3`、`catan-v1.0.1`、`puerto-rico-v1.0.0`、`awari-v1.0.0`、`color-match-v1.0.0`、`grid-garden-v1.0.0`、`splendor-v1.0.0`、`azul-v1.0.0`。发布工作流全部通过，附件包含对应游戏 ZIP/tgz、SHA256SUMS 和 release.json；逐项核对标签来源 SHA、发布描述中的提交以及 GitHub 附件摘要。没有覆盖任何已有版本，普通 GitHub Source code.zip 与内置 tgz 均不能作为在线安装 ZIP。
+- 本批仅开发/发布工具与内部文档，平台版本保持 **0.17.0 → 0.17.0**，游戏版本也不改号；不因分仓重跑无运行行为影响的全平台 build、数据库集成、E2E 或 UI 截图，独立游戏构建已实测。没有上传安装、上架或改变生产数据库，不能将 GitHub 发布当作平台上线。当前本机 WSL 仅发现 docker-desktop，未取得已确认服务器的有效连接信息，未同步服务器文档或重启服务，也没有声称生产版本更新。主平台配套变更通过独立功能分支/PR 交付。
+- 后续游戏继续在该组织独立建仓和发布；通用平台能力分别进入主仓库。版本升级时仍须审查精确 registry 与旧局恢复，来源导入器不代替历史版本保留方案；平台 Git 中保留集成副本的物理存储事实不变。详见 [ADR-009](adr/009-independent-game-repositories.md)。
+
 ## PR #21 合并复核与版本顺延（2026-10-25，0.17.0）
 
 - 用户确认阿瓦里 PR #21 作为历史遗留例外本次合入主仓库；后续游戏仍按每个游戏独立仓库执行。本轮合并最新 main（含 UNO、分仓规则、体验指南及修正后的导出工具），只解决进度追加区冲突，双方历史内容全部保留。原阿瓦里记录中的 0.16.0 为当时待合并候选；主线已有 UNO 0.16.0，本次新增游戏最终顺延 `0.16.0 → 0.17.0`（MINOR+1），README 同步。游戏包保持 1.0.0，不改规则、桌面或其他游戏版本。
