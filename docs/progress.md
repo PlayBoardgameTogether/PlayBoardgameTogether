@@ -1,5 +1,20 @@
 # 开发进度
 
+## 全平台像素风美化与图标库全面覆盖（2026-10-25，0.17.1）
+
+- **全面覆盖主平台所有界面**：根据用户“全面覆盖像素风至此网站，包括图标什么的不要影响到游戏只修改美化主平台所有界面”的要求，将像素风拓展至整个平台（大厅、房间等待、个人中心/玩家资料、金币国库、成就徽章墙、社交/公聊/私信/好友浮窗、开发者文档、官方 AI 接入、管理控制台、404/错误反馈及通用按钮/卡片/输入框等）。
+- **严格游戏棋桌隔离**：
+  - `App.tsx` 严格基于路由计算平台/游戏上下文（`const isPixel = !route.game;`）：当处于对局进行、教程练习或对局回放时（`route.game === true`），完全剔除 `desktop-shell--pixel` 及像素品牌标志，保持原始沉浸式棋盘样式，杜绝任何对游戏卡牌、棋子、网格、iframe 容器或 Canvas 的侵入或变形。
+- **原创原生像素图标库**：
+  - 新建 [apps/web/src/ui/PixelIcons.tsx](file:///d:/ImportantFileFolder/PlayBoardgameTogether/apps/web/src/ui/PixelIcons.tsx)，输出所有常用平台图标（`PixelHomeIcon`, `PixelFriendsIcon`, `PixelChatIcon`, `PixelProfileIcon`, `PixelDocsIcon`, `PixelMoreIcon`, `PixelBellIcon`, `PixelSearchIcon`, `PixelErrorIcon`, `PixelCrownIcon`, `PixelBotIcon`, `PixelCheckIcon`, `PixelCopyIcon`, `PixelCoinIcon`, `PixelTrophyIcon`, `PixelDiceIcon`, `PixelNotFoundIllustration`），使用原生 SVG 搭配 `shape-rendering="crispEdges"`，确保在所有高分屏与视口下无模糊锯齿、边缘干脆利落。
+  - 接入用户 `design/brand/pixel-dice/` 成果，为主站 Header 提供透明底的高清像素骰子 Logo 与像素品牌字标。
+- **全量自动化与静态回归**：
+  - `pnpm typecheck`：全工作区 11 个 package + test config 全部通过（0 error）。
+  - `pnpm lint`：ESLint、20 个源码根目录 AST 边界检查、Prettier 格式校验全部通过。
+  - `pnpm build`：Web 生产 bundle 检查通过，生产 API 运行时、游戏模块与隔离 ZIP、AI worker 状态均正常。
+  - `pnpm test:ui`：82 项完整端到端静态 UI 回归（包含桌面与手机双视口），**78 passed, 4 skipped**（桌面跳过移动端专用断言），通过率 100%。针对公共聊天头像等特定控件（`.public-chat-person`）保留透明无边框属性，符合既有双端布局规范。
+  - `pnpm test:admin-ui`：管理控制台 14 项专项自动化回归通过率 100%。
+
 ## 像素风大厅预览（2026-10-25，0.17.1）
 
 - 按用户“改成像素风先看看”实现大厅样板：暖米白/巧克力描边、琥珀按键、草绿筛选、原创 SVG 像素字标与四只米宝围桌插画；桌面三列游戏、手机双列与底部导航，中文正文维持清晰。压紧推荐区，让游戏目录更早出现；保留真实游戏封面与精确版本入口，不统一各游戏棋桌美术。

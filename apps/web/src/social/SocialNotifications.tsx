@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { SocialOverview } from '@boardgame/protocol';
 import { useSocialContext } from './SocialProvider.js';
+import { PixelBellIcon } from '../ui/PixelIcons.js';
 import '../styles/social.css';
 
 const receivedInvites = (data: SocialOverview) => data.invitations.filter(item =>
@@ -49,7 +50,7 @@ export function SocialNotifications() {
   const count = messages.reduce((sum, item) => sum + item.unread, 0) + invitations.length + requests.length;
   return <div className="social-notifications" ref={container}>
     <button ref={trigger} className="secondary notification-trigger" aria-label={count ? `通知，${count} 条未处理` : '通知'} aria-expanded={open} aria-controls="notification-list" onClick={() => { setOpen(value => !value); setToast(false); }}>
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M9 21h6" /></svg>
+      <PixelBellIcon />
       <span>通知</span>{count > 0 && <span className="unread-count" aria-hidden="true">{count > 99 ? '99+' : count}</span>}
       {error && <span aria-label="同步失败">!</span>}
     </button>

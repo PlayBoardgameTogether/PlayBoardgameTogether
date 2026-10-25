@@ -5,6 +5,7 @@ import { gamePath, useGameCatalog, type AvailableGame } from './game-catalog.js'
 import { gameDiscovery } from './game-discovery.js';
 import { gameArt } from './catalog-art.js';
 import { GameArtwork } from './GameArtwork.js';
+import { PixelSearchIcon } from '../ui/PixelIcons.js';
 
 export function GameCover({ game }: { game: AvailableGame }) {
   return <GameArtwork src={gameArt(game).coverUrl} className="game-cover" name={game.name} />;
@@ -89,10 +90,7 @@ export function GameCatalog() {
       {!!games.length && (
         <div className="catalog-discovery">
           <label className="catalog-search">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="10.5" cy="10.5" r="6.5" />
-              <path d="m16 16 5 5" />
-            </svg>
+            <PixelSearchIcon />
             <span className="visually-hidden">搜索游戏</span>
             <input
               type="search"

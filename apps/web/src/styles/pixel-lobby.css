@@ -1,5 +1,9 @@
-/* A lobby-only preview. No selectors or tokens reach a game or another route. */
+/* Comprehensive Platform Pixel Theme.
+   Covers platform shell, navigation, lobby, room waiting, social/chat,
+   profile, coins, badges, admin, auth and developer guides.
+   Strictly isolated: does not alter game boards, tables, or canvases. */
 @layer theme {
+  .desktop-shell--pixel,
   .desktop-shell--pixel-lobby {
     --bg: #f6efdc;
     --panel: #fffbed;
@@ -36,6 +40,7 @@
     font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
   }
 
+  :root[data-theme='dark'] .desktop-shell--pixel,
   :root[data-theme='dark'] .desktop-shell--pixel-lobby {
     --bg: #242720;
     --panel: #303329;
@@ -47,6 +52,9 @@
     --line: #545846;
     --line-strong: #b8ac8c;
     --control-line: #a1977d;
+    --accent: #f4c45e;
+    --accent-hover: #f8d17d;
+    --accent-active: #e1ad40;
     --accent-soft: #51462a;
     --accent-text: #3f3229;
     --link: #b8d49a;
@@ -57,14 +65,21 @@
     --danger-soft: #51352e;
     --neutral-rgb: 255 242 211;
     --surface-rgb: 48 51 41;
+    --shadow-card: 4px 4px 0 var(--line);
+    --shadow-sm: 2px 2px 0 var(--line);
   }
 
+  /* --------------------------------------------------------------------------
+     1. Shell, Header, Brand & Navigation
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .workspace,
   .desktop-shell--pixel-lobby .workspace {
     background-color: var(--bg);
-    background-image: radial-gradient(var(--line) 0.7px, transparent 0.7px);
-    background-size: 12px 12px;
+    background-image: radial-gradient(var(--line) 0.8px, transparent 0.8px);
+    background-size: 14px 14px;
   }
 
+  .desktop-shell--pixel .site-header,
   .desktop-shell--pixel-lobby .site-header {
     background: var(--panel);
     border-right: 2px solid var(--line-strong);
@@ -72,14 +87,17 @@
     -webkit-backdrop-filter: none;
   }
 
+  .desktop-shell--pixel .window-marks,
   .desktop-shell--pixel-lobby .window-marks {
     display: none;
   }
 
+  .desktop-shell--pixel .brand,
   .desktop-shell--pixel-lobby .brand {
     padding: 12px 6px 28px;
   }
 
+  .desktop-shell--pixel .brand .brand-name,
   .desktop-shell--pixel-lobby .brand .brand-name {
     font-family: 'Courier New', monospace;
     font-size: 20px;
@@ -87,6 +105,7 @@
     letter-spacing: -1px;
   }
 
+  .desktop-shell--pixel .brand-name > span,
   .desktop-shell--pixel-lobby .brand-name > span {
     margin-top: 8px;
     color: var(--muted);
@@ -95,6 +114,7 @@
     letter-spacing: 2px;
   }
 
+  .desktop-shell--pixel .pixel-wordmark,
   .desktop-shell--pixel-lobby .pixel-wordmark {
     display: block;
     width: 132px;
@@ -102,14 +122,24 @@
     image-rendering: pixelated;
   }
 
+  :root[data-theme='dark'] .desktop-shell--pixel .pixel-wordmark,
   :root[data-theme='dark'] .desktop-shell--pixel-lobby .pixel-wordmark {
     filter: brightness(0) saturate(100%) invert(93%) sepia(12%) saturate(614%) hue-rotate(338deg);
   }
 
+  .desktop-shell--pixel .brand-symbol,
   .desktop-shell--pixel-lobby .brand-symbol {
     filter: none;
   }
 
+  .desktop-shell--pixel .brand-symbol.pixel-symbol,
+  .desktop-shell--pixel-lobby .brand-symbol.pixel-symbol {
+    image-rendering: pixelated;
+    object-fit: contain;
+    border-radius: 0;
+  }
+
+  .desktop-shell--pixel .brand-symbol rect,
   .desktop-shell--pixel-lobby .brand-symbol rect {
     rx: 0;
     fill: var(--accent);
@@ -117,15 +147,19 @@
     stroke-width: 2px;
   }
 
+  .desktop-shell--pixel .brand-symbol path,
   .desktop-shell--pixel-lobby .brand-symbol path {
     fill: var(--accent-text);
   }
 
+  .desktop-shell--pixel .platform-navigation,
   .desktop-shell--pixel-lobby .platform-navigation {
     margin-top: 12px;
     gap: 10px;
   }
 
+  .desktop-shell--pixel .site-header .platform-navigation > a,
+  .desktop-shell--pixel .platform-navigation .nav-tools > summary,
   .desktop-shell--pixel-lobby .site-header .platform-navigation > a,
   .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary {
     min-height: 46px;
@@ -136,6 +170,7 @@
     transition: none;
   }
 
+  .desktop-shell--pixel.desktop-shell .site-header .platform-navigation > a[aria-current='page'],
   .desktop-shell--pixel-lobby.desktop-shell
     .site-header
     .platform-navigation
@@ -146,6 +181,8 @@
     box-shadow: 3px 3px 0 var(--line-strong);
   }
 
+  .desktop-shell--pixel .site-header .platform-navigation > a:hover,
+  .desktop-shell--pixel .platform-navigation .nav-tools > summary:hover,
   .desktop-shell--pixel-lobby .site-header .platform-navigation > a:hover,
   .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary:hover {
     background: var(--panel-raised);
@@ -153,11 +190,16 @@
     transform: none;
   }
 
+  .desktop-shell--pixel .platform-navigation svg,
   .desktop-shell--pixel-lobby .platform-navigation svg {
     stroke-linecap: square;
     stroke-linejoin: miter;
+    image-rendering: pixelated;
   }
 
+  .desktop-shell--pixel .nav-tools > div,
+  .desktop-shell--pixel .shell-help a,
+  .desktop-shell--pixel.desktop-shell .chat-dock,
   .desktop-shell--pixel-lobby .nav-tools > div,
   .desktop-shell--pixel-lobby .shell-help a,
   .desktop-shell--pixel-lobby.desktop-shell .chat-dock {
@@ -167,31 +209,206 @@
     box-shadow: 4px 4px 0 var(--line);
   }
 
+  .desktop-shell--pixel .workspace-toolbar,
   .desktop-shell--pixel-lobby .workspace-toolbar {
     background: var(--panel);
     border-bottom: 2px solid var(--line);
     color: var(--muted);
   }
 
-  .desktop-shell--pixel-lobby main {
-    width: min(1200px, calc(100% - 80px));
-    padding-top: 32px;
+  .desktop-shell--pixel footer,
+  .desktop-shell--pixel-lobby footer {
+    border-top: 2px solid var(--line);
+    color: var(--muted);
+    font-family: 'Courier New', 'Microsoft YaHei', monospace;
+    background: var(--panel);
   }
 
-  .desktop-shell--pixel-lobby :is(h1, h2, h3) {
+  /* --------------------------------------------------------------------------
+     2. Global Typography & Common Primitives
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel :is(h1, h2, h3, h4),
+  .desktop-shell--pixel-lobby :is(h1, h2, h3, h4) {
     color: var(--text);
     font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
     font-weight: 800;
     letter-spacing: 0;
   }
 
-  .desktop-shell--pixel-lobby .lobby-heading {
-    margin-bottom: 28px;
-  }
-
-  .desktop-shell--pixel-lobby .lobby-heading .eyebrow {
+  .desktop-shell--pixel .eyebrow,
+  .desktop-shell--pixel-lobby .eyebrow {
     font-size: 10px;
     letter-spacing: 2px;
+    font-weight: 800;
+  }
+
+  .desktop-shell--pixel
+    :is(.panel, .card, .auth-card, .not-found-card, .page-feedback, .error-notice),
+  .desktop-shell--pixel-lobby
+    :is(.panel, .card, .auth-card, .not-found-card, .page-feedback, .error-notice) {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+  }
+
+  /* Standard Buttons */
+  .desktop-shell--pixel
+    :is(button:not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person), .button-link),
+  .desktop-shell--pixel-lobby
+    :is(button:not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person), .button-link) {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    font-weight: 700;
+    transition: none;
+    cursor: pointer;
+  }
+
+  /* Primary Button */
+  .desktop-shell--pixel
+    :is(
+      button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
+      .button-link:not(.secondary)
+    ),
+  .desktop-shell--pixel-lobby
+    :is(
+      button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
+      .button-link:not(.secondary)
+    ) {
+    min-height: 44px;
+    padding: 9px 18px;
+    background: var(--accent);
+    color: var(--accent-text);
+    box-shadow: 3px 3px 0 var(--line-strong);
+  }
+
+  .desktop-shell--pixel
+    :is(
+      button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
+      .button-link:not(.secondary)
+    ):hover,
+  .desktop-shell--pixel-lobby
+    :is(
+      button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
+      .button-link:not(.secondary)
+    ):hover {
+    background: var(--accent-hover);
+    color: var(--accent-text);
+    transform: none;
+  }
+
+  .desktop-shell--pixel
+    :is(
+      button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
+      .button-link:not(.secondary)
+    ):active,
+  .desktop-shell--pixel-lobby
+    :is(
+      button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
+      .button-link:not(.secondary)
+    ):active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--line-strong);
+  }
+
+  /* Secondary Button */
+  .desktop-shell--pixel :is(button.secondary:not(.public-chat-person), .button-link.secondary),
+  .desktop-shell--pixel-lobby
+    :is(button.secondary:not(.public-chat-person), .button-link.secondary) {
+    min-height: 44px;
+    padding: 8px 16px;
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+
+  .desktop-shell--pixel
+    :is(button.secondary:not(.public-chat-person), .button-link.secondary):hover,
+  .desktop-shell--pixel-lobby
+    :is(button.secondary:not(.public-chat-person), .button-link.secondary):hover {
+    background: var(--panel-raised);
+    color: var(--text);
+  }
+
+  .desktop-shell--pixel
+    :is(button.secondary:not(.public-chat-person), .button-link.secondary):active,
+  .desktop-shell--pixel-lobby
+    :is(button.secondary:not(.public-chat-person), .button-link.secondary):active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--line);
+  }
+
+  /* Public Chat Person Avatar Button Reset */
+  .desktop-shell--pixel .public-chat-person.secondary,
+  .desktop-shell--pixel-lobby .public-chat-person.secondary {
+    min-height: auto;
+    padding: 0;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Inputs, Selects & Textareas */
+  .desktop-shell--pixel :is(select, textarea, input:not([type='checkbox']):not([type='radio'])),
+  .desktop-shell--pixel-lobby
+    :is(select, textarea, input:not([type='checkbox']):not([type='radio'])) {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 2px 2px 0 var(--line);
+    color: var(--text);
+    min-height: 44px;
+    padding: 8px 12px;
+  }
+
+  :root[data-theme='light']
+    .desktop-shell--pixel
+    :is(input:not([type='checkbox']):not([type='radio'])),
+  :root[data-theme='light']
+    .desktop-shell--pixel-lobby
+    :is(input:not([type='checkbox']):not([type='radio'])) {
+    background: #ffffff;
+  }
+
+  :root[data-theme='dark']
+    .desktop-shell--pixel
+    :is(input:not([type='checkbox']):not([type='radio'])),
+  :root[data-theme='dark']
+    .desktop-shell--pixel-lobby
+    :is(input:not([type='checkbox']):not([type='radio'])) {
+    background: var(--panel);
+  }
+
+  .desktop-shell--pixel :is(a, button, summary, input, select):focus-visible,
+  .desktop-shell--pixel-lobby :is(a, button, summary, input, select):focus-visible {
+    outline: 3px solid var(--success);
+    outline-offset: 3px;
+  }
+
+  /* Tags, Badges & Pills */
+  .desktop-shell--pixel :is(.tag, .status, .unread-count, .status-indicator),
+  .desktop-shell--pixel-lobby :is(.tag, .status, .unread-count, .status-indicator) {
+    border-radius: 0;
+  }
+
+  .desktop-shell--pixel .status-indicator,
+  .desktop-shell--pixel-lobby .status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 0;
+  }
+
+  /* --------------------------------------------------------------------------
+     3. Lobby Specific Layout (Retained and Enhanced)
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel main,
+  .desktop-shell--pixel-lobby main {
+    width: min(1200px, calc(100% - 80px));
+    padding-top: 32px;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading {
+    margin-bottom: 28px;
   }
 
   .desktop-shell--pixel-lobby .lobby-heading h1 {
@@ -262,43 +479,6 @@
 
   .desktop-shell--pixel-lobby .discovery-spotlight-copy > small {
     font-size: 11px;
-  }
-
-  .desktop-shell--pixel-lobby :is(.button-link, button.secondary, .room-row, select, input) {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
-    transition: none;
-  }
-
-  .desktop-shell--pixel-lobby .button-link {
-    min-height: 46px;
-    padding: 10px 20px;
-    background: var(--accent);
-    color: var(--accent-text);
-    font-weight: 800;
-    box-shadow: 3px 3px 0 var(--line-strong);
-  }
-
-  .desktop-shell--pixel-lobby .button-link:hover {
-    background: var(--accent-hover);
-    color: var(--accent-text);
-    transform: none;
-  }
-
-  .desktop-shell--pixel-lobby .button-link:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--line-strong);
-  }
-
-  .desktop-shell--pixel-lobby .discovery-spotlight-actions {
-    gap: 12px;
-  }
-
-  .desktop-shell--pixel-lobby .discovery-spotlight-actions > a:not(.button-link) {
-    font-size: 12px;
-    text-decoration: underline;
-    text-underline-offset: 5px;
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-art {
@@ -463,34 +643,366 @@
     font-size: 11px;
   }
 
-  .desktop-shell--pixel-lobby
-    :is(.discovery-empty, .guest-welcome-banner, .discovery-resume, .page-feedback) {
+  .desktop-shell--pixel-lobby :is(.discovery-empty, .guest-welcome-banner, .discovery-resume) {
     background: var(--panel);
     border: 2px solid var(--line-strong);
     border-radius: 0;
     box-shadow: 4px 4px 0 var(--line);
   }
 
-  .desktop-shell--pixel-lobby .mobile-lobby-actions a {
+  /* --------------------------------------------------------------------------
+     4. Room Waiting Page & Room Creation
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .room-page,
+  .desktop-shell--pixel .new-room-page {
+    margin-inline: auto;
+  }
+
+  .desktop-shell--pixel .room-heading {
+    padding-bottom: 16px;
+    border-bottom: 2px dashed var(--line);
+    margin-bottom: 24px;
+  }
+
+  .desktop-shell--pixel .room-page .seat-grid {
+    gap: 16px;
+    margin-block: 16px 24px;
+  }
+
+  .desktop-shell--pixel .room-page .seat-card {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+    padding: 18px;
+    min-height: 150px;
+  }
+
+  .desktop-shell--pixel .room-page .seat-card--empty {
+    border-style: dashed;
+    background: var(--panel-raised);
+    box-shadow: none;
+  }
+
+  .desktop-shell--pixel .room-page .seat-card--ready {
+    border-color: var(--success);
+    box-shadow: 4px 4px 0 var(--success);
+  }
+
+  .desktop-shell--pixel .room-disclosure {
+    border-bottom: 2px solid var(--line);
+    padding-block: 10px;
+  }
+
+  .desktop-shell--pixel .room-disclosure summary {
+    font-weight: 700;
+    min-height: 44px;
+  }
+
+  .desktop-shell--pixel .game-rules-card {
     background: var(--panel);
     border: 2px solid var(--line-strong);
     border-radius: 0;
     box-shadow: 3px 3px 0 var(--line);
+    padding: 20px;
   }
 
-  .desktop-shell--pixel-lobby :is(a, button, summary, input, select):focus-visible {
-    outline: 3px solid var(--success);
-    outline-offset: 4px;
+  .desktop-shell--pixel .room-create-shell {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 6px 6px 0 var(--line);
+    padding: 28px 24px;
   }
 
-  .desktop-shell--pixel-lobby footer {
-    border-top: 2px solid var(--line);
-    color: var(--muted);
-    font-family: 'Courier New', 'Microsoft YaHei', monospace;
+  /* --------------------------------------------------------------------------
+     5. Social, Friends & Chat
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .friends-page,
+  .desktop-shell--pixel .public-chat-page {
+    margin-inline: auto;
+  }
+
+  .desktop-shell--pixel .social-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .desktop-shell--pixel .social-nav a {
+    min-height: 40px;
+    padding: 8px 14px;
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: 0;
+    color: var(--text-secondary);
+    font-weight: 700;
+  }
+
+  .desktop-shell--pixel .social-nav a[aria-current='page'] {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--line-strong);
+    box-shadow: 2px 2px 0 var(--line-strong);
+  }
+
+  .desktop-shell--pixel .friend-id-card {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+    padding: 22px;
+  }
+
+  .desktop-shell--pixel .friend-id-card code.friend-id {
+    background: var(--panel-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    padding: 6px 12px;
+    font-family: 'Courier New', monospace;
+    font-weight: 800;
+    font-size: 16px;
+    display: inline-block;
+  }
+
+  .desktop-shell--pixel .friend-row,
+  .desktop-shell--pixel .person-row {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+  }
+
+  .desktop-shell--pixel .chat-bubble {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 2px 2px 0 var(--line);
+    padding: 10px 14px;
+  }
+
+  .desktop-shell--pixel .chat-bubble--mine {
+    background: var(--accent-soft);
+    border-color: var(--line-strong);
+  }
+
+  .desktop-shell--pixel .chat-bubble--peer {
+    background: var(--panel);
+    border-color: var(--line-strong);
+  }
+
+  .desktop-shell--pixel .notification-list {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    background: var(--panel);
+    box-shadow: 6px 6px 0 var(--line-strong);
+    padding: 16px;
+  }
+
+  .desktop-shell--pixel .notification-row {
+    border-bottom: 1px dashed var(--line);
+    padding: 10px 8px;
+  }
+
+  .desktop-shell--pixel .notification-row:hover {
+    background: var(--panel-raised);
+  }
+
+  /* --------------------------------------------------------------------------
+     6. Profile, Coins & Badges
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .profile-card {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 5px 5px 0 var(--line);
+    padding: 24px;
+  }
+
+  .desktop-shell--pixel .profile-options summary {
+    border-radius: 0;
+    border: 2px solid var(--line-strong);
+    box-shadow: 2px 2px 0 var(--line);
     background: var(--panel);
   }
 
+  .desktop-shell--pixel .profile-options-popover {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+    background: var(--panel);
+    padding: 16px;
+  }
+
+  .desktop-shell--pixel .coin-balance-card,
+  .desktop-shell--pixel .coin-action-panel {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+    padding: 20px;
+  }
+
+  .desktop-shell--pixel .badge-preview-dialog {
+    border: 3px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 8px 8px 0 var(--line-strong);
+    background: var(--panel);
+    padding: 24px;
+  }
+
+  .desktop-shell--pixel .badge-shelf {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+    background: var(--panel);
+    padding: 16px;
+  }
+
+  /* --------------------------------------------------------------------------
+     7. Auth Pages (Login & Register)
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .auth-shell {
+    display: flex;
+    justify-content: center;
+    padding-top: 32px;
+  }
+
+  .desktop-shell--pixel .auth-card {
+    max-width: 440px;
+    width: 100%;
+    padding: 32px 28px;
+    border: 3px solid var(--line-strong);
+    box-shadow: 6px 6px 0 var(--line);
+  }
+
+  .desktop-shell--pixel .auth-card h1 {
+    margin-block: 8px 12px;
+    font-size: 26px;
+  }
+
+  .desktop-shell--pixel .auth-back {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  /* --------------------------------------------------------------------------
+     8. Developer Docs, Official AI & Admin Console
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .developers-page {
+    gap: 24px;
+  }
+
+  .desktop-shell--pixel .developer-sidebar {
+    border-right: 2px solid var(--line);
+  }
+
+  .desktop-shell--pixel .developer-markdown pre {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    background: var(--panel-raised);
+    box-shadow: 3px 3px 0 var(--line);
+    padding: 14px;
+  }
+
+  .desktop-shell--pixel .developer-markdown code:not(pre code) {
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+  }
+
+  .desktop-shell--pixel .developer-markdown table {
+    border-collapse: collapse;
+    border: 2px solid var(--line-strong);
+    width: 100%;
+    margin-block: 16px;
+  }
+
+  .desktop-shell--pixel .developer-markdown th,
+  .desktop-shell--pixel .developer-markdown td {
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+  }
+
+  .desktop-shell--pixel .admin-nav {
+    border-bottom: 2px solid var(--line);
+    gap: 8px;
+  }
+
+  .desktop-shell--pixel .admin-nav a {
+    border: 2px solid transparent;
+    border-radius: 0;
+  }
+
+  .desktop-shell--pixel .admin-nav a[aria-current='page'] {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--line-strong);
+    box-shadow: 2px 2px 0 var(--line-strong);
+  }
+
+  .desktop-shell--pixel .admin-metric-card,
+  .desktop-shell--pixel .admin-shortcut-card {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+    padding: 16px;
+  }
+
+  .desktop-shell--pixel .package-upload-dialog {
+    border: 3px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 8px 8px 0 var(--line);
+  }
+
+  /* --------------------------------------------------------------------------
+     9. Error, 404 & Feedback
+     -------------------------------------------------------------------------- */
+  .desktop-shell--pixel .not-found-card {
+    max-width: 580px;
+    margin-inline: auto;
+    text-align: center;
+    padding: 40px 24px;
+    border: 3px solid var(--line-strong);
+    box-shadow: 6px 6px 0 var(--line);
+  }
+
+  .desktop-shell--pixel .not-found-card .empty-illustration {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .desktop-shell--pixel .page-feedback {
+    text-align: center;
+    padding: 36px 20px;
+  }
+
+  .desktop-shell--pixel .pixel-spinner {
+    animation: pixel-spin 1.2s steps(8, end) infinite;
+  }
+
+  @keyframes pixel-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     10. Responsive Media Queries
+     -------------------------------------------------------------------------- */
   @media (max-width: 1100px) {
+    .desktop-shell--pixel main,
     .desktop-shell--pixel-lobby main {
       width: calc(100% - 48px);
     }
@@ -510,21 +1022,25 @@
   }
 
   @media (max-width: 760px) {
+    .desktop-shell--pixel .site-header,
     .desktop-shell--pixel-lobby .site-header {
       padding: 14px 18px;
       border-right: 0;
       border-bottom: 2px solid var(--line-strong);
     }
 
+    .desktop-shell--pixel .brand,
     .desktop-shell--pixel-lobby .brand {
       padding: 0;
     }
 
+    .desktop-shell--pixel .workspace-toolbar,
     .desktop-shell--pixel-lobby .workspace-toolbar {
       background: transparent;
       border: 0;
     }
 
+    .desktop-shell--pixel .platform-navigation,
     .desktop-shell--pixel-lobby .platform-navigation {
       margin: 0;
       padding-inline: 8px;
@@ -535,12 +1051,15 @@
       box-shadow: none;
     }
 
+    .desktop-shell--pixel .site-header .platform-navigation > a,
+    .desktop-shell--pixel .platform-navigation .nav-tools > summary,
     .desktop-shell--pixel-lobby .site-header .platform-navigation > a,
     .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary {
       border: 0;
       font-size: 10px;
     }
 
+    .desktop-shell--pixel.desktop-shell .site-header .platform-navigation > a[aria-current='page'],
     .desktop-shell--pixel-lobby.desktop-shell
       .site-header
       .platform-navigation
@@ -551,10 +1070,12 @@
       box-shadow: none;
     }
 
+    .desktop-shell--pixel .site-header .platform-navigation > a[aria-current='page'] svg,
     .desktop-shell--pixel-lobby .site-header .platform-navigation > a[aria-current='page'] svg {
       color: var(--success);
     }
 
+    .desktop-shell--pixel main,
     .desktop-shell--pixel-lobby main {
       width: calc(100% - 36px);
       padding-top: 24px;
@@ -669,8 +1190,24 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .desktop-shell--pixel-lobby .button-link:active {
+    .desktop-shell--pixel :is(button, .button-link):active,
+    .desktop-shell--pixel-lobby :is(button, .button-link):active {
       transform: none;
     }
+  }
+
+  /* --------------------------------------------------------------------------
+     11. Strict Game Isolation Rule
+     Platform styles never bleed into game boards, package iframes, or canvas
+     -------------------------------------------------------------------------- */
+  .desktop-shell--game main,
+  .desktop-shell--game .game-board,
+  .desktop-shell--game .package-board,
+  .desktop-shell--game .az-table,
+  .desktop-shell--game .sp-table,
+  .desktop-shell--game .cm-table,
+  .desktop-shell--game canvas,
+  .desktop-shell--game iframe {
+    font-family: inherit;
   }
 }
