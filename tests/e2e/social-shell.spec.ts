@@ -157,7 +157,7 @@ test('messages and invitations notify outside the friends page', async ({ page }
   state.arrive();
   await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await expect(page.getByRole('button', { name: '通知，2 条未处理' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: '你有新的好友消息或邀请' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '收到新消息或房间邀请' })).toBeVisible();
   expect(state.readCount()).toBe(0);
   await page.getByRole('button', { name: '通知，2 条未处理' }).click();
   await expect(page.getByRole('link', { name: /周末桌/ })).toBeVisible();
@@ -215,7 +215,7 @@ test('profile keeps editing, ID settings and history behind task entrances', asy
   await page.reload();
   await expect(page.getByRole('heading', { name: '新的昵称' })).toBeVisible();
   await page.getByRole('link', { name: '对局记录', exact: true }).click();
-  await expect(page.getByText('还没有对局记录。')).toBeVisible();
+  await expect(page.getByText('暂无对局记录。')).toBeVisible();
   await page.getByRole('link', { name: '返回我的资料' }).click();
   await page.getByRole('link', { name: '管理好友 ID' }).click();
   await expect(page.getByLabel('新好友 ID')).toBeVisible();
@@ -280,7 +280,11 @@ test('friend avatars reflect the selected profile avatar', async ({ page }) => {
 test('friend options float without stretching the chat action and dismiss accessibly', async ({ page }, info) => {
   await fixture(page);
   await page.goto('/friends');
-  const chat = page.getByRole('link', { name: '私聊 桌友小明' });
+  const chat = page
+    .getByRole('region', { name: '好友列表' })
+    .locator('.social-row')
+    .filter({ hasText: '桌友小明' })
+    .getByRole('link', { name: '发消息', exact: true });
   const trigger = page.getByLabel('桌友小明 的好友操作');
   const before = await chat.boundingBox();
   await trigger.click();
@@ -297,7 +301,7 @@ test('friend options float without stretching the chat action and dismiss access
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: '删除好友' })).toBeHidden();
   await trigger.click();
-  await page.getByRole('heading', { name: '好友', exact: true }).click();
+  await page.getByRole('heading', { name: '我的好友', level: 1, exact: true }).click();
   await expect(page.getByRole('button', { name: '删除好友' })).toBeHidden();
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });

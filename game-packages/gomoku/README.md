@@ -22,7 +22,7 @@ node scripts/package-gomoku.mjs
 
 ```powershell
 pnpm test tests/unit/gomoku-package.test.ts
-pnpm exec playwright test --config playwright.gomoku-ui.config.ts --output .data/gomoku-validation
+pnpm exec playwright test --config tests/config/gomoku.config.ts --output .data/gomoku-validation
 pnpm typecheck
 pnpm lint
 ```

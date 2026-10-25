@@ -34,7 +34,7 @@ node scripts/package-rummikub.mjs
 
 ```powershell
 pnpm test tests/unit/rummikub-package.test.ts
-node node_modules/@playwright/test/cli.js test --config playwright.rummikub-ui.config.ts --output .data/rummikub-ui
+node node_modules/@playwright/test/cli.js test --config tests/config/rummikub.config.ts --output .data/rummikub-ui
 pnpm test:integration
 ```
 
