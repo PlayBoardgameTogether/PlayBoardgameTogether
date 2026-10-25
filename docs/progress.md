@@ -1,5 +1,16 @@
 # 开发进度
 
+## 波多黎各海港美术交付与通用展示修补（2026-10-25，候选 0.18.3）
+
+- 波多黎各在独立仓库 `PlayBoardgameTogether/playboard-game-puerto-rico` 完成 1.1.0：透明徽章、港湾场景、23 种建筑和殖民所/贸易所、土地/货物/船只图集；直接选船与装载预览、物件详情、手机区域切换和按投影事件呈现的动画。规则/contentVersion 仍为 1.0.0、SDK `^0.1.0`，资源版本 1.1.0。源码、图稿与测试只在游戏仓库维护。
+- 平台本批只修补通用详情展示：图标完整等比显示，移除外层边框/厚阴影；横幅恢复画面色彩，以文字侧局部遮罩保留阅读区，手机保留上方场景。没有游戏 ID 分支、数据库迁移或认证/正式动作改动。平台候选 **0.18.2 → 0.18.3（PATCH）**，README 同步；游戏自身改版不计入平台功能升级。
+- `tests/e2e/puerto-rico.spec.ts` 默认继续验证锁定 1.0.0，可用 `PUERTO_RICO_TEST_VERSION=1.1.0` 验证外部新包；动作回调完成后才记录成功，准备前等待席位与 revision 对应的可见状态，保留全部权限、筹码隐私、仓储、满城结算与恢复断言。增加真实图标加载、等比显示、无厚阴影及横幅不透明检查与截图。
+- 本轮实际 `pnpm build`、`pnpm typecheck`、`pnpm lint` 通过，包括 20 目录 AST 边界、生产 bundle 与 API/QuickJS runtime。版本最终写入后补 `pnpm --filter @boardgame/web build` 和生产 bundle 检查；测试编辑后补局部 ESLint 和 tests/config/tsconfig 类型检查，均通过。已有 model-viewer 大块警告未扩大处理。
+- 通过原 `pnpm test:e2e tests/e2e/puerto-rico.spec.ts --output=.data/puerto-rico-final` 使用独立 `boardgame_pr_harbor_20261025_final`：桌面两项与手机 sandbox 通过（3/4），手机实际联机发现固定确认栏被平台底部导航遮挡。游戏改成内容高度与船旁/岗位确认后，在新的独立 `boardgame_pr_harbor_20261025_release` 经原准备脚本执行 `$env:PUERTO_RICO_TEST_VERSION='1.1.0'; pnpm test:e2e tests/e2e/puerto-rico.spec.ts --project=mobile --output=.data/puerto-rico-release-mobile`，**2/2 通过，无 skip**；真实三账号安装、入房、准备、工人行动与刷新恢复通过。不是宣称一次 4/4。截图分别保留在上述输出目录。
+- 首轮测试还暴露旧 fixture 未等待动作回调、准备同步的问题，已修复等待；一次新库媒体准备失败，保留媒体隔离校验。复用含旧 1.1.0 构建记录的测试目录时，安装器正确拒绝同版本覆盖；改用新隔离库完成最终验收，没有删除开发/生产数据、放宽校验或覆盖历史版本。
+- 独立游戏本地规则 **16/16**，四视口 UI **8/8**，手机确认最终修复后 **4/4**，最终包 QuickJS/解析验证 **1/1**；PNG 自包含三文件 ZIP，压缩 1,359,100 字节、解压 1,828,206 字节，仍在原 2 MiB 预算内。最后仅归一化跨系统文本行尾与 ZIP 日期，再验证 UTC/上海构建一致与解析通过；未重复无行为变化的 UI 流程。
+- 用户随后明确“本次先交付安装包”：**不合并发布、不打标签、不发 Release、不进行生产安装或服务器更新**，也不导入未合并的游戏 SHA。平台 `game-packages/puerto-rico` 与来源锁继续保留 1.0.0；本 PR 不夹带游戏开发副本。未验证物理手机、软键盘、Safari、真实模型供应商及真人完整一局；独立库真实三人片段与固定场景不冒充这些验收。
+
 ## 搜索图标重合修复与模型配置操作栏 Popover 规范化（2026-10-25，0.18.2）
 
 - **彻底修复搜索框图标与文字重合缺陷**：
