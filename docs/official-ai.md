@@ -1,5 +1,13 @@
 # 平台官方 AI 与点数
 
+## 按局账单与 token 明细（0.19.0，2026-10-25）
+
+玩家点数账单按付款账户与对局汇总，每局展示游戏名称、最近扣点时间、计费行动数和扣点总额。点击单局可展开输入/输出 token 汇总及逐次行动的用量、结算价格和扣点；明细分页加载，每页 20 条。点数发放保留独立记录。进行中的对局只汇总当前已结算扣点，刷新余额与账单后读取最新汇总。
+
+汇总在服务端对本人完整流水分组后分页，每页 20 条，不以当前已加载的行动页推算整局费用。token 优先使用账本中的冻结快照，旧固定点价行动读取关联调用已记录的用量；缺失时明确显示未记录与不完整行动数，不估算为真实零消耗。失败、免费兜底和零扣点调用没有扣点流水，不计入此账单的 token 汇总；该汇总也不代表供应商货币账单。
+
+新增 GET `/api/v1/me/ai-points/bills?before=UUID`，返回 `aiPointBillsSchema` 的汇总与游标。原 GET `/api/v1/me/ai-points/ledger` 兼容旧请求，新增可选 `matchId=UUID`，仅返回本人该局扣点；每条可带 `usage: { inputTokens: number|null, outputTokens: number|null }`。两种游标均限定本人，明细游标还限定同一对局；不通过传入账户、席位或对局 ID 获取他人账单，不扩展对局 View 的参与权限。无数据库迁移或扣费规则变化。
+
 ## token 计费与管理员加价（0.11.0，2026-10-18）
 
 更新 API/Web 前执行迁移至 `033_official_ai_token_pricing.sql`。后台 `/admin/official-ai` 新发布档位按实际输入/输出 token 计费：分别设置基础点价（整数 AI 点数/百万 token，0–10 亿，不能同时为零）、加价比例（整数 0–1000%）和单次预留上限（1–10000 点），实时预览售价。基础点价需管理员自行换算供应商成本，不自动获取价格、汇率或货币账单；AI 点数继续独立于桌游币，没有现金支付或兑换。
@@ -62,7 +70,8 @@ API 增量：发布请求和目录可选 `tokenPricing: { inputPointsPerMillion,
 | GET `/api/v1/me/official-ai/profiles` | 本人官方配置及上限 |
 | POST `/api/v1/me/official-ai/enroll` | 本人；requestId、offerId、matchBudget |
 | GET `/api/v1/me/ai-points` | 本人余额/预留/可用点数 |
-| GET `/api/v1/me/ai-points/ledger?before=UUID` | 本人账单，每页20条，游标限定本人 |
+| GET `/api/v1/me/ai-points/bills?before=UUID` | 本人按局汇总及独立点数发放，每页20条 |
+| GET `/api/v1/me/ai-points/ledger?before=UUID&matchId=UUID` | 本人逐次流水，每页20条；可选按局筛选，游标限定本人及同局 |
 | GET/POST `/api/v1/admin/official-ai/offers` | 管理员目录/发布，来源必须是本人配置 |
 | PUT `/api/v1/admin/official-ai/offers/:id` | 管理员；requestId、expectedRevision、enabled |
 | POST `/api/v1/admin/ai-points/grant` | 管理员；requestId、accountId、points、note |

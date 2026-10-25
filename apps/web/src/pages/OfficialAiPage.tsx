@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
-  AiPointLedger,
+  AiPointBills,
   AiPointWallet,
   ModelProfile,
   OfficialAiOffer,
@@ -8,13 +8,14 @@ import type {
 import { PageFeedback } from '@boardgame/ui';
 import { api } from '../platform.js';
 import '../styles/official-ai.css';
-import { OfficialAiPrice, tokenSellingRates } from './OfficialAiPrice.js';
+import { OfficialAiPrice } from './OfficialAiPrice.js';
+import { AiPointBill } from './AiPointBill.js';
 
 export function OfficialAiPage() {
   const [offers, setOffers] = useState<OfficialAiOffer[]>([]);
   const [profiles, setProfiles] = useState<ModelProfile[]>([]);
   const [wallet, setWallet] = useState<AiPointWallet>();
-  const [ledger, setLedger] = useState<AiPointLedger>();
+  const [ledger, setLedger] = useState<AiPointBills>();
   const [budget, setBudget] = useState<Record<string, number>>({});
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -34,7 +35,7 @@ export function OfficialAiPage() {
       api.officialAiOffers(false, controller.signal),
       api.officialAiProfiles(controller.signal),
       api.aiPointWallet(controller.signal),
-      api.aiPointLedger(undefined, controller.signal),
+      api.aiPointBills(undefined, controller.signal),
     ])
       .then(([catalog, saved, points, history]) => {
         if (controller.signal.aborted || current !== generation.current) return;
@@ -92,7 +93,7 @@ export function OfficialAiPage() {
     setBusy(true);
     const current = generation.current;
     try {
-      const page = await api.aiPointLedger(ledger.nextCursor);
+      const page = await api.aiPointBills(ledger.nextCursor);
       if (mounted.current && current === generation.current)
         setLedger((old) =>
           old ? { items: [...old.items, ...page.items], nextCursor: page.nextCursor } : page,
@@ -141,9 +142,7 @@ export function OfficialAiPage() {
             <button type="button" className="secondary" onClick={retry} disabled={busy}>
               刷新余额与账单
             </button>
-            <p className="muted">
-              官方 AI 成功行动时计费，失败或兜底不扣点。
-            </p>
+            <p className="muted">官方 AI 成功行动时计费，失败或兜底不扣点。</p>
           </section>
           <section aria-labelledby="ai-catalog-title">
             <h2 id="ai-catalog-title">选择官方 AI</h2>
@@ -205,31 +204,9 @@ export function OfficialAiPage() {
             {!ledger?.items.length ? (
               <p className="muted">还没有点数记录。</p>
             ) : (
-              <ol className="ai-ledger">
+              <ol className="ai-ledger ai-match-bills" key={refresh}>
                 {ledger.items.map((item) => (
-                  <li key={item.id}>
-                    <div>
-                      <strong>{item.note}</strong>
-                      <small>
-                        {new Date(item.createdAt).toLocaleString()} · 余额 {item.balanceAfter}
-                      </small>
-                      {item.tokenBilling && (
-                        <small>
-                          输入 {item.tokenBilling.inputTokens} / 输出{' '}
-                          {item.tokenBilling.outputTokens} token ·{' '}
-                          {tokenSellingRates(item.tokenBilling.pricing)} · 合计取整{' '}
-                          {item.tokenBilling.chargedPoints} 点
-                        </small>
-                      )}
-                      {item.matchId && (
-                        <a href={`/matches/${item.matchId}`}>查看对局（需参与权限）</a>
-                      )}
-                    </div>
-                    <span className={item.delta > 0 ? 'ai-credit' : ''}>
-                      {item.delta > 0 ? '+' : ''}
-                      {item.delta} 点
-                    </span>
-                  </li>
+                  <AiPointBill key={item.id} item={item} />
                 ))}
               </ol>
             )}

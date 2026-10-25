@@ -1,5 +1,14 @@
 # 开发进度
 
+## 点数账单按局汇总与 token 明细（2026-10-25，0.19.0）
+
+- 玩家 `/official-ai` 的点数账单按本人对局汇总，显示游戏名称、最近扣点、计费行动数和合计；点击展开输入/输出 token 汇总及逐次用量、价格、扣点，明细可继续分页。点数发放保留独立记录。沿用像素主题、键盘展开及亮暗主题；实际暗色截图发现汇总栏辅助文字对比不足，已改为继承按钮前景色并补验。
+- 新增本人 `/me/ai-points/bills`，在单条 SQL 快照中对完整本人流水分组后每页 20 条；原流水接口兼容旧请求，增加可选 `matchId` 和 `usage`。游标隔离到本人，明细还限定同一局；冻结 tokenBilling 优先于迟到供应商记录，缺失用量明确标注，失败/免费兜底/零扣点调用不计入扣点账单。无迁移、扣费事务或游戏规则变更。无效查询参数明确返回 400。
+- 静态与构建：`pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，包含 20 目录 AST 边界、生产 bundle、API runtime、隔离 ZIP 与 AI worker 检查。查询错误修复后 API typecheck/build/runtime 再通过；版本与暗色样式调整后 Web build/生产 bundle 再通过，根版本、README 与实际构建页脚核对为 `0.19.0`。最终编辑的路由/测试局部 ESLint、Prettier 与 diff 检查通过。
+- 集成使用本轮独立 `boardgame_ai_bills_20261025`，经原 `pnpm test:integration` 准备/迁移/游戏/资源流程执行：30 文件、217 项，首次 **211 通过、6 失败**。新查询参数 500 已修复，随后 `pnpm exec vitest run tests/integration/official-ai.test.ts --testTimeout 20000` **23/23 通过**，覆盖跨页完整汇总、同局不同付款人、同时间 UUID 游标、缺失用量、冻结计费、原扣费/回滚/恢复。其余初次失败中，管理员 CLI 在 20 秒超时下定向 **1/1 通过**（实耗约 5.9 秒），模型配置清理死锁用例独立复验 **1/1 通过**；桌游币首项 `TRUNCATE accounts CASCADE` 死锁在定向复验仍失败，本轮未修改该模块。璀璨宝石 TTS 用例因隔离目录未准备本地图包失败，保留原 SVG 资源，不计为 TTS 验收。没有宣称单次全套通过；后续需独立处理这两项测试环境/清理问题。
+- 浏览器通过原 `pnpm test:e2e tests/e2e/official-ai.spec.ts tests/e2e/ai-point-bills.spec.ts --output=.data/billing-e2e`，原官方 AI 流程双端 **4 passed**。新故障注入最初被开发 StrictMode 的双请求消耗，改为在点击重试前持续注入失败，保留失败/重试断言；新单局账单双端随后 **2 passed**。暗色对比修正后，再通过原脚本只复验 `tests/e2e/ai-point-bills.spec.ts`，最终 **2 passed，12.6 秒**。真实会话/建房/开局后使用持久化账单夹具检查汇总、25 条明细分页、失败重试、键盘展开、收起/刷新和对局链接；真实模型结算由上项集成覆盖。截图覆盖 1440/1280/390/320 CSS 像素、亮暗主题和减少动态效果，无横向溢出；实际查看桌面、手机和暗色展开截图，产物在隔离工作目录 `.data/billing-e2e-verified/`。未测物理手机或真实付费供应商。
+- 版本从远程 main 基线 `0.18.2 → 0.19.0`，属兼容的按局浏览交互增强，MINOR+1；只在隔离分支 `codex/ai-match-billing` 交付，原工作区官方 AI 目录管理等未提交改动保持。API/用量口径同步 [官方 AI](official-ai.md) 和 [协议](protocol.md)。本机仍仅有 Docker Desktop WSL，无已确认的服务器连接配置，未同步服务器、未核验线上运行 SHA/服务或 `/health/ready`；不把提交推送当作上线。
+
 ## 搜索图标重合修复与模型配置操作栏 Popover 规范化（2026-10-25，0.18.2）
 
 - **彻底修复搜索框图标与文字重合缺陷**：

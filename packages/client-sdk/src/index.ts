@@ -3,7 +3,7 @@ import type { z } from 'zod';
 import {
   officialAiOffersSchema, officialAiOfferSchema, officialAiPublishSchema, officialAiStatusSchema,
   officialAiEnrollSchema, officialAiEnrollmentSchema, aiPointWalletSchema, aiPointLedgerSchema,
-  aiPointGrantSchema, officialAiStatsSchema,
+  aiPointGrantSchema, officialAiStatsSchema, aiPointBillsSchema, aiPointBillsQuerySchema, aiPointLedgerQuerySchema,
 } from '@boardgame/protocol';
 import { coinAdjustmentSchema, coinHistoryQuerySchema, coinWalletPageSchema, coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import {
@@ -163,6 +163,21 @@ export class ApiClient {
         signal ? { signal } : undefined,
       ),
     );
+  }
+  async aiPointBills(before?: string, signal?: AbortSignal) {
+    const query = aiPointBillsQuerySchema.parse({ before });
+    return aiPointBillsSchema.parse(await this.request<unknown>(
+      `/me/ai-points/bills${query.before ? `?before=${encodeURIComponent(query.before)}` : ''}`,
+      signal ? { signal } : undefined,
+    ));
+  }
+  async aiPointMatchLedger(matchId: string, before?: string, signal?: AbortSignal) {
+    const query = aiPointLedgerQuerySchema.parse({ matchId, before });
+    const params = new URLSearchParams({ matchId: query.matchId! });
+    if (query.before) params.set('before', query.before);
+    return aiPointLedgerSchema.parse(await this.request<unknown>(
+      `/me/ai-points/ledger?${params}`, signal ? { signal } : undefined,
+    ));
   }
   async enrollOfficialAi(input: z.input<typeof officialAiEnrollSchema>) {
     return officialAiEnrollmentSchema.parse(await this.request<unknown>('/me/official-ai/enroll', {

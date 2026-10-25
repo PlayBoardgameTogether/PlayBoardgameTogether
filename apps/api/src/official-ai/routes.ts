@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { aiPointLedgerQuerySchema } from '@boardgame/protocol';
+import { aiPointLedgerQuerySchema, aiPointBillsQuerySchema } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { routeContext } from '../routes/context.js';
 import { AppError } from '../errors.js';
@@ -35,8 +35,18 @@ export function registerOfficialAiRoutes(
   });
   app.get('/api/v1/me/ai-points/ledger', async (request) => {
     const current = await requireAuth(request);
-    const query = aiPointLedgerQuerySchema.parse(request.query);
-    return ok(request, await service.ledger(current!.account.id, query.before));
+    const query = aiPointLedgerQuerySchema.safeParse(request.query);
+    if (!query.success) throw new AppError('VALIDATION_ERROR', '账单查询参数无效', 400);
+    return ok(
+      request,
+      await service.ledger(current!.account.id, query.data.before, query.data.matchId),
+    );
+  });
+  app.get('/api/v1/me/ai-points/bills', async (request) => {
+    const current = await requireAuth(request);
+    const query = aiPointBillsQuerySchema.safeParse(request.query);
+    if (!query.success) throw new AppError('VALIDATION_ERROR', '账单查询参数无效', 400);
+    return ok(request, await service.bills(current!.account.id, query.data.before));
   });
   app.get('/api/v1/admin/official-ai/offers', async (request) => {
     await administrator(request);
