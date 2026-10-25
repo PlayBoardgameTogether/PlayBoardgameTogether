@@ -11,6 +11,9 @@ import setup from './setup.js';
 const webRoot = fileURLToPath(new URL('../../apps/web/', import.meta.url));
 const webRequire = createRequire(new URL('../../apps/web/package.json', import.meta.url));
 const { buildSync } = createRequire(webRequire.resolve('vite'))('esbuild');
+const gameVersion = process.env.PUERTO_RICO_TEST_VERSION ?? '1.0.0';
+if (!/^\d+\.\d+\.\d+$/.test(gameVersion)) throw new Error('Invalid Puerto Rico test version');
+const gameZip = `dist/game-packages/puerto-rico-${gameVersion}.zip`;
 type Snapshot = {
   current: number;
   move: number;
@@ -23,7 +26,7 @@ type Snapshot = {
 test('sandbox board supports previews, keyboard, worker allocation, privacy, themes and restoration', async ({
   page,
 }, info) => {
-  const parsed = readGamePackage(await readFile('dist/game-packages/puerto-rico-1.0.0.zip'));
+  const parsed = readGamePackage(await readFile(gameZip));
   expect(Object.keys(parsed.presentation).sort()).toEqual(['background', 'cover', 'icon']);
   const game = (await PackageRuntime.create()).extension(parsed.server),
     rng = new DeterministicRng(131);
@@ -44,15 +47,16 @@ test('sandbox board supports previews, keyboard, worker allocation, privacy, the
   }
   await page.exposeFunction('acceptAction', async (raw: unknown) => {
     const action = game.parseAction(raw);
-    received.push(action);
+    const actingSeat = seatId;
     await publish(true);
     state = game.applyAction(
       state,
-      { kind: 'seat', seatId, controllerEpoch: 0 },
+      { kind: 'seat', seatId: actingSeat, controllerEpoch: 0 },
       action,
       rng,
     ).state;
     await publish();
+    received.push(action);
   });
   const stylesheet = await platformStyles();
   const fixture = buildSync({
@@ -60,7 +64,7 @@ test('sandbox board supports previews, keyboard, worker allocation, privacy, the
       contents: `
     import React from 'react';import {createRoot} from 'react-dom/client';import {PackageBoard} from './src/games/PackageBoard.tsx';
     const root=createRoot(document.getElementById('root'));
-    function render(view,busy=false,replay=false){root.render(<PackageBoard id="online.puerto-rico" version="1.0.0" view={view} busy={busy} events={[]} onAction={action=>window.acceptAction(action)} replay={replay?{id:'readonly',animate:false,hold(){}}:undefined}/>);}
+    function render(view,busy=false,replay=false){root.render(<PackageBoard id="online.puerto-rico" version="${gameVersion}" view={view} busy={busy} events={[]} onAction={action=>window.acceptAction(action)} replay={replay?{id:'readonly',animate:false,hold(){}}:undefined}/>);}
     addEventListener('message',event=>{if(event.data?.type==='fixture:view')render(event.data.view,event.data.busy,event.data.replay);});
     render(JSON.parse(document.getElementById('initial-view').textContent));
   `,
@@ -272,9 +276,7 @@ test('three signed-in players install, join, act and recover through the live pl
   await page.goto('/admin/catalog');
   await page.getByRole('button', { name: '上传游戏 ZIP' }).click();
   const dialog = page.getByRole('dialog', { name: '上传并审核游戏 ZIP' });
-  await dialog
-    .getByLabel('游戏 ZIP 文件')
-    .setInputFiles('dist/game-packages/puerto-rico-1.0.0.zip');
+  await dialog.getByLabel('游戏 ZIP 文件').setInputFiles(gameZip);
   await dialog.getByRole('button', { name: '检查游戏包' }).click();
   await expect(dialog.getByText(/^(新游戏|此版本已安装)$/)).toBeVisible();
   await dialog.getByRole('button', { name: /^(审核通过并上架|确认已安装版本)$/ }).click();
@@ -287,7 +289,18 @@ test('three signed-in players install, join, act and recover through the live pl
     const peers = await Promise.all(contexts.map((c) => c.newPage()));
     await login(peers[0]!, 'stage2_a');
     await login(peers[1]!, 'stage2_b');
-    await page.goto('/games/online.puerto-rico/1.0.0');
+    await page.goto(`/games/online.puerto-rico/${gameVersion}`);
+    await expect
+      .poll(() =>
+        page
+          .locator('.game-detail-icon img')
+          .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth === 256),
+      )
+      .toBe(true);
+    await expect(page.locator('.game-detail-icon img')).toHaveCSS('object-fit', 'contain');
+    await expect(page.locator('.game-detail-icon')).toHaveCSS('box-shadow', 'none');
+    await expect(page.locator('.game-banner-background img')).toHaveCSS('opacity', '1');
+    await page.screenshot({ path: info.outputPath('real-game-detail.png'), fullPage: true });
     await page.getByRole('link', { name: '创建房间', exact: true }).click();
     await page.getByLabel('房间名', { exact: true }).fill('海港联机验收');
     await page.getByLabel('人数', { exact: true }).fill('3');
@@ -311,7 +324,12 @@ test('three signed-in players install, join, act and recover through the live pl
       await peer.goto(roomUrl);
       await peer.getByRole('button', { name: '坐这里', exact: true }).first().click();
     }
-    for (const peer of peers) await peer.getByRole('button', { name: '准备', exact: true }).click();
+    for (const [i, peer] of peers.entries()) {
+      await expect(peer.getByText(`3/3 已入座 · ${i}/3 已准备`, { exact: true })).toBeVisible();
+      await peer.getByRole('button', { name: '准备', exact: true }).click();
+      await expect(peer.getByRole('button', { name: '取消准备', exact: true })).toBeVisible();
+      await expect(page.getByText(`3/3 已入座 · ${i + 1}/3 已准备`, { exact: true })).toBeVisible();
+    }
     await expect(page.getByText('3/3 已入座 · 2/3 已准备', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '准备', exact: true }).click();
     await page.getByRole('button', { name: '开始游戏', exact: true }).click();
