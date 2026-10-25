@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { detectProvider, PROVIDER_PRESETS } from './model-presets.js';
 import type { useModelSettings } from './useModelSettings.js';
 import { PixelSearchIcon } from '../ui/PixelIcons.js';
@@ -54,13 +54,20 @@ export function ModelProfileDirectory({
     (p) => p.enabled && p.endpoint_id !== 'mock' && !p.has_credential,
   ).length;
 
+  const [openMoreId, setOpenMoreId] = useState<string | null>(null);
+
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
       const openDetails = document.querySelectorAll<HTMLDetailsElement>('details.model-more[open]');
+      let closedAny = false;
       for (const details of openDetails) {
         if (!details.contains(event.target as Node)) {
           details.open = false;
+          closedAny = true;
         }
+      }
+      if (closedAny && !document.querySelector('details.model-more[open]')) {
+        setOpenMoreId(null);
       }
     }
     function handleKeyDown(event: KeyboardEvent) {
@@ -71,6 +78,7 @@ export function ModelProfileDirectory({
         for (const details of openDetails) {
           details.open = false;
         }
+        setOpenMoreId(null);
       }
     }
     document.addEventListener('pointerdown', handlePointerDown);
@@ -253,7 +261,9 @@ export function ModelProfileDirectory({
 
             return (
               <article
-                className={`model-profile ${isEditing ? 'is-editing' : ''}`}
+                className={`model-profile ${isEditing ? 'is-editing' : ''} ${
+                  openMoreId === profile.id ? 'is-more-open' : ''
+                }`}
                 key={profile.id}
               >
                 {/* 正在编辑指示 */}
@@ -368,7 +378,15 @@ export function ModelProfileDirectory({
                   >
                     {busy === `test:${profile.id}` ? '测试中…' : '测试连接'}
                   </button>
-                  <details className="model-more">
+                  <details
+                    className="model-more"
+                    onToggle={(event) => {
+                      const isOpen = (event.currentTarget as HTMLDetailsElement).open;
+                      setOpenMoreId(
+                        isOpen ? profile.id : (prev) => (prev === profile.id ? null : prev),
+                      );
+                    }}
+                  >
                     <summary>更多</summary>
                     <div className="model-more-actions">
                       <button
@@ -379,6 +397,7 @@ export function ModelProfileDirectory({
                           (
                             event.currentTarget.closest('details') as HTMLDetailsElement | null
                           )?.removeAttribute('open');
+                          setOpenMoreId(null);
                           clone(profile);
                         }}
                       >
@@ -393,6 +412,7 @@ export function ModelProfileDirectory({
                             (
                               event.currentTarget.closest('details') as HTMLDetailsElement | null
                             )?.removeAttribute('open');
+                            setOpenMoreId(null);
                             void action(profile, 'revoke');
                           }}
                         >
@@ -407,6 +427,7 @@ export function ModelProfileDirectory({
                           (
                             event.currentTarget.closest('details') as HTMLDetailsElement | null
                           )?.removeAttribute('open');
+                          setOpenMoreId(null);
                           setDeleteId(profile.id);
                         }}
                       >

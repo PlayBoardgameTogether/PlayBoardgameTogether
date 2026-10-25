@@ -653,9 +653,24 @@
   }
 
   /* Details & Summary */
+  .model-profile:has(.model-more[open]),
+  .model-profile.is-more-open {
+    z-index: 30;
+  }
+
+  .model-profile:has(.model-more[open]) .model-actions,
+  .model-profile.is-more-open .model-actions {
+    position: relative;
+    z-index: 31;
+  }
+
   .model-more {
     position: relative;
     display: inline-block;
+  }
+
+  .model-more[open] {
+    z-index: 32;
   }
 
   .model-settings-shell summary {

@@ -683,6 +683,17 @@
   }
 
   /* Model profile actions & more popover */
+  .desktop-shell--pixel .model-profile:has(.model-more[open]),
+  .desktop-shell--pixel .model-profile.is-more-open {
+    z-index: 30;
+  }
+
+  .desktop-shell--pixel .model-profile:has(.model-more[open]) .model-actions,
+  .desktop-shell--pixel .model-profile.is-more-open .model-actions {
+    position: relative;
+    z-index: 31;
+  }
+
   .desktop-shell--pixel .model-actions {
     position: relative;
     display: flex;
@@ -694,6 +705,10 @@
   .desktop-shell--pixel .model-more {
     position: relative;
     display: inline-block;
+  }
+
+  .desktop-shell--pixel .model-more[open] {
+    z-index: 32;
   }
 
   .desktop-shell--pixel .model-more > summary {
