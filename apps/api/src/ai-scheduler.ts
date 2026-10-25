@@ -1,5 +1,5 @@
 import { ModelProfileService } from './model-profiles.js';
-import { OfficialAiService } from './official-ai/service.js';
+import { OfficialAiQuotaError, OfficialAiService } from './official-ai/service.js';
 import { AppError } from './errors.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { Worker } from 'node:worker_threads';
@@ -399,7 +399,16 @@ export class AiScheduler {
         try {
           action = t.controller_type === 'model' ? await this.model(t, c) : await this.script(t, c);
         } catch (error) {
-          if (error instanceof AppError && error.code === 'AI_BLOCKED') throw error;
+          const quotaFallback =
+            error instanceof OfficialAiQuotaError &&
+            (
+              await this.db.query(
+                "SELECT 1 FROM match_participants WHERE match_id=$1 AND seat_id=$2 AND occupant_kind='bot'",
+                [t.match_id, t.seat_id],
+              )
+            ).rowCount === 1;
+          if (error instanceof AppError && error.code === 'AI_BLOCKED' && !quotaFallback)
+            throw error;
           // A fallback must never consume a previous ready reservation after a restart.
           await this.official.release(t.id);
           const ext = this.registry.get(
@@ -411,7 +420,16 @@ export class AiScheduler {
               )
             ).rows[0]!.game_version,
           );
-          action = ext?.getFallbackAction(c.view as any, c.actionSpec as any);
+          if (quotaFallback) {
+            try {
+              action = await this.script({ ...t, policy_id: 'basic-v1' }, c);
+            } catch {
+              // Keep the same legal fallback used when an ordinary script worker fails.
+              action = ext?.getFallbackAction(c.view as any, c.actionSpec as any);
+            }
+          } else {
+            action = ext?.getFallbackAction(c.view as any, c.actionSpec as any);
+          }
           fallback = true;
           if (action == null) throw new Error('AI_FALLBACK_FAILED');
         }

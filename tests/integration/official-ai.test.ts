@@ -94,7 +94,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     expect(result.statusCode, result.body).toBe(200);
     return result.json().data;
   }
-  async function activeMatch() {
+  async function activeMatch(human = false, computer = false) {
     const result = await write(alice, 'POST', '/rooms', {
       requestId: randomUUID(),
       name: 'Official AI',
@@ -102,26 +102,44 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       version: '1.0.0',
       options: {},
       seatCount: 2,
+      ...(computer ? { computerOpponents: true, computerModelProfileId: profileId } : {}),
     });
     expect(result.statusCode).toBe(200);
     const { roomId, room } = result.json().data;
-    const seatId = room.seats[1].seatId as string;
-    await roomCommand(roomId, `seats/${seatId}/bot`, { controllerType: 'model', profileId });
+    const seatId = room.seats[human ? 0 : 1].seatId as string;
+    if (!computer)
+      await roomCommand(
+        roomId,
+        `seats/${room.seats[1].seatId}/bot`,
+        human
+          ? { policyId: 'basic-v1' }
+          : {
+              controllerType: 'model',
+              profileId,
+            },
+      );
     await roomCommand(roomId, 'my-ready', { ready: true });
     const { matchId } = await roomCommand(roomId, 'start');
-    const draw = await write(alice, 'POST', `/matches/${matchId}/actions`, {
-      requestId: randomUUID(),
-      expectedRevision: 0,
-      expectedControllerEpoch: 0,
-      action: { type: 'draw_card' },
-    });
+    const draw = human
+      ? await write(alice, 'PUT', `/matches/${matchId}/my-controller`, {
+          requestId: randomUUID(),
+          expectedControllerEpoch: 0,
+          controllerType: 'model',
+          profileId,
+        })
+      : await write(alice, 'POST', `/matches/${matchId}/actions`, {
+          requestId: randomUUID(),
+          expectedRevision: 0,
+          expectedControllerEpoch: 0,
+          action: { type: 'draw_card' },
+        });
     expect(draw.statusCode).toBe(200);
     const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), config);
     await scheduler.reconcileMatch(matchId);
     const task = (
       await db.query<{ id: string; decision_key: string }>(
-        'SELECT id,decision_key FROM ai_tasks WHERE match_id=$1 AND seat_id=$2 AND source_revision=1',
-        [matchId, seatId],
+        'SELECT id,decision_key FROM ai_tasks WHERE match_id=$1 AND seat_id=$2 AND source_revision=$3',
+        [matchId, seatId, human ? 0 : 1],
       )
     ).rows[0]!;
     expect(task).toBeDefined();
@@ -130,7 +148,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       matchId: matchId as string,
       seatId,
       taskId: task.id,
-      decisionKey: `revision:1:${task.decision_key}`,
+      decisionKey: `revision:${human ? 0 : 1}:${task.decision_key}`,
     };
   }
   async function claim(taskId: string) {
@@ -142,6 +160,23 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     const profile = await service.runtime(profileId, alice.id);
     expect(profile).not.toBeNull();
     return profile!;
+  }
+  async function passHumanTurn(matchId: string) {
+    const view = await get(alice, `/matches/${matchId}/view`);
+    const action = view.view.canDraw
+      ? { type: 'draw_card' }
+      : registry.get('color-match', '1.0.0')!.getFallbackAction(view.view, view.actionSpec);
+    if (action)
+      expect(
+        (
+          await write(alice, 'POST', `/matches/${matchId}/actions`, {
+            requestId: randomUUID(),
+            expectedRevision: view.revision,
+            expectedControllerEpoch: 0,
+            action,
+          })
+        ).statusCode,
+      ).toBe(200);
   }
   async function propose(taskId: string, action: unknown = { type: 'draw_card' }) {
     await service.ready(taskId);
@@ -457,6 +492,8 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
             { timeout: 5000 },
           )
           .toBe('succeeded');
+        // Quiesce later subdecisions before asserting the whole wallet's reservations.
+        await scheduler.close();
         expect(
           reply.mock.calls.filter(([input]) => input.decisionId === match.taskId),
         ).toHaveLength(1);
@@ -624,8 +661,170 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     }
   }, 15000);
 
+  it('creates official computer seats atomically, rejects foreign/personal profiles and replays the exact create receipt', async () => {
+    const input = {
+      requestId: randomUUID(),
+      name: '官方电脑桌',
+      gameId: 'color-match',
+      version: '1.0.0',
+      options: {},
+      seatCount: 3,
+      visibility: 'private',
+      computerOpponents: true,
+      computerModelProfileId: profileId,
+    };
+    expect((await write(bob, 'POST', '/rooms', input)).statusCode).toBe(403);
+    const personal = await write(alice, 'POST', '/me/model-profiles', {
+      name: '个人模型',
+      endpointId: 'mock',
+      modelId: 'mock-v1',
+    });
+    expect(
+      (
+        await write(alice, 'POST', '/rooms', {
+          ...input,
+          computerModelProfileId: personal.json().data.id,
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect(
+      (await write(alice, 'POST', '/rooms', { ...input, computerOpponents: undefined })).statusCode,
+    ).toBe(400);
+    expect((await db.query('SELECT 1 FROM rooms')).rowCount).toBe(0);
+    const created = await write(alice, 'POST', '/rooms', input);
+    expect(created.statusCode, created.body).toBe(200);
+    const { roomId, room } = created.json().data;
+    expect(room.roomRevision).toBe(0);
+    expect(
+      (
+        await db.query('SELECT bot_model_profile_id FROM seats WHERE room_id=$1 AND seat_index>0', [
+          roomId,
+        ])
+      ).rows,
+    ).toEqual([{ bot_model_profile_id: profileId }, { bot_model_profile_id: profileId }]);
+    expect((await write(alice, 'POST', '/rooms', input)).json().data.roomId).toBe(roomId);
+    expect(
+      (
+        await write(alice, 'POST', '/rooms', {
+          ...input,
+          computerModelProfileId: personal.json().data.id,
+        })
+      ).statusCode,
+    ).toBe(409);
+    expect((await db.query('SELECT 1 FROM rooms')).rowCount).toBe(1);
+  });
+
+  it.each(['fixed', 'token'])(
+    'uses free script for an unfunded %s computer seat and resumes official AI after funding',
+    async (mode) => {
+      if (mode === 'token') await tokenOffer();
+      const match = await activeMatch(false, true);
+      const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
+        ...config,
+        AI_GLOBAL_CONCURRENCY: 1,
+        AI_SCAN_INTERVAL_MS: 100,
+      });
+      const decide = vi.spyOn(MockModelAdapter.prototype, 'decide');
+      if (mode === 'token')
+        decide.mockImplementation(async (input) => ({
+          raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]?.id }),
+          inputTokens: 800,
+          outputTokens: 400,
+        }));
+      scheduler.start();
+      try {
+        await expect
+          .poll(
+            async () =>
+              (await db.query('SELECT status FROM ai_tasks WHERE id=$1', [match.taskId])).rows[0]
+                ?.status,
+            { timeout: 5000 },
+          )
+          .toBe('succeeded');
+        expect(
+          (await db.query('SELECT safe_error_code FROM ai_tasks WHERE id=$1', [match.taskId]))
+            .rows[0]?.safe_error_code,
+        ).toBe('AI_FALLBACK_USED');
+        expect(decide).not.toHaveBeenCalled();
+        expect(await service.wallet(alice.id)).toEqual({ balance: 0, reserved: 0, available: 0 });
+        expect((await service.ledger(alice.id)).items).toEqual([]);
+        await grant(20);
+        await expect
+          .poll(
+            async () => {
+              await passHumanTurn(match.matchId);
+              return (await service.wallet(alice.id)).balance;
+            },
+            { timeout: 5000 },
+          )
+          .toBeLessThan(20);
+        expect(decide).toHaveBeenCalled();
+      } finally {
+        await scheduler.close();
+        decide.mockRestore();
+      }
+    },
+    15000,
+  );
+
+  it.each(['fixed', 'token'])(
+    'keeps a %s computer seat playing free after its match cap without increasing the cap',
+    async (mode) => {
+      if (mode === 'token') await tokenOffer();
+      await grant(20);
+      await write(alice, 'POST', '/me/official-ai/enroll', {
+        requestId: randomUUID(),
+        offerId,
+        matchBudget: 2,
+      });
+      const match = await activeMatch(false, true);
+      const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
+        ...config,
+        AI_GLOBAL_CONCURRENCY: 1,
+        AI_SCAN_INTERVAL_MS: 100,
+      });
+      const decide = vi.spyOn(MockModelAdapter.prototype, 'decide');
+      if (mode === 'token')
+        decide.mockImplementation(async (input) => ({
+          raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]?.id }),
+          inputTokens: 800,
+          outputTokens: 400,
+        }));
+      scheduler.start();
+      try {
+        await expect
+          .poll(async () => (await service.wallet(alice.id)).balance, { timeout: 5000 })
+          .toBe(18);
+        await expect
+          .poll(
+            async () => {
+              await passHumanTurn(match.matchId);
+              return (
+                await db.query(
+                  "SELECT 1 FROM ai_tasks WHERE match_id=$1 AND status='succeeded' AND safe_error_code='AI_FALLBACK_USED'",
+                  [match.matchId],
+                )
+              ).rowCount;
+            },
+            { timeout: 5000 },
+          )
+          .toBeGreaterThan(0);
+        expect((await service.wallet(alice.id)).balance).toBe(18);
+        expect((await service.stats()).calls).toBe(1);
+        expect(
+          (await service.profiles(alice.id)).find((profile) => profile.id === profileId)
+            ?.official_match_budget,
+        ).toBe(2);
+      } finally {
+        await scheduler.close();
+        decide.mockRestore();
+      }
+    },
+    15000,
+  );
+
   it('resumes an unfunded official task after a grant without losing its unique decision key', async () => {
-    const match = await activeMatch();
+    const match = await activeMatch(true);
     const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
       ...config,
       AI_GLOBAL_CONCURRENCY: 1,
@@ -672,7 +871,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       offerId,
       matchBudget: 2,
     });
-    const match = await activeMatch();
+    const match = await activeMatch(true);
     const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
       ...config,
       AI_GLOBAL_CONCURRENCY: 1,
@@ -683,16 +882,6 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       await expect
         .poll(async () => (await service.wallet(alice.id)).balance, { timeout: 5000 })
         .toBe(18);
-      let view = await get(alice, `/matches/${match.matchId}/view`);
-      // Allow any target subdecision to stop at the same cap; otherwise hand the next turn back to the bot.
-      if (view.view.canDraw) {
-        await write(alice, 'POST', `/matches/${match.matchId}/actions`, {
-          requestId: randomUUID(),
-          expectedRevision: view.revision,
-          expectedControllerEpoch: 0,
-          action: { type: 'draw_card' },
-        });
-      }
       await expect
         .poll(
           async () =>
@@ -704,7 +893,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
           { timeout: 5000 },
         )
         .toBeGreaterThan(0);
-      view = await get(alice, `/matches/${match.matchId}/view`);
+      const view = await get(alice, `/matches/${match.matchId}/view`);
       expect(view.status).toBe('active');
       expect((await service.wallet(alice.id)).balance).toBe(18);
       expect((await service.stats()).calls).toBe(1);

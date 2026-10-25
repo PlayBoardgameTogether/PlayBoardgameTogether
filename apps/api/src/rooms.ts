@@ -489,6 +489,15 @@ export class RoomService {
       );
       if (Number(count.rows[0]!.count) >= 1)
         throw new AppError('ROOM_CONFIG_CHANGED', '你已创建一个有效房间，请先关闭原房间。', 409);
+      if (body.computerModelProfileId) {
+        await this.requireBotProfile(client, accountId, body.computerModelProfileId);
+        const official = await client.query(
+          'SELECT 1 FROM model_profiles WHERE id=$1 AND official_offer_id IS NOT NULL',
+          [body.computerModelProfileId],
+        );
+        if (!official.rowCount)
+          throw new AppError('FORBIDDEN', '电脑对局请选择本人的官方 AI 配置', 403);
+      }
       const roomId = randomUUID();
       const assets = await defaultAssetBinding(client, this.registry, body.gameId);
       const passwordHash = body.password ? await hash(body.password) : null;
@@ -518,8 +527,8 @@ export class RoomService {
       for (let i = 0; i < body.seatCount; i++) {
         const bot = !!body.computerOpponents && i > 0;
         await client.query(
-          `INSERT INTO seats(id,room_id,seat_index,owner_account_id,occupant_kind,bot_name,bot_policy_id,bot_policy_version)
-           VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          `INSERT INTO seats(id,room_id,seat_index,owner_account_id,occupant_kind,bot_name,bot_policy_id,bot_policy_version,bot_model_profile_id)
+           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
           [
             randomUUID(),
             roomId,
@@ -527,8 +536,9 @@ export class RoomService {
             i === 0 ? accountId : null,
             bot ? 'bot' : 'human',
             bot ? `电脑 ${i + 1}` : null,
-            bot ? 'basic-v1' : null,
+            bot ? (body.computerModelProfileId ? 'model' : 'basic-v1') : null,
             bot ? '1.0.0' : null,
+            bot ? (body.computerModelProfileId ?? null) : null,
           ],
         );
       }

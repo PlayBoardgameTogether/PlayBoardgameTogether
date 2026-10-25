@@ -2,13 +2,99 @@ import { matchViewSchema } from '../../packages/protocol/src/index.js';
 import { viewSchema } from '@boardgame/color-match/shared';
 import { test, expect, type Page } from './fixtures.js';
 
-async function login(page: Page) {
+async function login(page: Page, username = 'stage3_a') {
   await page.goto('/login');
-  await page.getByLabel('用户名').fill('stage3_a');
+  await page.getByLabel('用户名').fill(username);
   await page.getByLabel('密码', { exact: true }).fill('stage two password');
   await page.getByRole('button', { name: '登录', exact: true }).click();
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
 }
+
+test('defaults to official AI, recovers a lost enrollment and continues with free script at zero points', async ({
+  page,
+}, info) => {
+  await login(page, 'stage7_admin');
+  const admin = (await (await page.request.get('/api/v1/auth/me')).json()).data;
+  const headers = { origin: 'http://127.0.0.1:5273', 'x-csrf-token': admin.csrfToken };
+  // Zero player points prevent dispatch of this test-only source credential.
+  const source = await page.request.post('/api/v1/me/model-profiles', {
+    headers,
+    data: {
+      name: '电脑入口测试来源',
+      endpointId: 'openai',
+      modelId: 'fixture-not-dispatched',
+      apiKey: 'fixture-official-api-key',
+    },
+  });
+  expect(source.ok()).toBe(true);
+  const offer = await page.request.post('/api/v1/admin/official-ai/offers', {
+    headers,
+    data: {
+      requestId: crypto.randomUUID(),
+      name: '默认官方陪玩',
+      profileId: (await source.json()).data.id,
+      pointsPerAction: 2,
+    },
+  });
+  expect(offer.ok()).toBe(true);
+  await page.request.post('/api/v1/auth/logout', { headers });
+  await login(page);
+  await page.goto('/games/color-match/1.0.0/computer');
+  await expect(page.getByLabel('陪玩 AI')).toHaveValue((await offer.json()).data.id);
+  await expect(page.getByLabel('每席位单局 AI 点数上限')).toHaveValue('100');
+  await expect(page.getByText(/可用 0 点/)).toBeVisible();
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({
+      path: info.outputPath(`official-computer-${width}.png`),
+      fullPage: true,
+    });
+  }
+  const enrollments: string[] = [];
+  let lost = false;
+  await page.route('**/api/v1/me/official-ai/enroll', async (route) => {
+    enrollments.push(route.request().postData()!);
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    if (!lost) {
+      lost = true;
+      await route.abort('failed');
+    } else await route.fulfill({ response });
+  });
+  await page.getByRole('button', { name: '开始电脑对局', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '继续本次开局' }).click();
+  await expect(page).toHaveURL(/\/matches\/[0-9a-f-]+$/);
+  expect(enrollments).toHaveLength(2);
+  expect(new Set(enrollments).size).toBe(1);
+  const matchId = page.url().split('/').at(-1)!;
+  const me = (await (await page.request.get('/api/v1/auth/me')).json()).data;
+  const draw = await page.request.post(`/api/v1/matches/${matchId}/actions`, {
+    headers: { origin: 'http://127.0.0.1:5273', 'x-csrf-token': me.csrfToken },
+    data: {
+      requestId: crypto.randomUUID(),
+      expectedRevision: 0,
+      expectedControllerEpoch: 0,
+      action: { type: 'draw_card' },
+    },
+  });
+  expect(draw.ok()).toBe(true);
+  await expect
+    .poll(
+      async () =>
+        (await (await page.request.get(`/api/v1/matches/${matchId}/view`)).json()).data.revision,
+    )
+    .toBeGreaterThan(1);
+  expect((await (await page.request.get('/api/v1/me/ai-points')).json()).data).toEqual({
+    balance: 0,
+    reserved: 0,
+    available: 0,
+  });
+});
 
 test('recovers lost create and start replies across refresh without duplicate rooms or matches', async ({
   page,

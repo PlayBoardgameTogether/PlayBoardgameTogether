@@ -1,5 +1,9 @@
 # 数据模型
 
+## 官方 AI 优先电脑开局（0.18.0）
+
+无新迁移。电脑创建可填充原 `seats.bot_model_profile_id`、`bot_policy_id='model'`，开局按原逻辑固定 `match_participants.model_owner_account_id`。余额/单局预算不足时预留事务回滚，不创建模型调用和扣费记录；同一 AI task 保存免费脚本提案并走原动作事务，`safe_error_code='AI_FALLBACK_USED'`。不更改控制类型、epoch、付款身份或预算，不重放已完成的脚本行动。
+
 ## 公开终局摘要（034，0.12.0）
 
 新增 `matches.result_summary`（可空 JSONB），数据库约束要求非空时对局为 finished 且值为对象。原真人/自动动作事务在规则确认终局后，用 registry 中按精确版本显式登记的投影生成仅含 seatId/winner/可选 score 的公开摘要；与 State、RNG、revision、回放帧、动作、回执和房间复位原子提交或共同回滚。重复成功请求不生成新结果。不是完整 outcome 或额外权威规则来源，不参与随机与规则摘要计算。
