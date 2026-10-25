@@ -12,6 +12,12 @@
 - 本批仅开发/发布工具与内部文档，平台版本保持 **0.17.0 → 0.17.0**，游戏版本也不改号；不因分仓重跑无运行行为影响的全平台 build、数据库集成、E2E 或 UI 截图，独立游戏构建已实测。没有上传安装、上架或改变生产数据库，不能将 GitHub 发布当作平台上线。当前本机 WSL 仅发现 docker-desktop，未取得已确认服务器的有效连接信息，未同步服务器文档或重启服务，也没有声称生产版本更新。主平台配套变更通过独立功能分支/PR 交付。
 - 交付前远程 main 新增测试配置整理 PR #26（`b6c9cef`），已核对并合入，只在进度追加处保留双方全文解决冲突。四处游戏说明的新测试命令分别通过 [阿瓦里 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-awari/pull/1)、[卡坦岛 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-catan/pull/1)、[五子棋 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-gomoku/pull/1)、[拉密 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-rummikub/pull/1) 在检查通过、核对单文件一行差异后锁定 head 合并，平台来源锁指向这些已审查且已进入各仓 main 的文档提交。游戏运行源码与原 11 个 Release 的标签/附件全部保持；平台最终组合再次 typecheck（含新的 tests/config 检查）、lint 和远程 142 文件来源核对通过，不重复运行无运行变化的业务验收。GitHub 插件对新仓库 PR 写入返回 403，改用已授权的 GitHub CLI 完成交付，没有申请额外权限。
 - 后续游戏继续在该组织独立建仓和发布；通用平台能力分别进入主仓库。版本升级时仍须审查精确 registry 与旧局恢复，来源导入器不代替历史版本保留方案；平台 Git 中保留集成副本的物理存储事实不变。详见 [ADR-009](adr/009-independent-game-repositories.md)。
+## 组织项目开源协议（2026-10-25，许可与元数据更新）
+
+- 用户确认组织下全部 12 个仓库采用 GPL-3.0，版权持有人为 TheTopBoardgameAssociation。各仓库新增包含项目版权声明与完整 GPL v3 正文的 LICENSE；README 链接许可，所有已跟踪的 package.json 声明 `GPL-3.0-only`。
+- 原有 CC0-1.0、第三方和素材许可声明保留；本轮不变更游戏规则、资源内容、SDK 契约、运行逻辑、锁文件或历史游戏版本。平台以 origin/main 的 0.17.0 为基线，许可/元数据更新不递增平台或游戏版本。
+- 在隔离副本中检查 Git 分支、远程与工作区，并在修改前逐仓 fetch origin main、确认与基线一致；原工作区中的像素风提交及未提交改动不带入本轮。各仓库使用 codex/gpl-3-license 分支、独立提交和 PR。
+- 本轮验证为 GPL 完整正文一致性、版权及 SPDX 一致性、JSON 解析与除 license 外内容不变、README 链接、版本一致性、资源原许可保留和 git diff --check。未运行业务测试/构建，本批无运行行为变化；未合并 PR、发布游戏包或变更生产运行版本。下一步审阅各仓库许可 PR。
 
 ## 浏览器测试配置整理（2026-10-25，开发工具更新）
 
