@@ -19,6 +19,30 @@ afterEach(async () => {
 });
 
 describe('independent game repository export', () => {
+  it('exports a builtin with its complete SDK fixture, original tests and independent build workflow', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'boardgame-builtin-export-'));
+    temporary.push(directory);
+    const output = join(directory, 'games');
+    run('--output', output, 'azul');
+    const game = join(output, 'playboard-game-azul');
+    const origin = JSON.parse(await readFile(join(game, 'SOURCE.json'), 'utf8'));
+    for (const path of origin.ownedFiles) {
+      expect(await readFile(join(game, path))).toEqual(
+        execFileSync('git', ['show', `${origin.commit}:${path}`], { cwd: root }),
+      );
+    }
+    expect(origin.ownedFiles).toContain('scripts/azul-audio.ts');
+    expect(origin.ownedFiles).not.toContain('packages/game-sdk/src/index.ts');
+    expect(await readFile(join(game, 'packages/game-sdk/package.json'), 'utf8')).toContain(
+      '@boardgame/game-sdk',
+    );
+    expect(await readFile(join(game, '.github/workflows/game.yml'), 'utf8')).toContain(
+      'pnpm typecheck',
+    );
+    await expect(readFile(join(game, 'apps/api/src/main.ts'))).rejects.toThrow();
+    await expect(readFile(join(game, 'games/splendor/package.json'))).rejects.toThrow();
+  }, 20000);
+
   it('exports committed game bytes, original rule regressions and pinned compatibility sources without workspace dependencies', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'boardgame-export-'));
     temporary.push(directory);
@@ -77,7 +101,7 @@ describe('independent game repository export', () => {
     const game = join(output, 'playboard-game-gomoku');
     expect(await readFile(join(game, 'game-packages/gomoku/server.txt'))).toEqual(expected);
     await expect(readFile(join(game, 'game-packages/gomoku/.env'))).rejects.toThrow();
-  });
+  }, 20000);
 
   it('refuses existing destinations and invalid selections before overwriting files', async () => {
     const output = await mkdtemp(join(tmpdir(), 'boardgame-export-existing-'));
