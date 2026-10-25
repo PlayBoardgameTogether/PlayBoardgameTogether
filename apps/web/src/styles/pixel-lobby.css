@@ -985,6 +985,82 @@
     padding: 36px 20px;
   }
 
+  .desktop-shell--pixel .page-feedback-spinner,
+  .desktop-shell--pixel-lobby .page-feedback-spinner {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border: 3px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+    background: #fcf6e6 url('/platform-art/playboard-dice-animated.gif') no-repeat center / cover;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  .desktop-shell--pixel .page-feedback-spinner::before,
+  .desktop-shell--pixel-lobby .page-feedback-spinner::before {
+    display: none;
+  }
+
+  .desktop-shell--pixel .page-feedback-spinner .spinner-icon,
+  .desktop-shell--pixel-lobby .page-feedback-spinner .spinner-icon {
+    display: none;
+  }
+
+  /* Pixel Loading Dice Component */
+  .pixel-loading-dice {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+    background: #fcf6e6;
+    overflow: hidden;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  .pixel-loading-dice-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* Model Settings Loading Panel */
+  .desktop-shell--pixel .model-loading-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .desktop-shell--pixel .loading-spinner-ring {
+    width: 64px;
+    height: 64px;
+    border: 3px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+    background: #fcf6e6 url('/platform-art/playboard-dice-animated.gif') no-repeat center / cover;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .desktop-shell--pixel .page-feedback-spinner,
+    .desktop-shell--pixel-lobby .page-feedback-spinner,
+    .desktop-shell--pixel .loading-spinner-ring {
+      background-image: url('/platform-art/pixel-dice.png');
+    }
+  }
+
   .desktop-shell--pixel .pixel-spinner {
     animation: pixel-spin 1.2s steps(8, end) infinite;
   }
