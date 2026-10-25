@@ -42,7 +42,7 @@ node scripts/package-catan.mjs
 
 ```powershell
 pnpm test tests/unit/catan-package.test.ts
-node node_modules/@playwright/test/cli.js test --config playwright.catan-ui.config.ts --output .data/catan-ui
+node node_modules/@playwright/test/cli.js test --config tests/config/catan.config.ts --output .data/catan-ui
 pnpm test:integration
 ```
 
