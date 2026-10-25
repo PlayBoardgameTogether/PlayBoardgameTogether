@@ -1,5 +1,15 @@
 # 开发进度
 
+## PR #21 合并复核与版本顺延（2026-10-25，0.17.0）
+
+- 用户确认阿瓦里 PR #21 作为历史遗留例外本次合入主仓库；后续游戏仍按每个游戏独立仓库执行。本轮合并最新 main（含 UNO、分仓规则、体验指南及修正后的导出工具），只解决进度追加区冲突，双方历史内容全部保留。原阿瓦里记录中的 0.16.0 为当时待合并候选；主线已有 UNO 0.16.0，本次新增游戏最终顺延 `0.16.0 → 0.17.0`（MINOR+1），README 同步。游戏包保持 1.0.0，不改规则、桌面或其他游戏版本。
+- 本轮 `pnpm --config.verify-deps-before-run=false typecheck`、同选项 `lint`、`build` 均通过，包含 AST 边界、格式、生产 bundle 和 API runtime/隔离 ZIP/AI worker 校验。保留已有 model-viewer 大 chunk 提示。
+- `pnpm ... exec vitest run tests/unit/awari-package.test.ts tests/unit/game-packages.test.ts`：2 文件、13/13 通过，无 skip；`node scripts/package-awari.mjs` 生成 111496 字节实际三文件 ZIP，内嵌原创 PNG。
+- `pnpm ... exec playwright test --config playwright.awari-ui.config.ts --output .data/pr-review-awari-ui`：4/4 通过，无 skip，实际查看 1440×900、1280×720、390×844、320×640 的选坑截图及手机终局截图。验证预览/确认、忙碌恢复、双方方向、键盘/弹窗焦点、减少动态效果、保存恢复和 sandbox；该层不冒充 HTTP 联机验收。
+- `node .data/pr-review/validate-awari.mjs integration`：通过原 `test:integration` 脚本准备/迁移/同步/资源流程，以临时 Vitest include 定向阿瓦里文件，1/1 通过，无 skip。验证实际 PNG ZIP 安装、非参与者拒绝、非法动作/事务回滚、重复与内容冲突、API 重启、完整结算及本人回放。初始本机 Docker 未启动，启动现有 Docker Desktop 和项目 PostgreSQL 后新建 `boardgame_pr21_test_20261025` 专用库；仅进程内覆盖 TEST_DATABASE_URL，保留原 .env 与开发/生产库。首次资源校验较慢但完成，没有跳过隔离媒体处理。
+- 集成完成后顺序执行 `node .data/pr-review/validate-awari.mjs e2e`，仍调用原 `test:e2e` 和原端口运行器，桌面/手机 2/2 通过，无 skip，约 2.1 分钟；覆盖真实上传审核、封面/图标、大厅入口、建房/脚本 AI、刷新、完整对局与返回房间。实际查看双端联机棋桌截图，页脚正确显示 0.17.0。
+- 以上为本轮合并候选的验证，旧记录原样保留；未验证物理手机、真实模型供应商或生产服务器。源码合并不代表阿瓦里已上架，仍需管理员审核安装 ZIP；独立游戏仓库创建与发布也未在本任务执行。
+
 ## 阿瓦里在线游戏包（2026-10-24，0.16.0）
 
 - 新增 `online.awari@1.0.0` 三文件在线 ZIP 源码与打包脚本，规则在原有有界 QuickJS 中执行，桌面使用原 `PackageBoard` sandbox/CSP 与消息桥；不增加平台 gameId 分支、数据库迁移、认证或动作入口。沿用正式身份、权限、revision、requestId、事务、恢复、AI 和回放。规则/维护见 [游戏包说明](../game-packages/awari/README.md)。
@@ -21,6 +31,53 @@
 首轮原 E2E 固定 5273 端口遇到已有进程，停止仅本轮子进程，改用独立端口；中断结果不计通过。最终桌面 ZIP 改变哈希后，已安装测试版按不可变规则正确拒绝同版本覆盖，因此使用新的 `boardgame_awari_e2e_test_20261024` 库并执行原隔离准备脚本。开发/生产配置与数据库均保留，不以中断/未完成用例计作通过。服务器实际同步结果在最终交付报告中说明。
 
 限制：未验证物理手机、WebKit、真实外部模型供应商或付费调用；本轮不重跑无关后台/社交及全库验收。服务器无已配置的管理员登录凭据，源码同步不会让数据库中的在线包自动上架；需要通过现有管理员上传审核安装最终 ZIP，不能绕过会话/管理员检查。Git 命令行 HTTPS 推送 dry-run 缺少凭据，后续使用已连接 GitHub 应用同步精确核对的提交树；远程/服务器实际交付结果另记，不以请求受理或 Git 推送推断上线。
+## PR #23 合并复核（2026-10-25，平台版本不变）
+
+- 同步最新 main，保留已合并的分仓规则与体验指南。修正导出目录清单中的平台来源为 `PlayBoardgameTogether/PlayBoardgameTogether`，生成的来源记录、README 与 Release 目标随之使用新组织；文档中的游戏仓库仍为待确认建议目标，未创建仓库或发布 Release。
+- 本轮 `pnpm --config.verify-deps-before-run=false typecheck`、同选项 `lint` 通过。`pnpm ... exec vitest run tests/unit/game-repositories.test.ts` 最终 3/3 通过，无 skip；新增来源与目标组织回归。初轮脏工作区测试误将 Windows CRLF 检出文件当作 Git LF 字节预期，现从夹具 Git 对象读取原始预期，继续精确核验导出字节与秘密文件隔离；不是修改或归一化导出内容。修改文件另作 ESLint 检查，差异检查通过。
+- 本次仅开发工具元数据、文档和测试修正，平台保持 0.16.0；未重复运行未受修改影响的各游戏全量构建/联机测试，独立仓库 CI、Release 与管理员安装仍未验证。旧验证记录保留在下节。
+
+## ZIP 游戏独立仓库导出与发布工具（2026-10-25，平台版本不变）
+
+- 新增 `scripts/game-repositories/catalog.json` 与 `scripts/export-game-repositories.mjs`，为 UNO（含两种玩法）、五子棋、拉密、卡坦岛、波多黎各生成五个独立项目。来源锁定经过核对的 `origin/main@471501e93949da34c9c7a17e4b9902b2f5713090`；不读取工作区未提交规则，不导出会话/数据库/根 .env，目标目录已存在时拒绝覆盖。原始路径、摘要、完整 SHA 与类型导入适配记录在各项目 SOURCE.json。
+- 每个项目含原游戏源码/素材、规则回归、独立 package.json/锁文件和 GitHub Actions；固定 SDK、ZIP 解析器、PNG 校验和 QuickJS 快照仅用于测试，不需要平台 workspace 或数据库。普通推送/PR/手动工作流只构建，精确游戏标签才发布对应 ZIP、SHA256SUMS 和 release.json；不覆盖现有 Release、不自动上架游戏。发布步骤仅配置，尚无实际 GitHub Release 验收。
+- 保留主仓库中游戏源码、原打包和集成/E2E 入口。待分仓创建、GitHub CI/首次 Release 和平台审核安装确认后，再迁走主仓库副本及切换测试夹具；本批不宣称已完成物理拆仓。内置 games/*、生产 API/WS/SDK、规则版本与数据库均未变。
+
+本轮实际验证：
+
+- 新导出回归 `pnpm --config.verify-deps-before-run=false exec vitest run tests/unit/game-repositories.test.ts`：3/3，通过真实临时克隆中的脏规则/未跟踪测试秘密文件验证提交快照隔离，并检查来源摘要、无 workspace 依赖、已有目标和错误输入保护。
+- 五个独立项目分别用自身锁文件完成冻结安装；分别执行 `pnpm ... test`，6 个规则测试文件、73/73 通过，无 skip（UNO 23、五子棋 10、拉密 11、卡坦岛 13、波多黎各 16）。真实 QuickJS 内含不同人数脚本完整对局与每步恢复，未调用付费模型。
+- 五个项目各自 `pnpm ... build` 成功，生成六份带内嵌图片的三文件 ZIP；各自 `pnpm ... verify` 5/5，通过平台包解析器、原 QuickJS 及最小/最大人数生命周期检查。UNO 休闲版/毫不留情的实际 ZIP 为 204246/132609 字节；五子棋 146309、拉密 537150、卡坦岛 369574、波多黎各 94559 字节。产物保持忽略。
+- `GITHUB_REF_TYPE=tag GITHUB_REF_NAME=uno-no-mercy-v9.9.9 pnpm ... verify` 按预期失败，明确拒绝不存在的版本；对应 `uno-no-mercy-v1.0.0` 通过，实际 dist/release 只有毫不留情 ZIP 和两份元数据，没有夹带休闲版。
+- 独立平台候选 `pnpm ... typecheck`、`pnpm ... lint` 通过（20 个源码根目录 AST 边界及现有格式检查）；新增工具/模板/测试另作定向 ESLint/Prettier 与差异检查。初次 typecheck 因候选没有 workspace 依赖失败，随后按原冻结锁文件补齐依赖后通过，未修改检查规则或主锁文件。
+
+交付边界与下一步：当前 GitHub 应用可写已有主仓库，但没有建仓/Release 接口；命令行无可用 GitHub 推送登录，已请用户创建并授权五个目标仓库。本地五套候选已验证，远程分仓、Actions 实际运行、正式 Release 和管理员安装未验证。未运行无关数据库集成/E2E或平台全量生产 build；本批仅开发发布工具和内部文档，平台版本保持 0.16.0，不重启生产服务、不声称已上线。主仓库提交、PR 与远程结果以本轮最终交付链接为准。
+
+## UNO 可扩展玩法与毫不留情（2026-10-24，0.16.0）
+
+实现独立 UNO 扩展目录 `game-packages/uno/editions.json` 和统一打包工具；保留休闲版 `online.uno@1.2.0`（规则内容仍为 1.1.0），新增 `online.uno-no-mercy@1.0.0`、2–6 人、168 张牌。建房沿用游戏与版本选择，不要求玩家编辑 JSON；每局锁定一个玩法和精确版本，后续扩展可登记自己的规则、桌面和美术，无平台 gameId 分支或任意混搭开关。
+
+毫不留情实现同值/更高值跨颜色罚牌叠加、双人反转 +4 回到自己、强制连摸并只出新牌、7 选目标换手、0 按方向轮转、同色全弃、跳过所有人、下家选色和公开轮盘翻牌、25 张即时淘汰/移出区重洗、UNO 补喊/抢抓窗口、出完或生存胜利。牌守恒、方向、债务、阶段、UNO 窗口和胜者持久化验证；普通摸牌不公开，对手只有牌数，轮盘翻牌按规则公开。新规则继续运行于 QuickJS，使用原正式对局事务、身份、请求去重、回执、AI fencing 与回放，无协议或迁移变更。
+
+共享桌面提供可出牌标记、整理/恢复摸牌顺序、累计罚牌、选换手目标、轮盘选色与淘汰状态；桌面横列玩家、手机两列，长手牌单独滚动。原同局面同步误关选色弹窗已用旧 HTML 复现（新增断言失败），新版相同同步保留草稿、UNO 选择和焦点，局面/身份变化再清理。MatchPage 从公开目录按精确版本读取名称，避免将在线游戏内部 ID 当作标题；目录不可用时使用通用标题，不阻断对局。规则来源、数字版裁定、扩展接入方法及剩余边界见 [UNO 指南](games/uno.md) 和 [包说明](../game-packages/uno/README.md)。
+
+平台版本 0.15.0 → 0.16.0，兼容的新游戏扩展和交互增强（MINOR+1）；README 同步，未改锁文件或其他游戏版本。工作区已有波多黎各、回放和导航等其他改动全部保留；交付使用从最新 `origin/main` 创建的独立 `codex/uno-expansions` worktree，仅提交本轮文件及自己的 README/版本差异。
+
+交付前远程 main 合入了独立波多黎各 PR #20（0.15.0）；已查看完整新增路径与 README/版本/进度差异，没有修改 UNO、平台链路或依赖。隔离分支先保存本轮差异、快进到最新 main 再恢复，版本顺延为 0.16.0，保留对方所有已合并内容。已通过的 UNO 规则/对局检查不受影响，最终重新构建版本注入的 Web。
+
+本轮实际验证：
+
+- `pnpm --config.verify-deps-before-run=false typecheck` 全工作区通过；最终标题调整后 Web typecheck 再通过。`pnpm ... lint` 的 ESLint、20 源目录 AST 边界和 Prettier 全通过；最终修改的 TypeScript 文件另执行 ESLint/Prettier 通过。普通 pnpm 的自动依赖校验尝试访问只读 store SQLite，使用既有关闭运行前依赖核验选项；未安装/升级依赖。tsx/Chromium 受沙箱 IPC/系统调用限制的命令在获准环境运行，未更改规则执行上限。
+- `pnpm ... test tests/unit/uno-package.test.ts tests/unit/uno-no-mercy.test.ts tests/unit/package-enhancements.test.ts tests/unit/game-packages.test.ts`：4 文件、33/33 通过，无 skip。覆盖两种牌组、确定性、非法动作/原 State/RNG 不变、特殊牌与叠加、私密投影、UNO 窗口、淘汰、移出区回收、JSONB 恢复、2/4/6 人毫不留情及 2/3/4 人休闲版完整 AI 对局逐步恢复。
+- 原 `test:integration --config .data/uno-vitest.config.mjs` 定向 UNO 与通用在线包：2 文件、8/8 通过，无 skip。独立 `boardgame_uno_test_20261024`，原脚本完成隔离检查/建库/迁移/游戏同步/资源准备；验证上传与不可变版本、图片/覆盖/进程重启、非成员保护、非法动作无持久化变化、重复结果不重播事件/内容冲突，以及两种玩法各自真人对脚本和 mock 模型完整结算。初轮新增重复回执断言误要求再次返回事件，依既有不重播契约修正后通过；未削弱幂等或规则断言。默认 .env 的 5434 端口不可用，改为加载既有隔离测试 PostgreSQL 配置并派生专属库，只在进程内传入，未改 .env 或开发/生产库。
+- `node scripts/check-uno-package.mjs`：1440×900、1280×800、390×844、320×740 均通过。检查相同快照不关选色、UNO 保留、Escape 焦点、出牌/摸牌/保留、提交/失败后重试、整理、毫不留情罚牌/换手/轮盘/抓漏喊、父 cookie 隔离、35 张长手牌/父页面滚动后选色和无整页横向溢出；检查减少动态效果并实际查看截图。固定 View 不计为真人联机证据。
+- `node scripts/package-uno.mjs`：生成三文件实际 ZIP，最终休闲版 `uno-1.2.0.zip` 为 204246 字节，毫不留情 `uno-no-mercy-1.0.0.zip` 为 132609 字节。原创 PNG 图标/封面/背景内嵌，无外链；产物和截图保留忽略目录。
+- `pnpm ... build` 全工作区生产构建通过，包含 bundle/API runtime、隔离 ZIP 与 AI worker 检查；最终仅标题改动后重跑受影响 Web 构建与 production bundle 检查通过，未重复 API 构建。既有较大模型查看器 bundle 提示保留，无新增依赖。
+- 最终 `test:e2e tests/e2e/uno-package.spec.ts --output=.data/uno-e2e-release`：桌面/手机 4/4 通过，无 skip，1.2 分钟。真实上传/审核、封面/背景、建房/脚本 AI、原 iframe 按钮行动、刷新/私密视图、完整结算/返回房间及公开游戏名标题均覆盖。本轮早期桌面两项通过，手机旧测试误要求设计上隐藏的懒加载图标解码而失败；改为验证隐藏和实际图片端点后手机两项通过。标题调整后的全量曾为 3/4 通过，手机毫不留情暴露原生 modal 在长 iframe/父页面滚动后选色按钮超出视口的问题；已改为桌面内联选色面板，补入 35 张长手牌、父页面滚动后的实际选色回归，四视口通过。最终使用新的专属测试库 `boardgame_uno_release_test_20261024`，避免覆盖之前测试库中同版本的旧桌面字节，保留不可变保护；原准备脚本完整执行，没有降低断言或限时。
+
+限制：没有真实供应商调用、物理手机/屏幕阅读器验收、音效或教程；其他 UNO 扩展与毫不留情额外卡/硬币包未实现。末张立即结束、换手不设新 UNO 窗口、25 张中止补牌、2000 回合及 AI 只在当前回合参与抓漏喊的数字版边界已在指南明示。不自动公开淘汰者手牌，不为在线包推算平台公开战绩。
+
+交付与服务器记录待补入。开始时正式服务器为 0.14.3，UNO 仅安装旧 1.1.0；源码部署不等于管理员审核上架新游戏包。
 
 ## 波多黎各经典基础版（2026-10-24，0.15.0）
 

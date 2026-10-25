@@ -2,7 +2,7 @@
 
 顶尖桌游联盟的桌游平台，支持多人实时对局、脚本与模型 AI、在线游戏扩展。先选游戏，再开一桌，让朋友在浏览器里一起玩。
 
-**平台版本 `0.16.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
+**平台版本 `0.17.0`** · TypeScript · React / Vite · Fastify · PostgreSQL
 
 [快速开始](#快速开始) · [游戏列表](#游戏列表) · [部署与更新](#部署与更新) · [开发者文档](#开发者文档) · [开发进度](docs/progress.md)
 
@@ -41,6 +41,7 @@
 | 游戏         | 人数 | 打包命令                            | 规则与说明                                   |
 | ------------ | ---- | ----------------------------------- | -------------------------------------------- |
 | UNO · 休闲版 | 2–4  | `node scripts/package-uno.mjs`      | [上传包说明](game-packages/uno/README.md)    |
+| UNO · 毫不留情 | 2–6 | `node scripts/package-uno.mjs no-mercy` | [游戏指南](docs/games/uno.md) |
 | 五子棋       | 2    | `node scripts/package-gomoku.mjs`   | [上传包说明](game-packages/gomoku/README.md) |
 | 拉密         | 2–4  | `node scripts/package-rummikub.mjs` | [游戏指南](docs/games/rummikub.md)           |
 | 阿瓦里       | 2    | `node scripts/package-awari.mjs`    | [游戏指南](game-packages/awari/README.md)   |
@@ -48,6 +49,8 @@
 | 卡坦岛       | 3–4  | `node scripts/package-catan.mjs`    | [游戏指南](docs/games/catan.md)              |
 
 输出位于 `dist/game-packages/`。包格式、运行限制及 AI 接口见 [在线游戏 ZIP 规范](apps/web/public/developer-docs/game-packages.md)；普通源码仓库 ZIP 不能直接安装。
+
+独立开发与发布游戏的仓库规划、导出工具及迁移边界见 [独立游戏仓库](docs/game-repositories.md)。
 
 ## 快速开始
 
@@ -152,6 +155,12 @@ pnpm start:online
 | 排查恢复或部署问题       | [可靠性](docs/reliability.md) · [故障恢复](docs/recovery.md) · [部署](docs/deployment.md)                                                   |
 
 构建会生成 `/llms-full.txt` 和白名单 SDK 源码 `/developer-sdk/sdk-sources.json`，并提供 `/llms.txt`。生产托管需保留这些静态路径及页面回退。
+
+### 主项目与游戏分仓
+
+平台主仓库为 [PlayBoardgameTogether/PlayBoardgameTogether](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether)。后续采用**每个游戏单独一个仓库**：平台能力与通用 SDK 在主仓库维护，游戏规则、棋桌、AI 策略、资源、测试和打包工具在各自游戏仓库开发与发布，分别维护版本和提交记录。具体仓库地址待确认。
+
+当前下列 `games/`、`game-packages/` 仍保留现有实现，尚未完成迁移；内置游戏仍依赖平台构建装配，在线游戏仍通过管理员审核安装符合规范的游戏 ZIP。迁移须保留依赖、精确版本和旧对局兼容，详见 [开发指引](AGENTS.md#主项目与游戏分仓规则2026-10-25)。
 
 ### 仓库结构
 
