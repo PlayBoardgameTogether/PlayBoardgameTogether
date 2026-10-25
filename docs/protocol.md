@@ -1,5 +1,11 @@
 # 协议
 
+## 官方 AI 优先电脑开局（0.18.0）
+
+`createRoomInputSchema` 增加可选 `computerModelProfileId: UUID`，必须同时提供 `computerOpponents: true`，且为当前创建者自己的有效官方配置。原创建事务验证并填充 bot 的 model 配置，准备/开局、身份、revision 和回执语义不变；省略字段保持免费脚本兼容。Web 先通过原 enroll 请求显式保存档位及每席位预算，再创建房间；整个分步进度保存在会话存储，重试复用各步骤原请求。无新端点或数据库迁移。
+
+官方 bot 额度不足的当次行动通过现有脚本 worker 和正式动作事务提交，任务保留 `AI_FALLBACK_USED`；真人官方托管仍使用 `AI_BLOCKED`。停用/授权失效不作为额度回退，不改变本人 View 投影与自动动作 fencing。
+
 ## 电脑开局与公开结果（0.12.0）
 
 公开 `GET /api/v1/games` 为每个已启用的精确版本增加 `supportsScriptAi`，按 registry 的真实 `getDecisionContext` 能力计算，不改 manifest 或规则摘要。`POST /api/v1/rooms` 新增可选 `computerOpponents: true`：仅用于私密房间，游戏必须支持脚本 AI；原建房事务将首席绑定本人，其他席位设置为无账户 basic-v1 bot。本人仍未准备。配额、身份/CSRF、安装版本、请求回执与失败回滚沿用原接口。

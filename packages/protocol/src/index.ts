@@ -194,8 +194,12 @@ export const createRoomInputSchema = z
     visibility: z.enum(['public', 'private']).optional(),
     password: roomPasswordSchema.optional(),
     computerOpponents: z.literal(true).optional(),
+    computerModelProfileId: z.string().uuid().optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => !value.computerModelProfileId || value.computerOpponents === true, {
+    message: '电脑模型配置仅用于电脑对局',
+  });
 export const createRoomResultSchema = z.object({
   roomId: z.string().uuid(),
   inviteCode: z.string().nullable(),

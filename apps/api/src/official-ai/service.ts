@@ -42,6 +42,12 @@ type RuntimeProfile = {
   base_url: string;
 };
 
+export class OfficialAiQuotaError extends AppError {
+  constructor(message: string) {
+    super('AI_BLOCKED', message, 409);
+  }
+}
+
 export class OfficialAiService {
   constructor(
     private db: Database,
@@ -455,9 +461,9 @@ export class OfficialAiService {
         ? Math.min(profile.points_per_action, available, remaining)
         : profile.points_per_action;
       if (available < reservedPoints || available < 1)
-        throw new AppError('AI_BLOCKED', 'AI 点数不足，请补充点数后重试或收回控制', 409);
+        throw new OfficialAiQuotaError('AI 点数不足，请补充点数后重试或收回控制');
       if (remaining < reservedPoints || remaining < 1)
-        throw new AppError('AI_BLOCKED', '此席位已达到单局 AI 点数上限', 409);
+        throw new OfficialAiQuotaError('此席位已达到单局 AI 点数上限');
       const group = await client.query(
         `INSERT INTO ai_decision_groups(match_id,seat_id,controller_epoch,decision_key,external_attempts)
         VALUES($1,$2,$3,$4,1) ON CONFLICT(match_id,seat_id,controller_epoch,decision_key)
