@@ -1,5 +1,11 @@
 # 开发进度
 
+## PR #23 合并复核（2026-10-25，平台版本不变）
+
+- 同步最新 main，保留已合并的分仓规则与体验指南。修正导出目录清单中的平台来源为 `PlayBoardgameTogether/PlayBoardgameTogether`，生成的来源记录、README 与 Release 目标随之使用新组织；文档中的游戏仓库仍为待确认建议目标，未创建仓库或发布 Release。
+- 本轮 `pnpm --config.verify-deps-before-run=false typecheck`、同选项 `lint` 通过。`pnpm ... exec vitest run tests/unit/game-repositories.test.ts` 最终 3/3 通过，无 skip；新增来源与目标组织回归。初轮脏工作区测试误将 Windows CRLF 检出文件当作 Git LF 字节预期，现从夹具 Git 对象读取原始预期，继续精确核验导出字节与秘密文件隔离；不是修改或归一化导出内容。修改文件另作 ESLint 检查，差异检查通过。
+- 本次仅开发工具元数据、文档和测试修正，平台保持 0.16.0；未重复运行未受修改影响的各游戏全量构建/联机测试，独立仓库 CI、Release 与管理员安装仍未验证。旧验证记录保留在下节。
+
 ## ZIP 游戏独立仓库导出与发布工具（2026-10-25，平台版本不变）
 
 - 新增 `scripts/game-repositories/catalog.json` 与 `scripts/export-game-repositories.mjs`，为 UNO（含两种玩法）、五子棋、拉密、卡坦岛、波多黎各生成五个独立项目。来源锁定经过核对的 `origin/main@471501e93949da34c9c7a17e4b9902b2f5713090`；不读取工作区未提交规则，不导出会话/数据库/根 .env，目标目录已存在时拒绝覆盖。原始路径、摘要、完整 SHA 与类型导入适配记录在各项目 SOURCE.json。

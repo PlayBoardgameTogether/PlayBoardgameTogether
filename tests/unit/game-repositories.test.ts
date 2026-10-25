@@ -26,6 +26,9 @@ describe('independent game repository export', () => {
     run('--output', output, 'gomoku');
     const game = join(output, 'playboard-game-gomoku');
     const origin = JSON.parse(await readFile(join(game, 'SOURCE.json'), 'utf8'));
+    expect(origin.repository).toBe('PlayBoardgameTogether/PlayBoardgameTogether');
+    const release = JSON.parse(await readFile(join(game, 'release.config.json'), 'utf8'));
+    expect(release.repository).toBe('PlayBoardgameTogether/playboard-game-gomoku');
     for (const [path, hash] of Object.entries(origin.files)) {
       const source = execFileSync('git', ['show', `${origin.commit}:${path}`], { cwd: root });
       expect(createHash('sha256').update(source).digest('hex')).toBe(hash);
@@ -60,7 +63,9 @@ describe('independent game repository export', () => {
     await cp(join(root, 'scripts/game-repositories'), join(fixture, 'scripts/game-repositories'), {
       recursive: true,
     });
-    const expected = await readFile(join(fixture, 'game-packages/gomoku/server.txt'));
+    const expected = execFileSync('git', ['show', 'HEAD:game-packages/gomoku/server.txt'], {
+      cwd: fixture,
+    });
     await writeFile(join(fixture, 'game-packages/gomoku/server.txt'), 'uncommitted rules');
     await writeFile(join(fixture, 'game-packages/gomoku/.env'), 'EXPORT_TEST_SECRET=fixture-only');
     const output = join(directory, 'export');

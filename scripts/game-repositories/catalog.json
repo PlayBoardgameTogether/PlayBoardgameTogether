@@ -1,5 +1,5 @@
 {
-  "platform": "Rst307/PlayBoardgameTogether",
+  "platform": "PlayBoardgameTogether/PlayBoardgameTogether",
   "games": {
     "uno": {
       "repository": "playboard-game-uno",

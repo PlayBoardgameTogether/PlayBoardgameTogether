@@ -4,15 +4,15 @@
 
 ## 仓库清单
 
-目标账户沿用本项目远程的 `Rst307`。下表为计划目标，不表示仓库已经创建或发布成功；实际结果记录在本轮进度与交付说明中。
+平台主仓库已迁至 `PlayBoardgameTogether/PlayBoardgameTogether`。下表使用同名组织作为导出模板的建议目标，具体游戏仓库地址仍须用户确认，不表示仓库已经创建或发布成功，也不构成创建仓库的授权；实际结果记录在本轮进度与交付说明中。
 
 | 游戏           | 目标仓库                            | 发布标签示例                        |
 | -------------- | ----------------------------------- | ----------------------------------- |
-| UNO 及扩展玩法 | `Rst307/playboard-game-uno`         | `uno-v1.2.0`、`uno-no-mercy-v1.0.0` |
-| 五子棋         | `Rst307/playboard-game-gomoku`      | `gomoku-v1.0.3`                     |
-| 拉密           | `Rst307/playboard-game-rummikub`    | `rummikub-v1.0.3`                   |
-| 卡坦岛         | `Rst307/playboard-game-catan`       | `catan-v1.0.1`                      |
-| 波多黎各       | `Rst307/playboard-game-puerto-rico` | `puerto-rico-v1.0.0`                |
+| UNO 及扩展玩法 | `PlayBoardgameTogether/playboard-game-uno`         | `uno-v1.2.0`、`uno-no-mercy-v1.0.0` |
+| 五子棋         | `PlayBoardgameTogether/playboard-game-gomoku`      | `gomoku-v1.0.3`                     |
+| 拉密           | `PlayBoardgameTogether/playboard-game-rummikub`    | `rummikub-v1.0.3`                   |
+| 卡坦岛         | `PlayBoardgameTogether/playboard-game-catan`       | `catan-v1.0.1`                      |
+| 波多黎各       | `PlayBoardgameTogether/playboard-game-puerto-rico` | `puerto-rico-v1.0.0`                |
 
 同一游戏的相关扩展留在一个仓库，分别使用自己的游戏 ID、版本和 Release 标签。无需 Git submodule，也不让生产启动依赖临时拉取多个游戏源码仓库。
 
@@ -43,13 +43,13 @@ pnpm verify
 
 Linux CI 使用 `playwright install --with-deps chromium`。首次安装只安装工具依赖；不执行游戏 ZIP 内的 npm 或 shell 脚本。
 
-若使用已登录且具备建仓权限的 GitHub CLI，验证和审查完成后可在各独立项目目录初始化新的游戏仓库，再执行：
+仅在用户确认目标地址并授权创建对应仓库后，使用已登录且具备建仓权限的 GitHub CLI，验证和审查完成后可在各独立项目目录初始化新的游戏仓库，再执行：
 
 ```powershell
 git init -b main
 git add README.md package.json pnpm-lock.yaml .gitignore .github scripts tests game-packages packages apps SOURCE.json release.config.json vitest.config.mjs
 git commit -m "chore: initialize independent game repository"
-gh repo create Rst307/playboard-game-gomoku --public --source . --remote origin --push
+gh repo create PlayBoardgameTogether/playboard-game-gomoku --public --source . --remote origin --push
 ```
 
 示例针对五子棋，其他项目替换仓库名；只在新导出目录执行，不对现有平台仓库初始化。创建为公开仓库前核对素材分发权限与待提交文件。若仓库已创建，则添加已确认的远程并正常推送，不重复创建或强制覆盖。当前连接如没有建仓/发布能力，应先由有权限的用户创建并授权访问；不能把本地导出计为 GitHub 分仓完成。
