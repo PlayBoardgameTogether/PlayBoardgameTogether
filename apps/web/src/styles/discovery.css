@@ -30,24 +30,72 @@
     color: var(--muted);
   }
   .lobby-heading .lobby-invite {
-    flex: 0 1 320px;
+    position: relative;
+    flex: 0 0 auto;
     min-width: 0;
     margin: 0;
     padding: 0;
-    background: var(--panel);
-    border: 1px solid var(--line-strong);
-    border-radius: 14px;
+    background: transparent;
+    border: none;
   }
   .lobby-heading .lobby-invite > summary {
-    min-height: 48px;
-    padding: 12px 16px;
-    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 9px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .lobby-heading .lobby-invite > summary::-webkit-details-marker {
+    display: none;
   }
   .lobby-heading .lobby-invite summary small {
     display: none;
   }
-  .lobby-heading .lobby-invite[open] {
-    flex-basis: 380px;
+  .lobby-heading .lobby-invite .lobby-invite-body {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 340px;
+    max-width: min(340px, 92vw);
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    padding: 18px 20px 20px;
+    z-index: 100;
+  }
+  .lobby-invite-popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .lobby-invite-popover-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .lobby-invite-popover-close {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0 4px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .lobby-invite-popover-close:hover {
+    color: var(--text);
   }
   .discovery-spotlight {
     display: grid;
@@ -354,7 +402,7 @@
     }
     .lobby-heading .lobby-invite,
     .lobby-heading .lobby-invite[open] {
-      flex-basis: 100%;
+      flex-basis: auto;
     }
     .discovery-catalog .game-card,
     .discovery-catalog .game-card:hover {
