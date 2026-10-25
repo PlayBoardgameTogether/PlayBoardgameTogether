@@ -1,0 +1,268 @@
+{
+  "format": 1,
+  "platformSource": "a7e36d32e2febeb5bd7013752f099d01d0502316",
+  "games": {
+    "uno": {
+      "repository": "PlayBoardgameTogether/playboard-game-uno",
+      "commit": "10d1cb335176ee96a347b7e5d602af354da4c5dd",
+      "kind": "zip",
+      "source": "game-packages/uno",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/uno.md": "09f3764c7bf8bce5325ee59e07029c20f5d8a2dd",
+        "game-packages/uno/README.md": "c4dc2a708d1816004c1672cddfba1a1271088c90",
+        "game-packages/uno/art/cover.svg": "c5e63cbd54ed85a3936b4cb12ff86fd880954efd",
+        "game-packages/uno/art/icon.svg": "afe25e7dd7d8c1cb425c94f87f19da043fcdea68",
+        "game-packages/uno/client.html": "c7a4d9f99d61fe83e468148c55cf7c1599b4bf1b",
+        "game-packages/uno/editions.json": "62642ff68b9d2ff3cea2360aff3ef453a67a1d2f",
+        "game-packages/uno/game.json": "bec52204f3a5228e994ce61398766c2e10205941",
+        "game-packages/uno/no-mercy/art/cover.svg": "77e46e3ecd863f7e6eb1ebca6cd93188454a169a",
+        "game-packages/uno/no-mercy/art/icon.svg": "56a9deba1b0982f16f61d992406808226936d6d4",
+        "game-packages/uno/no-mercy/game.json": "75e5fada5b02085c0c143cda15f0cfb44d9a9f0c",
+        "game-packages/uno/no-mercy/server.txt": "9761c1f8bd534ca56c0fe4840791543660f5fb27",
+        "game-packages/uno/server.txt": "82ef3a77a21b76580473e1a0219c609e0e36b582",
+        "scripts/check-uno-package.mjs": "80a5264a1aa222d51f2e02909d176395eac02f14",
+        "scripts/package-uno.mjs": "859a1021cd3628ea257fe34468e38bdf44794764",
+        "scripts/uno-package.mjs": "2539623242e0e3f6d267432d5eb2d5136278987d",
+        "tests/unit/uno-no-mercy.test.ts": "4816f4e8da773a7f7d19403b572fbc66b3daa30a",
+        "tests/unit/uno-package.test.ts": "dfdfe7ab5c74f3e815385d8ddf6ebcc945f779ca"
+      }
+    },
+    "gomoku": {
+      "repository": "PlayBoardgameTogether/playboard-game-gomoku",
+      "commit": "d62d015b20c5a874908ca663bbe56abee507c3af",
+      "kind": "zip",
+      "source": "game-packages/gomoku",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "game-packages/gomoku/README.md": "3254626487aba018d306d6a30f357cb608e1a568",
+        "game-packages/gomoku/art/background.svg": "d934aa7b985cae53dffd02c0c269c7651882a99b",
+        "game-packages/gomoku/art/cover.svg": "4eeb4bb75d86055319369dd6c548c27737deaf38",
+        "game-packages/gomoku/art/icon.svg": "bf5c7ef8b7b88e88e00f0a7c9559e2067d0bc9b1",
+        "game-packages/gomoku/client.html": "778ffa4cb5d21632dfb8d45682c2c5dd535c27c4",
+        "game-packages/gomoku/game.json": "22a35a74b938f97d2b9665db3ab884813fe2e02a",
+        "game-packages/gomoku/server.txt": "f93f170f2d5227b4223303b2188683cf5c8c38da",
+        "scripts/package-gomoku.mjs": "600eb81f8af35bf725b07647f293ae47837ecbf1",
+        "tests/unit/gomoku-package.test.ts": "be4ae7fbff83f22098a8b0369f7d0e2f65d2e562"
+      }
+    },
+    "rummikub": {
+      "repository": "PlayBoardgameTogether/playboard-game-rummikub",
+      "commit": "7a87ebdb67612e7b93ee8aa4b637c9a6cb721e02",
+      "kind": "zip",
+      "source": "game-packages/rummikub",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/rummikub.md": "54d72f7568c3730d785a78fa3fd27ee32cf3789a",
+        "game-packages/rummikub/README.md": "918e96f722d08bc1850f93059cb86c1600169b35",
+        "game-packages/rummikub/art/cover.svg": "80f18d1701c141fcbc083d60cd0a6745018b96bf",
+        "game-packages/rummikub/art/icon.svg": "ab335854b14f771b53b8cb5d18a8c4d2063ae3a4",
+        "game-packages/rummikub/client.html": "16ce6c36b424e46e83a0f10d5a1751175fc67c9f",
+        "game-packages/rummikub/game.json": "0f52e285aef421e744b4aa2cb6c6dd318d7e2056",
+        "game-packages/rummikub/server.txt": "d88b27f11c38c5ebf76d09aea9f881578a3fc13e",
+        "game-packages/rummikub/shared.txt": "9d1917ccb6d847fd0075fff7b2e0a4af8d573a4a",
+        "scripts/package-rummikub.mjs": "07fc1396e062585c74587c3f5ae48fb93b2c9584",
+        "scripts/rummikub-package.mjs": "51a27dfda979bd47f9606e5a2c1390b197a68b3e",
+        "tests/unit/rummikub-package.test.ts": "0390fd6892014ebcb825c9cfa6489f12d6f250f5"
+      }
+    },
+    "catan": {
+      "repository": "PlayBoardgameTogether/playboard-game-catan",
+      "commit": "dc1ac21565454475be5aa880ac29c6fe81b2b381",
+      "kind": "zip",
+      "source": "game-packages/catan",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/catan.md": "d316571ad03ffc7123d4ca2ae11f853358de4c76",
+        "game-packages/catan/README.md": "96402688b61e051aa0a9701e55d8b13331ca6c5f",
+        "game-packages/catan/art/cover-prompt.md": "a37b459063ecfa8775fe3b959dacd1c6b80f51b2",
+        "game-packages/catan/art/cover.png": "2a52c8cc55c7b9408eab7011bd603677c3459f85",
+        "game-packages/catan/art/cover.svg": "88bcdfb2d6a25cc7f80f158d31f1103935b94749",
+        "game-packages/catan/client.html": "5e414b304c3cc6ed5c4f60966e5ada78b59877a3",
+        "game-packages/catan/game.json": "fc994ff7699d3e003e0b4fa03756ca2cdd0ad63e",
+        "game-packages/catan/server.txt": "1b696d7fd2c7788e07ea5e9678e8f03285f991af",
+        "game-packages/catan/shared.txt": "84773598583a7776c15e4900734d2ba99df3cfd4",
+        "scripts/catan-package.mjs": "843fa1b66fef40e5ecdffb8bbef03421ca00c421",
+        "scripts/package-catan.mjs": "885418910d8ceb06492d0d43726c6920c302f81e",
+        "tests/unit/catan-package.test.ts": "17dd4454d2de45f5e077a8d352cfa19a567b7883"
+      }
+    },
+    "puerto-rico": {
+      "repository": "PlayBoardgameTogether/playboard-game-puerto-rico",
+      "commit": "a47a1244eb7a2bb049390997f3e692960ab21217",
+      "kind": "zip",
+      "source": "game-packages/puerto-rico",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/puerto-rico.md": "5e3c63c3b51daaf54968a442871cac3d80f06225",
+        "game-packages/puerto-rico/README.md": "9757317389b9260f55a34a09bd11804a76a077c7",
+        "game-packages/puerto-rico/art/cover.svg": "cc38f38d27878bf384863d69ac324c12f27be457",
+        "game-packages/puerto-rico/client.html": "2e6b0de49548f3485a984c931cedc5005d8c36c9",
+        "game-packages/puerto-rico/game.json": "76af66fcf9f324e51d8cc6912ad6ea283aa48274",
+        "game-packages/puerto-rico/server.txt": "c33b40e4505cad2b40e21a1b56298bd35149c034",
+        "game-packages/puerto-rico/shared.txt": "d4b010beb5d5689e121612a43782d58ded199cbd",
+        "scripts/package-puerto-rico.mjs": "b0af19ffbb0c0d6330caf08d920e26ffe385b4dd",
+        "scripts/puerto-rico-package.mjs": "b0fc192df4881928c0c53a75a37de4f9bfef6915",
+        "tests/unit/puerto-rico-package.test.ts": "fbf522dbbc376fb8e331645d47cac2ffaf2a9224"
+      }
+    },
+    "awari": {
+      "repository": "PlayBoardgameTogether/playboard-game-awari",
+      "commit": "49c51537f8fa5d2669516a7c42eb198d5b5fe6b4",
+      "kind": "zip",
+      "source": "game-packages/awari",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "game-packages/awari/README.md": "6865f24dd36612345a21efb577edc500a1e01091",
+        "game-packages/awari/art/cover.svg": "c544938d5679e548fe40e8837f3d8d5b8ee288e9",
+        "game-packages/awari/art/icon.svg": "60ebce40d10a22e25ec5466d0792833ecb70303f",
+        "game-packages/awari/client.html": "ac856cb8668f2682914df5ef77ff71f7f7c9df74",
+        "game-packages/awari/game.json": "5d739a47e24aff7e03a6e591e26d863d515e98a2",
+        "game-packages/awari/server.txt": "e402f2718c2c4bb84b0b292432392303dca6f68e",
+        "scripts/awari-package.mjs": "4f6fca83d1c5e885380e918c6239f96c326e4538",
+        "scripts/package-awari.mjs": "24debeaad142b62860a631dbd3900c8d32ace049",
+        "tests/unit/awari-package.test.ts": "d7fd5e98da4370247a9f77ab67a9e9eeaf18cdd5"
+      }
+    },
+    "color-match": {
+      "repository": "PlayBoardgameTogether/playboard-game-color-match",
+      "commit": "ceb70051f81a059bcb184694ae38e3cdc2a6672f",
+      "kind": "builtin",
+      "source": "games/color-match",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "games/color-match/assets/NOTICE.md": "c4fad3f5911e9599c24fe814ff397d583766cbc3",
+        "games/color-match/assets/cards/README.md": "4a11713acb94df178175b93b2aae1888b7eb8fea",
+        "games/color-match/assets/icons/README.md": "2b24de95bdbc326b26e32a06b13e63b06149a99f",
+        "games/color-match/assets/manifest.json": "5e3ed3e9881e63bcf12747360497a0bb6b8c2054",
+        "games/color-match/build.mjs": "0c880c7547af2d6a9374cd4b709178441c7c8ae1",
+        "games/color-match/manifest.json": "1bc0bd3bd90a68a2cb25483b700c6664cdbfd18c",
+        "games/color-match/package.json": "d66a9a176986f506ad508cff62004b2ae35c5d2f",
+        "games/color-match/src/client/index.tsx": "0ee9145c0303aaa46313170aa246255d0a1be7e2",
+        "games/color-match/src/client/preview.tsx": "a5173acb4d75f4f8eba5be59841d93444f68ae47",
+        "games/color-match/src/client/style.css": "3ec0c8a4c2b3e05fe81ce875a4d401eae5775468",
+        "games/color-match/src/client/tutorial.ts": "130bb94ebd9449daad5da9c9869b9fe073608be7",
+        "games/color-match/src/server/index.ts": "39b15fcafa2f52a330668e42d3f8b523241fd47b",
+        "games/color-match/src/shared/assets.ts": "c73aae974769d9394ebe8caabe9b17b32077d205",
+        "games/color-match/src/shared/index.ts": "2ccaa02d4eec5ae47b4865b63746609e44a6802a",
+        "games/color-match/src/shared/rules.ts": "adfb99d597496ad5cb0ba0a59d673b907b2bbf42",
+        "games/color-match/tsconfig.build.json": "3f0f42675a96e56981dbabca269db40063db4cb0",
+        "games/color-match/tsconfig.json": "c7f519bfc91b90f387c56df6a19616cae661e7d8",
+        "tests/unit/color-match.test.ts": "6656c94981052e45b68e5187ccc622701a805e2d",
+        "tests/unit/tutorial.test.ts": "efcaa2ab348ed3567323d84112d5a42372a1d1d5"
+      }
+    },
+    "grid-garden": {
+      "repository": "PlayBoardgameTogether/playboard-game-grid-garden",
+      "commit": "e04ae54b762caaf30b1096f3f06a09a43d6f2127",
+      "kind": "builtin",
+      "source": "games/grid-garden",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/grid-garden.md": "b570333449ab1da99a9e351438b72fbaec331136",
+        "games/grid-garden/assets/NOTICE.md": "8af66eae8d2f9d513e59d2c97c81ad0cb3a45676",
+        "games/grid-garden/assets/manifest.json": "0ab7ee4d8ba28b226f6c170c709fdbfc126b6525",
+        "games/grid-garden/package.json": "04bb46e6db7021bfda9559d8215f6de4575fa67d",
+        "games/grid-garden/src/client/index.tsx": "3c322cc284faf9e8dfda879b3992a99633fe44ba",
+        "games/grid-garden/src/server/assets.ts": "b5addd670238734a5baa6f6325c28cc8272f8fba",
+        "games/grid-garden/src/server/index.ts": "6a25ec71b459197448e9b82c012765088134c5e4",
+        "games/grid-garden/src/shared/assets.ts": "e6fff98191035768277740de7582a2247081795a",
+        "games/grid-garden/src/shared/index.ts": "e6dce1f86ceac4f9e85bf80772b80a611cb21c57",
+        "games/grid-garden/src/shared/rules.ts": "2b32e9b4ac34a22265c18d4f2861315a80c532f3",
+        "games/grid-garden/tsconfig.build.json": "8bc8c3215c43be9cf9e54e770db354abea9883f6",
+        "games/grid-garden/tsconfig.json": "c7f519bfc91b90f387c56df6a19616cae661e7d8",
+        "tests/unit/grid-garden.test.ts": "37d75981250ed2cee870333171f933e740a1d987"
+      }
+    },
+    "splendor": {
+      "repository": "PlayBoardgameTogether/playboard-game-splendor",
+      "commit": "52da0564950476e36ca94ce0b899f5969f8a6ac3",
+      "kind": "builtin",
+      "source": "games/splendor",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/splendor.md": "cc2699641968445fa524ee120a30f81080d14dd0",
+        "games/splendor/build.mjs": "0c880c7547af2d6a9374cd4b709178441c7c8ae1",
+        "games/splendor/package.json": "1c752c9d7f1aeb4f160dd95d6e5de4ce8f97f2f4",
+        "games/splendor/src/client/Activity.tsx": "f6ed67e70f68fd6c5483ee7811af8376caacfd36",
+        "games/splendor/src/client/index.tsx": "1ac3b26de6a3b14aa0a3276f46804bae6c96a27a",
+        "games/splendor/src/client/interaction.ts": "d716c458be37074522380d1555206d356ed161ef",
+        "games/splendor/src/client/style.css": "7ac8b5d5950ef273050b1843e99f58ccad60d6a5",
+        "games/splendor/src/client/tutorial-scenes.ts": "99544ecc712ffef0005b128f8cedf89120e64551",
+        "games/splendor/src/client/tutorial.ts": "6209ee5e9bb218c90c160bfc30d40331fb0f2af2",
+        "games/splendor/src/client/visuals.tsx": "2deed88eefbea300bd4e8c5263d6b4f0b9c7f2f5",
+        "games/splendor/src/server/index.ts": "3e3c83db80ee6d3e77198565c07f3768dffecb52",
+        "games/splendor/src/shared/assets.ts": "ab3396b25f080cb589136f69ab16beae6088a8c6",
+        "games/splendor/src/shared/catalog.ts": "a1d18cbecc2b6ae6fcc950085a014cee7277c3f9",
+        "games/splendor/src/shared/index.ts": "1a3bf32e145f50f44a8916b0bd40b2489a3a6f2e",
+        "games/splendor/src/shared/rules.ts": "306577c2e73e91cd8f4f5abccb5e4f59bcc787c1",
+        "games/splendor/tsconfig.build.json": "9d7a98ee82b33838e9f4a8b1ae5f2543c25c06ca",
+        "games/splendor/tsconfig.json": "13a90fc2ee3a20b932ccd712cd41ffffe522e568",
+        "tests/unit/splendor-assets.test.ts": "9c31f45cb93ff650b46987508f46fc66289c4a3c",
+        "tests/unit/splendor-interaction.test.ts": "f09078a036f86c3c7a5e6bc27f45e07d0b6b3bd6",
+        "tests/unit/splendor-tutorial-reference.ts": "5acb0b8701fb0b26423bafb4167700d72d2bc2f5",
+        "tests/unit/splendor-tutorial.test.ts": "efd56dbd063cd0ce78550b824d0bb13ad291cb74",
+        "tests/unit/splendor.test.ts": "fe2fb8d8ecab0a092d8e89c3b2370914f8e5720d"
+      }
+    },
+    "azul": {
+      "repository": "PlayBoardgameTogether/playboard-game-azul",
+      "commit": "db1fce8eb3019e7faab1781720c76a5883dd21b3",
+      "kind": "builtin",
+      "source": "games/azul",
+      "compatibility": {
+        "platform": "0.17.0",
+        "sdk": "0.1.0"
+      },
+      "files": {
+        "docs/games/azul.md": "9eefe51969dd68ef8deba05d615821546b20d0a7",
+        "games/azul/build.mjs": "132aec0b1085c9565899a840829d911fb6203f83",
+        "games/azul/package.json": "7a91e66e94359fe750c0f9b512ff96c26503763c",
+        "games/azul/src/client/TileFlight.tsx": "5a566591500dc2e348592a8439974c3d7a11ce34",
+        "games/azul/src/client/index.tsx": "dd4e5512f6f0ce2285799c32f0422a1ee645cec7",
+        "games/azul/src/client/scoring.ts": "664f03b293575446f21afaac5c770e572c508827",
+        "games/azul/src/client/style.css": "7cc39539ea95634c01639b51f0fb198e4ad3222c",
+        "games/azul/src/client/tutorial-scenes.ts": "22f5c9590c665334ac44d53f8cb2c6edea90a1e9",
+        "games/azul/src/client/tutorial.ts": "696a909af360f4fa1eee61d38f95be89a3697ed4",
+        "games/azul/src/server/index.ts": "1457d9461d9023569bed7b7bf5cad2e6ba8380c0",
+        "games/azul/src/shared/assets.ts": "2c8241b3168378355f1f345b876d07813481fa2d",
+        "games/azul/src/shared/index.ts": "a63df94718d944328290746f8b646eaee7b1f8e6",
+        "games/azul/src/shared/rules.ts": "1a5cf9a07f160ba3f8e8e8e2a9041a6c4b6317d9",
+        "games/azul/tsconfig.build.json": "a8d421a4c3960cbf751e024f0e4a10bc2db6a702",
+        "games/azul/tsconfig.json": "f2ddf8df746f4a52d521e27fdfe7df1608e41d19",
+        "scripts/azul-audio.ts": "5bdae289cd7e4d8ed1aa7091bebf857509b79c02",
+        "tests/unit/azul-scoring-presentation.test.ts": "4db074adf564e1c8a94834f6d5b7a68daed29218",
+        "tests/unit/azul-tutorial-reference.ts": "89cec3c2a2d79207a07d9780759553ff6fde38c1",
+        "tests/unit/azul-tutorial.test.ts": "d5060e96e2ee19ef7a9613a5705a614f8f003682",
+        "tests/unit/azul.test.ts": "0b4e1b860fee3232e95c914e3fb75c1db76962fc"
+      }
+    }
+  }
+}

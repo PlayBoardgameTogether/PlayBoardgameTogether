@@ -4,6 +4,7 @@
     "uno": {
       "repository": "playboard-game-uno",
       "name": "UNO",
+      "docs": ["docs/games/uno.md"],
       "scripts": ["package-uno.mjs", "uno-package.mjs", "check-uno-package.mjs"],
       "tests": ["uno-package.test.ts", "uno-no-mercy.test.ts"],
       "assets": [
@@ -21,6 +22,7 @@
     "rummikub": {
       "repository": "playboard-game-rummikub",
       "name": "拉密",
+      "docs": ["docs/games/rummikub.md"],
       "scripts": ["package-rummikub.mjs", "rummikub-package.mjs"],
       "tests": ["rummikub-package.test.ts"],
       "assets": [{ "id": "online.rummikub", "archive": "rummikub" }]
@@ -28,6 +30,7 @@
     "catan": {
       "repository": "playboard-game-catan",
       "name": "卡坦岛",
+      "docs": ["docs/games/catan.md"],
       "scripts": ["package-catan.mjs", "catan-package.mjs"],
       "tests": ["catan-package.test.ts"],
       "assets": [{ "id": "online.catan", "archive": "catan" }]
@@ -35,9 +38,64 @@
     "puerto-rico": {
       "repository": "playboard-game-puerto-rico",
       "name": "波多黎各",
+      "docs": ["docs/games/puerto-rico.md"],
       "scripts": ["package-puerto-rico.mjs", "puerto-rico-package.mjs"],
       "tests": ["puerto-rico-package.test.ts"],
       "assets": [{ "id": "online.puerto-rico", "archive": "puerto-rico" }]
+    },
+    "awari": {
+      "repository": "playboard-game-awari",
+      "name": "阿瓦里",
+      "scripts": ["package-awari.mjs", "awari-package.mjs"],
+      "tests": ["awari-package.test.ts"],
+      "assets": [{ "id": "online.awari", "archive": "awari" }]
+    },
+    "color-match": {
+      "repository": "playboard-game-color-match",
+      "name": "Color Match",
+      "kind": "builtin",
+      "scripts": [],
+      "tests": ["color-match.test.ts", "tutorial.test.ts"],
+      "docs": [],
+      "assets": [{ "id": "color-match", "archive": "color-match" }]
+    },
+    "grid-garden": {
+      "repository": "playboard-game-grid-garden",
+      "name": "Grid Garden",
+      "kind": "builtin",
+      "scripts": [],
+      "tests": ["grid-garden.test.ts"],
+      "docs": ["docs/games/grid-garden.md"],
+      "assets": [{ "id": "grid-garden", "archive": "grid-garden" }]
+    },
+    "splendor": {
+      "repository": "playboard-game-splendor",
+      "name": "璀璨宝石",
+      "kind": "builtin",
+      "scripts": [],
+      "tests": [
+        "splendor.test.ts",
+        "splendor-assets.test.ts",
+        "splendor-interaction.test.ts",
+        "splendor-tutorial.test.ts",
+        "splendor-tutorial-reference.ts"
+      ],
+      "docs": ["docs/games/splendor.md"],
+      "assets": [{ "id": "splendor.base", "archive": "splendor" }]
+    },
+    "azul": {
+      "repository": "playboard-game-azul",
+      "name": "花砖物语",
+      "kind": "builtin",
+      "scripts": ["azul-audio.ts"],
+      "tests": [
+        "azul.test.ts",
+        "azul-scoring-presentation.test.ts",
+        "azul-tutorial.test.ts",
+        "azul-tutorial-reference.ts"
+      ],
+      "docs": ["docs/games/azul.md"],
+      "assets": [{ "id": "azul.base", "archive": "azul" }]
     }
   }
 }

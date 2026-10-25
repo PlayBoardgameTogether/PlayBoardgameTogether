@@ -1,5 +1,6 @@
 {
   "name": "boardgame-platform",
+  "license": "GPL-3.0-only",
   "version": "0.17.1",
   "private": true,
   "type": "module",

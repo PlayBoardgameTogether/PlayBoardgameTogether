@@ -1,5 +1,6 @@
 {
   "name": "@boardgame/color-match",
+  "license": "GPL-3.0-only",
   "version": "1.0.0",
   "type": "module",
   "exports": {

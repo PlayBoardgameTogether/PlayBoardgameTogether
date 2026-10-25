@@ -1,5 +1,11 @@
 # 架构
 
+## 游戏仓库所有权分离（2026-10-25）
+
+10 个游戏仓库在 PlayBoardgameTogether 组织分别维护规则、棋桌、策略、资源和发布；平台主仓库保留其锁定集成副本，用于既有 registry、workspace、资源准备与回归，不再直接开发游戏。`game-repositories.lock.json` 记录远程完整提交和 Git blob SHA，`check-game-repositories.mjs --remote` 同时核对副本和远程 tree；`import-game-repository.mjs` 引入经过审查的精确版本并保护本地修改。独立仓库中的 SDK/包解析器只是固定兼容性测试快照，平台仍是通用 SDK 和运行时的维护来源。
+
+没有改变进程、公开契约、数据所有权、事务、旧对局恢复或安装权限；内置游戏继续构建装配，在线 ZIP 继续管理员审核安装。仓库清单见 [独立游戏仓库](game-repositories.md)，取舍见 [ADR-009](adr/009-independent-game-repositories.md)。
+
 ## 对局连接与游戏样式整理（2026-10-22，0.14.2）
 
 `matches/connection.ts` 管理单个页面世代的认证初始化、WS 订阅、权威同步、退避重连、心跳与浏览器监听，返回停止入口。通过类型化回调与 `useMatchSession` 协作；Hook 继续拥有本人 View 合并、账户绑定的待确认动作、原请求回执恢复与音效授权。连接状态读取同一个 ref，停止、取消或页面世代失效后不再投递迟到回调，不创建新的传输、动作或身份路径。

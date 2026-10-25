@@ -158,9 +158,9 @@ pnpm start:online
 
 ### 主项目与游戏分仓
 
-平台主仓库为 [PlayBoardgameTogether/PlayBoardgameTogether](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether)。后续采用**每个游戏单独一个仓库**：平台能力与通用 SDK 在主仓库维护，游戏规则、棋桌、AI 策略、资源、测试和打包工具在各自游戏仓库开发与发布，分别维护版本和提交记录。具体仓库地址待确认。
+平台主仓库为 [PlayBoardgameTogether/PlayBoardgameTogether](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether)。全部游戏采用**每个游戏单独一个仓库**，统一位于 [PlayBoardgameTogether 组织](https://github.com/orgs/PlayBoardgameTogether)：平台能力与通用 SDK 在主仓库维护，游戏规则、棋桌、AI 策略、资源、测试和打包工具在各自游戏仓库开发与发布。10 个游戏仓库、构建与发布方式见 [独立游戏仓库](docs/game-repositories.md)，后续游戏沿用该约定。
 
-当前下列 `games/`、`game-packages/` 仍保留现有实现，尚未完成迁移；内置游戏仍依赖平台构建装配，在线游戏仍通过管理员审核安装符合规范的游戏 ZIP。迁移须保留依赖、精确版本和旧对局兼容，详见 [开发指引](AGENTS.md#主项目与游戏分仓规则2026-10-25)。
+下列 `games/`、`game-packages/` 保留锁定的构建与回归集成副本，禁止在平台直接开发游戏；`game-repositories.lock.json` 记录对应游戏仓库的完整提交 SHA 和文件摘要。内置游戏仍随平台构建装配，在线游戏仍通过管理员审核安装规范 ZIP；独立仓库发布不会自动上架或更新旧对局。详见 [开发指引](AGENTS.md#主项目与游戏分仓规则2026-10-25)。
 
 ### 仓库结构
 
@@ -173,8 +173,8 @@ packages/
   client-sdk/          类型化请求与客户端传输
   game-sdk/            游戏扩展契约与确定性 RNG
   ui/                  可复用视觉组件
-games/                 内置游戏，分离 shared / server / client 入口
-game-packages/         在线 ZIP 游戏源码与打包入口
+games/                 内置游戏锁定集成副本；test-counter 为平台验收设施
+game-packages/         在线 ZIP 游戏锁定构建/回归副本
 docs/                  设计、协议、运维与验收记录
 scripts/               开发、打包与维护工具
 ```
@@ -204,3 +204,11 @@ pnpm build
 - **资源与备份**：资源默认位于 `.data/assets`；生产使用绝对路径 `ASSET_STORAGE_DIR` 指向独立持久目录。本机提取的 TTS 图包不随仓库分发，新环境需自行安装或恢复。
 - **部署规模**：presence 与广播仍是单 API 进程内状态，不宣称多副本生产高可用或更新零中断；当前不提供自动断线托管和观战。
 - **开发实验台**：`/dev/lab` 保持双开发开关限制，与正式身份和对局链路分离。
+
+## 许可证
+
+Copyright (C) 2026 TheTopBoardgameAssociation
+
+除另有声明的文件外，本项目采用 [GNU GPL v3.0](LICENSE)（`GPL-3.0-only`）开源协议，允许按协议使用、修改和分发。本软件不提供任何担保，具体条款见 LICENSE。
+
+已有单独许可声明的素材、第三方代码和依赖继续遵循各自的许可与署名要求；例如标明 CC0-1.0 的资源仍按原许可分发。

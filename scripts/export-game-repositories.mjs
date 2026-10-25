@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
+import { exportBuiltin } from './game-repositories/export-builtin.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const templates = new URL('./game-repositories/templates/', import.meta.url);
@@ -45,6 +46,12 @@ const runtimeFiles = [
 const exports = [];
 for (const key of selected) {
   const config = catalog.games[key];
+  if (config.kind === 'builtin') {
+    exports.push(
+      await exportBuiltin({ key, config, catalog, commit, platform, git, source, templates }),
+    );
+    continue;
+  }
   const paths = git('ls-tree', '-r', '--name-only', commit, '--', `game-packages/${key}/`)
     .toString()
     .trim()
@@ -62,6 +69,8 @@ for (const key of selected) {
   if (!paths.length) throw new Error(`${key} has no committed source at ${commit}`);
   paths.push(...config.scripts.map((name) => `scripts/${name}`));
   paths.push(...config.tests.map((name) => `tests/unit/${name}`));
+  paths.push(...(config.docs ?? []));
+  const ownedFiles = [...paths];
   paths.push(...runtimeFiles);
   const files = new Map(paths.map((path) => [path, source(path)]));
   const protocol = source('packages/protocol/src/index.ts').toString();
@@ -83,6 +92,9 @@ for (const key of selected) {
     repository: catalog.platform,
     commit,
     game: key,
+    platformVersion: platform.version,
+    sdkVersion: JSON.parse(source('packages/game-sdk/package.json').toString()).version,
+    ownedFiles,
     files: Object.fromEntries(
       paths.map((path) => [path, createHash('sha256').update(source(path)).digest('hex')]),
     ),
@@ -112,6 +124,8 @@ for (const key of selected) {
     },
   };
   files.set('package.json', Buffer.from(JSON.stringify(packageJson, null, 2) + '\n'));
+  files.set('AGENTS.md', await readFile(new URL('game-AGENTS.md', templates)));
+  files.set('.gitattributes', Buffer.from('* text=auto eol=lf\n'));
   files.set('SOURCE.json', Buffer.from(JSON.stringify(provenance, null, 2) + '\n'));
   files.set(
     'release.config.json',
@@ -133,6 +147,7 @@ for (const key of selected) {
     ),
   );
   files.set('pnpm-lock.yaml', await readFile(new URL('pnpm-lock.yaml', templates)));
+  files.set('pnpm-workspace.yaml', Buffer.from('packages: []\nallowBuilds:\n  esbuild: true\n'));
   files.set('vitest.config.mjs', await readFile(new URL('vitest.config.mjs', templates)));
   files.set('tests/release.test.ts', await readFile(new URL('release.test.ts', templates)));
   files.set('.github/workflows/game.yml', await readFile(new URL('game.yml', templates)));
