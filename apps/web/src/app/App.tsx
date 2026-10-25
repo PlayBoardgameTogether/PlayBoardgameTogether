@@ -47,7 +47,7 @@ function AppShell({ path }: { path: string }) {
         {isPixel ? (
           <img
             className="brand-symbol pixel-symbol"
-            src="/platform-art/pixel-dice.png"
+            src="/platform-art/pixel-dice.svg"
             alt=""
             width="32"
             height="32"

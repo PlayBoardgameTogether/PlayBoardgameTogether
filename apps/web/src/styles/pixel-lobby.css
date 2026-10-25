@@ -134,6 +134,9 @@
 
   .desktop-shell--pixel .brand-symbol.pixel-symbol,
   .desktop-shell--pixel-lobby .brand-symbol.pixel-symbol {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
     image-rendering: pixelated;
     object-fit: contain;
     border-radius: 0;
