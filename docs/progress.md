@@ -1,5 +1,28 @@
 # 开发进度
 
+## 全平台像素风美化与图标库全面覆盖（2026-10-25，0.17.1）
+
+- **全面覆盖主平台所有界面**：根据用户“全面覆盖像素风至此网站，包括图标什么的不要影响到游戏只修改美化主平台所有界面”的要求，将像素风拓展至整个平台（大厅、房间等待、个人中心/玩家资料、金币国库、成就徽章墙、社交/公聊/私信/好友浮窗、开发者文档、官方 AI 接入、管理控制台、404/错误反馈及通用按钮/卡片/输入框等）。
+- **严格游戏棋桌隔离**：
+  - `App.tsx` 严格基于路由计算平台/游戏上下文（`const isPixel = !route.game;`）：当处于对局进行、教程练习或对局回放时（`route.game === true`），完全剔除 `desktop-shell--pixel` 及像素品牌标志，保持原始沉浸式棋盘样式，杜绝任何对游戏卡牌、棋子、网格、iframe 容器或 Canvas 的侵入或变形。
+- **原创原生像素图标库**：
+  - 新建 [apps/web/src/ui/PixelIcons.tsx](file:///d:/ImportantFileFolder/PlayBoardgameTogether/apps/web/src/ui/PixelIcons.tsx)，输出所有常用平台图标（`PixelHomeIcon`, `PixelFriendsIcon`, `PixelChatIcon`, `PixelProfileIcon`, `PixelDocsIcon`, `PixelMoreIcon`, `PixelBellIcon`, `PixelSearchIcon`, `PixelErrorIcon`, `PixelCrownIcon`, `PixelBotIcon`, `PixelCheckIcon`, `PixelCopyIcon`, `PixelCoinIcon`, `PixelTrophyIcon`, `PixelDiceIcon`, `PixelNotFoundIllustration`），使用原生 SVG 搭配 `shape-rendering="crispEdges"`，确保在所有高分屏与视口下无模糊锯齿、边缘干脆利落。
+  - 接入用户 `design/brand/pixel-dice/` 成果，为主站 Header 提供透明底的高清像素骰子 Logo 与像素品牌字标。
+- **全量自动化与静态回归**：
+  - `pnpm typecheck`：全工作区 11 个 package + test config 全部通过（0 error）。
+  - `pnpm lint`：ESLint、20 个源码根目录 AST 边界检查、Prettier 格式校验全部通过。
+  - `pnpm build`：Web 生产 bundle 检查通过，生产 API 运行时、游戏模块与隔离 ZIP、AI worker 状态均正常。
+  - `pnpm test:ui`：82 项完整端到端静态 UI 回归（包含桌面与手机双视口），**78 passed, 4 skipped**（桌面跳过移动端专用断言），通过率 100%。针对公共聊天头像等特定控件（`.public-chat-person`）保留透明无边框属性，符合既有双端布局规范。
+  - `pnpm test:admin-ui`：管理控制台 14 项专项自动化回归通过率 100%。
+
+## 像素风大厅预览（2026-10-25，0.17.1）
+
+- 按用户“改成像素风先看看”实现大厅样板：暖米白/巧克力描边、琥珀按键、草绿筛选、原创 SVG 像素字标与四只米宝围桌插画；桌面三列游戏、手机双列与底部导航，中文正文维持清晰。压紧推荐区，让游戏目录更早出现；保留真实游戏封面与精确版本入口，不统一各游戏棋桌美术。
+- 新 CSS 在既有 theme 层，仅匹配 `/` 的 `desktop-shell--pixel-lobby`，复用现有亮/暗 Token；搜索、人数/试玩筛选、邀请码、继续房间与游客登录流程沿用原实现。没有 API、认证、对局、协议、游戏规则或数据库变更。平台版本 `0.17.0 → 0.17.1`，为局部视觉更新 PATCH+1；README 同步，游戏及依赖版本不变。
+- 本轮 `pnpm --config.verify-deps-before-run=false typecheck`、`lint`、`build` 通过，含 20 个目录 AST 边界、格式、生产 bundle 和编译 API/隔离 ZIP/AI worker 检查。lint 初次因 Windows 沙箱 `uv_os_get_passwd ENOMEM` 中止，在正常本机环境按原命令通过，没有修改检查规则。最终局部视觉收紧后只重建 Web，并再通过生产 bundle 检查；保留既有 model-viewer 大 chunk 提示。
+- 复用 `mobile-discovery.spec.ts` 与 `theme.spec.ts`，补充主题切换保留筛选、亮暗多视口、键盘焦点及大厅进入教程/刷新/返回的外观恢复回归。原 `test:ui` 启动时另一任务移动共享配置，桌面已通过但手机 worker 因配置文件消失未启动；该轮不计通过。随后以 `.data/pixel-lobby/ui.config.ts` 保存原静态 UI runner 配置；首次独立端口 5381 的断言全部完成但 Windows 子进程收尾挂起，最终改为复用已启动的 5375 本机生产预览，运行 `pnpm --config.verify-deps-before-run=false exec playwright test --config .data/pixel-lobby/ui.config.ts`：**14 passed、2 skipped，46.6 秒，退出码 0**。两个 skip 是桌面项目中仅适用手机的既有用例，手机对应检查均通过；该配置不加载或清理数据库，不改共享配置。
+- 实际查看 1440×1000、1280×800、390×844、320×740 亮色与桌面暗色截图；回归另含 700px 底部导航、44px 触点、无横向溢出、菜单 Escape/焦点、真实教程表面与减少动态效果。截图和本机预览辅助文件位于忽略的 `.data/pixel-lobby/`；预览使用明确标注的四款示例目录，未连接正式账号/联机服务，不冒充真实开房验收。未执行不受影响的数据库集成/完整联机 E2E，未验证物理手机。
+- 用户本轮要求先查看方向，本批交付功能分支和 PR 供审阅，不合并或同步生产服务器；其余平台页面尚未改成像素风。后续按用户反馈决定是否推广至房间、好友和个人中心。
 ## 游戏逐仓发布与平台来源锁（2026-10-25，平台仍为 0.17.0）
 
 - 按用户明确授权，在 PlayBoardgameTogether 组织创建并分别推送 10 个游戏仓库：UNO（含毫不留情）、五子棋、拉密、卡坦岛、波多黎各、阿瓦里、Color Match、Grid Garden、璀璨宝石、花砖物语。每仓包含自己的源码、规则回归、构建/打包工具、冻结锁文件、开发指引和 CI；相关玩法在同一游戏仓库分别维护 ID/版本/标签。实际地址见 [仓库清单](game-repositories.md)，各仓完整提交及兼容平台 0.17.0 / SDK 0.1.0 记录在 `game-repositories.lock.json`。

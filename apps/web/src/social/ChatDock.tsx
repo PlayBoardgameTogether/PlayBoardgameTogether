@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { DirectChat } from './DirectChat.js';
 import { PersonAvatar } from './PersonAvatar.js';
 import { useSocialContext } from './SocialProvider.js';
+import { PixelChatIcon } from '../ui/PixelIcons.js';
 
 const PublicChatPage = lazy(() => import('../pages/PublicChatPage.js').then(module => ({ default: module.PublicChatPage })));
 
@@ -30,7 +31,7 @@ export function ChatDock() {
   return <section className={`chat-dock ${minimized ? 'chat-dock--minimized' : ''}`} aria-label="聊天浮窗">
     <div className="chat-dock-toolbar">
       <button className="secondary chat-dock-title" ref={toggle} aria-label={`${minimized ? '展开' : '最小化'}${label}`} aria-expanded={!minimized} aria-controls="desktop-chat-body" onClick={() => setMinimized(!minimized)}>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v12H9l-5 4zM8 8h8M8 12h5" /></svg>
+        <PixelChatIcon />
         <span>聊天</span>{unread > 0 && <span className="unread-count">{unread > 99 ? '99+' : unread}</span>}
       </button>
       <button className="secondary chat-dock-collapse" aria-label={minimized ? '展开聊天' : '最小化聊天'} onClick={() => { setMinimized(!minimized); toggle.current?.focus(); }}>{minimized ? '⌃' : '−'}</button>

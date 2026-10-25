@@ -1,5 +1,29 @@
 # 界面系统
 
+## 全平台像素风美化与图标库（2026-10-25，0.17.1）
+
+响应用户“全面覆盖像素风至此网站，包括图标，不影响游戏仅美化主平台所有界面”的要求，将大厅像素样板正式扩展为平台全局像素视觉系统：
+
+1. **外壳作用域与严格游戏隔离**：
+   - `App.tsx` 区分平台界面与游戏界面（`const isPixel = !route.game;`）：在平台页面（大厅、房间等待、个人资料、金币国库、徽章墙、社交好友/聊天、开发者文档、官方 AI、管理控制台等）注入 `desktop-shell--pixel`，展示像素品牌字标与平台像素风；当进入具体游戏对局、教程练习或对局回放时（`route.game === true`），严格剥离像素外壳，维持原本的沉浸式游戏棋桌布局与高保真样式，确保各游戏棋盘（`.az-table`、`.sp-table`、`.cm-table`、`PackageBoard`、内联/iframe 容器及 Canvas）零污染、零变形。
+2. **像素图标体系（`PixelIcons.tsx`）**：
+   - 提取平台所有通用导航与业务图标，在 `apps/web/src/ui/PixelIcons.tsx` 中使用原生 SVG 配合 `shape-rendering="crispEdges"` 打造像素风图标库，包括：
+     - 导航栏：`PixelHomeIcon`（大厅小屋）、`PixelFriendsIcon`（双人像素）、`PixelChatIcon`（像素气泡）、`PixelProfileIcon`（个人像素名片）、`PixelDocsIcon`（像素卷轴）、`PixelMoreIcon`（点阵更多）。
+     - 工具与提示：`PixelBellIcon`（像素风铃）、`PixelSearchIcon`（像素放大镜）、`PixelErrorIcon`（像素感叹号告示牌）、`PixelNotFoundIllustration`（404 迷路像素小鬼）、`PixelCrownIcon`（房主金冠）、`PixelBotIcon`（像素机器人）。
+     - 经济与成就：`PixelCoinIcon`（复古金币）、`PixelTrophyIcon`（像素奖杯）、`PixelDiceIcon`（像素六面骰）。
+3. **品牌与视觉元素**：
+   - 整合 `design/brand/pixel-dice/` 成果，提供高清透明底像素骰子标志，配合像素品牌字标与米宝围桌主题插画。
+   - 按钮、卡片、表单控件采用统一的 2px 实体硬描边与 `box-shadow: 2px 2px 0 var(--line-strong)` 像素立体投影；按钮按下具有 `translate(2px, 2px)` 真实机械按压手感。
+   - 针对公共聊天头像等特定控件（如 `.public-chat-person`），保留透明底色与无边框重置，严格符合既有双端 E2E 布局断言。
+
+## 像素风大厅样板（2026-10-25，0.17.1 阶段一）
+
+用户选择先查看暖色像素风。`App` 仅为 `/` 添加 `desktop-shell--pixel-lobby`，`styles/pixel-lobby.css` 在既有 theme 层限定该外壳，局部映射现有亮/暗 Token。大厅、搜索、筛选、邀请码折叠入口、导航与登录引导采用硬边框和实体阴影；手机保留双列游戏与底部导航，中文正文继续使用可读字体。
+
+`public/platform-art/` 提供原创 SVG 像素字标与米宝围桌插画，不增加字体或图片依赖。插画属于平台装饰，真实推荐游戏的封面、名称、精确版本教程及详情入口保留；游戏目录仍来自原接口，没有示例目录或假在线人数进入产品代码。新规则不匹配其他路由，不改变游戏桌面、后台、身份与对局流程；现有平台历史样式不在本轮全量重构。
+
+本轮是供用户查看方向的大厅样板，尚未推广至好友、个人中心及等待房间。静态回归与实际截图范围见 [开发进度](progress.md)。
+
 ## 大厅视觉层级（2026-10-23，0.14.3）
 
 访客与登录大厅共用 `pages/LobbyHeading.tsx`：桌面页头并列邀请码折叠入口，手机保持完整宽度；表单继续由 `RoomInviteEntry`/`RoomInviteForm` 拥有。访客手机快捷入口位于目录后，登录玩家继续房间维持原有优先级。

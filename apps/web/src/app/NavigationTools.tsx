@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ThemeSelect } from './ThemeSelect.js';
+import { PixelMoreIcon } from '../ui/PixelIcons.js';
 
 export function NavigationTools({ path, labEnabled, administrator }: {
   path: string;
@@ -31,7 +32,7 @@ export function NavigationTools({ path, labEnabled, administrator }: {
     // Outside pointer presses, Escape and navigation already dismiss the menu.
     if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
   }}>
-    <summary ref={trigger}><svg className="nav-more-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /></svg><span className="nav-more-dots" aria-hidden="true">⋯</span> 更多</summary>
+    <summary ref={trigger}><PixelMoreIcon /><span className="nav-more-dots" aria-hidden="true">⋯</span> 更多</summary>
     <div aria-label="平台设置">
       <ThemeSelect />
       <a className="nav-mobile-doc" href="/developers" aria-current={path === '/developers' || path.startsWith('/developers/') ? 'page' : undefined}>开发者文档</a>

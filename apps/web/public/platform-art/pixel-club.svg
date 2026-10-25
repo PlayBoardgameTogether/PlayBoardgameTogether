@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 160 100" shape-rendering="crispEdges">
+  <defs>
+    <g id="meeple">
+      <path d="M5 0h6v2h2v7h3v3h3v5h-5v-3h-1v7h-5v-5H6v5H1v-7H0v3h-5v-5h3V9h3V2h4Z" fill="#49382d"/>
+      <path d="M5 2h6v2h1v6h3v3h2v2h-2v-3h-4v7H9v-5H5v5H3v-7H0v3h-3v-2h3v-3h3V4h2Z" fill="currentColor"/>
+      <path d="M5 4h2v4H5Z" fill="#fff6db" opacity=".55"/>
+    </g>
+    <g id="plant">
+      <path d="M7 0h4v4h4v4h-4v6H7V8H3V4h4Z" fill="#426b46"/>
+      <path d="M0 10h5v4h4v6H5v-4H0ZM12 12h6v5h-5v3H9v-5h3Z" fill="#6e9853"/>
+      <path d="M3 20h13v3h-1v10H4V23H3Z" fill="#49382d"/>
+      <path d="M5 22h9v3H5Zm1 5h7v4H6Z" fill="#d18a60"/>
+    </g>
+    <g id="star" fill="#d2a249"><path d="M2 0h2v2h2v2H4v2H2V4H0V2h2Z"/></g>
+  </defs>
+  <path fill="#dfe9cf" d="M0 0h160v100H0Z"/>
+  <path fill="#eef1d9" d="M0 0h160v62H0Z"/>
+  <path fill="#c5d4b1" d="M0 84h160v16H0Z"/>
+  <path fill="#f9f3de" d="M16 12h22v4h7v4H10v-4h6Zm101 6h18v4h8v4h-33v-4h7Z"/>
+  <path fill="#bacd9c" d="M0 59h8v-5h7v4h9v-7h8v11h7v-5h8v9h68v-9h8v5h6V51h9v8h8v-5h8v7h6v16H0Z"/>
+  <path fill="#e8d9ad" d="M33 67h94v25H33Z"/>
+  <path fill="#d7c591" d="M33 89h94v3H33Z"/>
+  <path fill="#a4b787" d="M23 94h7v2h-7Zm111-9h7v2h-7ZM8 79h5v2H8Zm135 13h6v2h-6Z"/>
+  <path fill="#49382d" d="M59 10h42v4h4v17h-4v4H59v-4h-4V14h4Z"/>
+  <path fill="#f4c65c" d="M59 14h42v17H59Z"/>
+  <path fill="#49382d" d="M67 18h10v2h2v5h-2v2h-6v3h-4Zm4 4v2h4v-2Zm12-4h9v2h2v3h-2v2h2v3h-2v2h-9Zm4 3v2h4v-2Zm0 5v1h4v-1Z"/>
+  <path fill="#b08750" d="M60 35h2v8h-2Zm38 0h2v8h-2Z"/>
+  <use href="#meeple" x="52" y="37" color="#e1a749"/>
+  <use href="#meeple" x="100" y="37" color="#cf7162"/>
+  <path fill="#49382d" d="M40 58h80v4h5v14h-5v5h-7v12h-6V81H53v12h-6V81h-7v-5h-5V62h5Z"/>
+  <path fill="#bd8750" d="M40 62h80v12H40Z"/>
+  <path fill="#d7a66a" d="M44 61h72v3H44Z"/>
+  <path fill="#96683e" d="M40 74h80v4H40Z"/>
+  <path fill="#486b52" d="M59 58h42v16H59Z"/>
+  <path fill="#7fa078" d="M62 60h36v11H62Z"/>
+  <path fill="#f7eed6" d="M68 61h7v9h-7Zm12 0h7v9h-7Z"/>
+  <path fill="#d5755b" d="M70 63h3v4h-3Z"/>
+  <path fill="#e7b64e" d="M82 63h3v4h-3Z"/>
+  <path fill="#49382d" d="M91 63h7v7h-7Z"/>
+  <path fill="#fff5dd" d="M92 64h5v5h-5Z"/>
+  <path fill="#49382d" d="M93 65h1v1h-1Zm2 2h1v1h-1Z"/>
+  <path fill="#f4cf72" d="M48 66h6v3h-6Zm59 0h6v3h-6Z"/>
+  <path fill="#a57a50" d="M48 69h6v2h-6Zm59 0h6v2h-6Z"/>
+  <path fill="#49382d" d="M39 79h18v3h3v11H36V82h3Zm64 0h18v3h3v11h-24V82h3Z"/>
+  <path fill="#bc8d5d" d="M39 83h18v7H39Zm64 0h18v7h-18Z"/>
+  <use href="#meeple" x="44" y="71" color="#648baf"/>
+  <use href="#meeple" x="108" y="71" color="#8c9f5b"/>
+  <use href="#plant" x="13" y="53"/>
+  <use href="#plant" x="130" y="47"/>
+  <use href="#star" x="35" y="30"/>
+  <use href="#star" x="118" y="37"/>
+  <path fill="#e6b655" d="M21 43h2v2h-2Zm115-8h2v2h-2ZM44 20h2v2h-2Z"/>
+</svg>
