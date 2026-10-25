@@ -1,0 +1,212 @@
+const QUIET_LIMIT = 200;
+function object(value, keys) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+}
+function integer(value, min, max) {
+  return Number.isInteger(value) && value >= min && value <= max;
+}
+function sum(values) {
+  return values.reduce((total, value) => total + value, 0);
+}
+function side(pits, player) {
+  return sum(pits.slice(player * 6, player * 6 + 6));
+}
+function key(state) {
+  return [state.turn, ...state.scores, ...state.pits].join(',');
+}
+function sow(state, pit) {
+  const pits = [...state.pits], path = [], capturedPits = [];
+  const sown = pits[pit];
+  pits[pit] = 0;
+  let lastPit = pit;
+  for (let seed = 0; seed < sown; seed++) {
+    do { lastPit = (lastPit + 1) % 12; } while (lastPit === pit);
+    pits[lastPit]++;
+    path.push(lastPit);
+  }
+  const opponent = 1 - state.turn;
+  for (let index = lastPit; Math.floor(index / 6) === opponent && [2, 3].includes(pits[index]); index--) {
+    capturedPits.push(index);
+  }
+  const potential = sum(capturedPits.map(index => pits[index]));
+  const grandSlam = potential > 0 && potential === side(pits, opponent);
+  if (grandSlam) capturedPits.length = 0;
+  const captured = sum(capturedPits.map(index => pits[index]));
+  for (const index of capturedPits) pits[index] = 0;
+  return { pits, path, capturedPits, lastPit, sown, captured, grandSlam };
+}
+function legalPits(state) {
+  if (state.endReason !== null) return [];
+  const result = [], mustFeed = side(state.pits, 1 - state.turn) === 0;
+  for (let pit = state.turn * 6; pit < state.turn * 6 + 6; pit++) {
+    if (state.pits[pit] > 0 && (!mustFeed || side(sow(state, pit).pits, 1 - state.turn) > 0)) result.push(pit);
+  }
+  return result;
+}
+function finish(state, reason, collect) {
+  state.endReason = reason;
+  if (collect) {
+    for (let player = 0; player < 2; player++) state.scores[player] += side(state.pits, player);
+    state.pits.fill(0);
+  }
+}
+function outcome(state) {
+  if (state.endReason === null) return { status: 'ongoing' };
+  const best = Math.max(...state.scores);
+  return { status: 'finished', winners: state.scores[0] === state.scores[1] ? []
+    : state.seats.filter((_, index) => state.scores[index] === best),
+    scores: Object.fromEntries(state.seats.map((seat, index) => [seat, state.scores[index]])) };
+}
+function analyze(state) {
+  if (!object(state, ['seats', 'pits', 'scores', 'turn', 'moveCount', 'history', 'last', 'endReason'])
+    || !Array.isArray(state.seats) || state.seats.length !== 2
+    || !state.seats.every(seat => typeof seat === 'string' && seat.length > 0 && seat.length <= 128)
+    || state.seats[0] === state.seats[1]
+    || !Array.isArray(state.pits) || state.pits.length !== 12 || !state.pits.every(n => integer(n, 0, 48))
+    || !Array.isArray(state.scores) || state.scores.length !== 2 || !state.scores.every(n => integer(n, 0, 48))
+    || sum(state.pits) + sum(state.scores) !== 48 || !integer(state.turn, 0, 1)
+    || !integer(state.moveCount, 0, 10000) || state.turn !== state.moveCount % 2
+    || ![null, 'majority', 'draw', 'no-feed', 'repetition', 'quiet-limit'].includes(state.endReason)
+    || !Array.isArray(state.history) || state.history.length < 1 || state.history.length > QUIET_LIMIT + 1
+    || state.history.length > state.moveCount + 1) throw new Error('Invalid Awari save');
+  for (const entry of state.history) {
+    if (typeof entry !== 'string' || entry.length > 60) throw new Error('Invalid position history');
+    const values = entry.split(',').map(Number);
+    if (values.length !== 15 || !integer(values[0], 0, 1) || values.slice(1).some(n => !integer(n, 0, 48))
+      || sum(values.slice(1)) !== 48 || values.join(',') !== entry) throw new Error('Invalid position history');
+  }
+  if (state.moveCount === 0) {
+    if (state.last !== null || state.endReason !== null || state.pits.some(n => n !== 4)
+      || state.scores.some(n => n !== 0) || state.history.length !== 1) throw new Error('Invalid initial state');
+  } else {
+    const last = state.last;
+    if (!object(last, ['player', 'pit', 'sown', 'lastPit', 'captured', 'grandSlam'])
+      || last.player !== 1 - state.turn || !integer(last.pit, last.player * 6, last.player * 6 + 5)
+      || !integer(last.sown, 1, 48) || !integer(last.lastPit, 0, 11) || !integer(last.captured, 0, 18)
+      || typeof last.grandSlam !== 'boolean' || (last.grandSlam && last.captured !== 0)) throw new Error('Invalid last move');
+    let target = last.pit;
+    for (let count = 0; count < last.sown; count++) {
+      do { target = (target + 1) % 12; } while (target === last.pit);
+    }
+    if (target !== last.lastPit) throw new Error('Invalid last landing pit');
+  }
+  if (state.endReason === null) {
+    if (state.scores.some(n => n > 24) || sum(state.pits) === 0 || legalPits(state).length === 0
+      || state.history.at(-1) !== key(state) || state.history.length > QUIET_LIMIT
+      || state.history.filter(entry => entry === key(state)).length >= 3) throw new Error('Unfinished terminal position');
+  } else if (state.endReason === 'majority') {
+    if (Math.max(...state.scores) < 25) throw new Error('Invalid majority');
+  } else if (state.endReason === 'draw') {
+    if (state.scores.some(n => n !== 24) || sum(state.pits) !== 0) throw new Error('Invalid draw');
+  } else if (sum(state.pits) !== 0) throw new Error('Uncollected end position');
+  return state;
+}
+function actions(state) {
+  return legalPits(state).map(pit => {
+    const result = sow(state, pit);
+    // Basic script: captures first, then prefer positions with a smaller immediate reply capture.
+    const next = { ...state, pits: result.pits, turn: 1 - state.turn };
+    const replies = legalPits(next).map(reply => sow(next, reply).captured);
+    const score = (state.scores[state.turn] + result.captured >= 25 ? 1000 : 0)
+      + result.captured * 10 - Math.max(0, ...replies) * 6;
+    return { action: { type: 'sow', pit }, score };
+  }).sort((a, b) => b.score - a.score || a.action.pit - b.action.pit).map(item => item.action);
+}
+const game = {
+  manifest: {
+    id: 'online.awari', version: '1.0.0', contentVersion: '1.0.0', sdkRange: '^0.1.0',
+    name: '阿瓦里', description: '双人非洲播种棋：播下种子、连吃二三子，必须给空仓的对手留种。Abapa 规则，支持基础脚本 AI。',
+    players: { min: 2, max: 2 }, mode: 'rules-driven', capabilities: ['turn-based', 'spatial'],
+    defaultAssetPack: { id: 'online.awari.default', version: '1.0.0' }, developmentOnly: false
+  },
+  validateOptions(value) {
+    if (!object(value, [])) throw new Error('Awari has no custom options');
+    return {};
+  },
+  parseAction(value) {
+    if (!object(value, ['type', 'pit']) || value.type !== 'sow' || !integer(value.pit, 0, 11)) throw new Error('Invalid sow action');
+    return { type: 'sow', pit: value.pit };
+  },
+  setup({ seats, options }) {
+    this.validateOptions(options);
+    const state = { seats: [...seats], pits: Array(12).fill(4), scores: [0, 0], turn: 0,
+      moveCount: 0, history: [], last: null, endReason: null };
+    state.history.push(key(state));
+    analyze(state);
+    return { state, events: [] };
+  },
+  getView(state, viewer) {
+    analyze(state);
+    const index = viewer.kind === 'seat' ? state.seats.indexOf(viewer.seatId) : -1;
+    const candidates = index === state.turn ? actions(state) : [];
+    return {
+      pits: [...state.pits], players: state.seats.map((seatId, player) => ({ seatId, score: state.scores[player] })),
+      you: index < 0 ? null : state.seats[index], yourIndex: index < 0 ? null : index,
+      currentSeat: state.endReason === null ? state.seats[state.turn] : null,
+      moveCount: state.moveCount, quietMoves: state.history.length - 1,
+      mustFeed: state.endReason === null && side(state.pits, 1 - state.turn) === 0,
+      actions: candidates, previews: candidates.map(action => {
+        const result = sow(state, action.pit);
+        return { pit: action.pit, path: result.path, lastPit: result.lastPit,
+          captured: result.captured, capturedPits: result.capturedPits, grandSlam: result.grandSlam };
+      }),
+      last: state.last === null ? null : { ...state.last }, endReason: state.endReason, outcome: outcome(state)
+    };
+  },
+  getActionSpec(state, viewer) {
+    return { actions: this.getView(state, viewer).actions };
+  },
+  validateAction(state, actor, value) {
+    const action = this.parseAction(value);
+    analyze(state);
+    if (actor.kind !== 'seat' || actor.seatId !== state.seats[state.turn] || !legalPits(state).includes(action.pit)) {
+      throw new Error('Sowing not allowed');
+    }
+  },
+  applyAction(state, actor, value) {
+    this.validateAction(state, actor, value);
+    const action = this.parseAction(value), result = sow(state, action.pit);
+    const next = { ...state, seats: [...state.seats], pits: result.pits, scores: [...state.scores],
+      turn: 1 - state.turn, moveCount: state.moveCount + 1, history: [...state.history],
+      last: { player: state.turn, pit: action.pit, sown: result.sown, lastPit: result.lastPit,
+        captured: result.captured, grandSlam: result.grandSlam } };
+    next.scores[state.turn] += result.captured;
+    if (result.captured > 0) next.history = [];
+    next.history.push(key(next));
+    if (Math.max(...next.scores) >= 25) finish(next, 'majority', false);
+    else if (next.scores.every(n => n === 24)) finish(next, 'draw', false);
+    else if (legalPits(next).length === 0) finish(next, 'no-feed', true);
+    else if (next.history.filter(entry => entry === key(next)).length >= 3) finish(next, 'repetition', true);
+    else if (next.history.length > QUIET_LIMIT) finish(next, 'quiet-limit', true);
+    const events = [{ type: 'seeds.sown', seatId: actor.seatId, ...next.last,
+      path: result.path, capturedPits: result.capturedPits }];
+    if (next.endReason !== null) events.push({ type: 'game.finished', ...outcome(next), reason: next.endReason });
+    return { state: next, events };
+  },
+  projectEvents(events) {
+    return events.map(event => event.type === 'seeds.sown'
+      ? { type: event.type, seatId: event.seatId, player: event.player, pit: event.pit, sown: event.sown,
+        lastPit: event.lastPit, captured: event.captured, grandSlam: event.grandSlam,
+        path: [...event.path], capturedPits: [...event.capturedPits] }
+      : { type: 'game.finished', winners: [...event.winners], scores: { ...event.scores }, reason: event.reason });
+  },
+  getOutcome(state) {
+    analyze(state);
+    return outcome(state);
+  },
+  serialize(state) {
+    analyze(state);
+    return JSON.parse(JSON.stringify(state));
+  },
+  deserialize(value) {
+    return this.serialize(value);
+  },
+  getFallbackAction(view) {
+    return view.actions[0] || null;
+  },
+  getDecisionContext(state, viewer) {
+    const view = this.getView(state, viewer);
+    return view.actions.length ? { decisionKey: 'sow:' + view.moveCount, legalActions: view.actions } : null;
+  }
+};

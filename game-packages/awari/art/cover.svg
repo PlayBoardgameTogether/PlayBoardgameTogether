@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#203b30"/>
+  <circle cx="790" cy="82" r="164" fill="#2c4938"/><circle cx="120" cy="510" r="210" fill="#2c4938"/>
+  <g fill="none" stroke="#d3a965" opacity=".3"><circle cx="830" cy="90" r="192"/><circle cx="830" cy="90" r="211"/><path d="M40 56h120M100 16v80M760 474h150M835 434v80"/></g>
+  <text x="70" y="104" fill="#f7dfa9" font-family="sans-serif" font-weight="700" font-size="58" letter-spacing="10">AWARI</text>
+  <text x="73" y="139" fill="#d9c7a0" font-family="sans-serif" font-size="18" letter-spacing="5">SOW · CAPTURE · GROW</text>
+  <g transform="translate(120 190) rotate(-7 360 135)">
+    <rect x="0" y="14" width="720" height="250" rx="100" fill="#382417" opacity=".7"/>
+    <rect width="720" height="250" rx="100" fill="#a46a35" stroke="#e7bb75" stroke-width="7"/>
+    <path d="M60 125h600" stroke="#754623" stroke-width="3"/>
+    <g id="pits" fill="#4d2d19" stroke="#c38e50" stroke-width="3">
+      <ellipse cx="100" cy="72" rx="40" ry="32"/><ellipse cx="204" cy="72" rx="40" ry="32"/><ellipse cx="308" cy="72" rx="40" ry="32"/><ellipse cx="412" cy="72" rx="40" ry="32"/><ellipse cx="516" cy="72" rx="40" ry="32"/><ellipse cx="620" cy="72" rx="40" ry="32"/>
+      <ellipse cx="100" cy="178" rx="40" ry="32"/><ellipse cx="204" cy="178" rx="40" ry="32"/><ellipse cx="308" cy="178" rx="40" ry="32"/><ellipse cx="412" cy="178" rx="40" ry="32"/><ellipse cx="516" cy="178" rx="40" ry="32"/><ellipse cx="620" cy="178" rx="40" ry="32"/>
+    </g>
+    <g fill="#f5d28b">
+      <g id="seeds"><ellipse cx="88" cy="68" rx="7" ry="10"/><ellipse cx="108" cy="78" rx="7" ry="10"/><ellipse cx="111" cy="58" rx="6" ry="9"/></g>
+      <use href="#seeds" x="104"/><use href="#seeds" x="208"/><use href="#seeds" x="312"/><use href="#seeds" x="416"/><use href="#seeds" x="520"/>
+      <use href="#seeds" y="106"/><use href="#seeds" x="104" y="106"/><use href="#seeds" x="208" y="106"/><use href="#seeds" x="312" y="106"/><use href="#seeds" x="416" y="106"/><use href="#seeds" x="520" y="106"/>
+    </g>
+    <ellipse cx="412" cy="178" rx="44" ry="36" fill="none" stroke="#a3e8ba" stroke-width="4"/>
+  </g>
+  <path d="M473 467Q611 502 725 447l-10 25m10-25-29-2" fill="none" stroke="#a3e8ba" stroke-width="4" stroke-linecap="round"/>
+</svg>

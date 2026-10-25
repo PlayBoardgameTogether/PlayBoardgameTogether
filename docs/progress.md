@@ -1,5 +1,36 @@
 # 开发进度
 
+## PR #21 合并复核与版本顺延（2026-10-25，0.17.0）
+
+- 用户确认阿瓦里 PR #21 作为历史遗留例外本次合入主仓库；后续游戏仍按每个游戏独立仓库执行。本轮合并最新 main（含 UNO、分仓规则、体验指南及修正后的导出工具），只解决进度追加区冲突，双方历史内容全部保留。原阿瓦里记录中的 0.16.0 为当时待合并候选；主线已有 UNO 0.16.0，本次新增游戏最终顺延 `0.16.0 → 0.17.0`（MINOR+1），README 同步。游戏包保持 1.0.0，不改规则、桌面或其他游戏版本。
+- 本轮 `pnpm --config.verify-deps-before-run=false typecheck`、同选项 `lint`、`build` 均通过，包含 AST 边界、格式、生产 bundle 和 API runtime/隔离 ZIP/AI worker 校验。保留已有 model-viewer 大 chunk 提示。
+- `pnpm ... exec vitest run tests/unit/awari-package.test.ts tests/unit/game-packages.test.ts`：2 文件、13/13 通过，无 skip；`node scripts/package-awari.mjs` 生成 111496 字节实际三文件 ZIP，内嵌原创 PNG。
+- `pnpm ... exec playwright test --config playwright.awari-ui.config.ts --output .data/pr-review-awari-ui`：4/4 通过，无 skip，实际查看 1440×900、1280×720、390×844、320×640 的选坑截图及手机终局截图。验证预览/确认、忙碌恢复、双方方向、键盘/弹窗焦点、减少动态效果、保存恢复和 sandbox；该层不冒充 HTTP 联机验收。
+- `node .data/pr-review/validate-awari.mjs integration`：通过原 `test:integration` 脚本准备/迁移/同步/资源流程，以临时 Vitest include 定向阿瓦里文件，1/1 通过，无 skip。验证实际 PNG ZIP 安装、非参与者拒绝、非法动作/事务回滚、重复与内容冲突、API 重启、完整结算及本人回放。初始本机 Docker 未启动，启动现有 Docker Desktop 和项目 PostgreSQL 后新建 `boardgame_pr21_test_20261025` 专用库；仅进程内覆盖 TEST_DATABASE_URL，保留原 .env 与开发/生产库。首次资源校验较慢但完成，没有跳过隔离媒体处理。
+- 集成完成后顺序执行 `node .data/pr-review/validate-awari.mjs e2e`，仍调用原 `test:e2e` 和原端口运行器，桌面/手机 2/2 通过，无 skip，约 2.1 分钟；覆盖真实上传审核、封面/图标、大厅入口、建房/脚本 AI、刷新、完整对局与返回房间。实际查看双端联机棋桌截图，页脚正确显示 0.17.0。
+- 以上为本轮合并候选的验证，旧记录原样保留；未验证物理手机、真实模型供应商或生产服务器。源码合并不代表阿瓦里已上架，仍需管理员审核安装 ZIP；独立游戏仓库创建与发布也未在本任务执行。
+
+## 阿瓦里在线游戏包（2026-10-24，0.16.0）
+
+- 新增 `online.awari@1.0.0` 三文件在线 ZIP 源码与打包脚本，规则在原有有界 QuickJS 中执行，桌面使用原 `PackageBoard` sandbox/CSP 与消息桥；不增加平台 gameId 分支、数据库迁移、认证或动作入口。沿用正式身份、权限、revision、requestId、事务、恢复、AI 和回放。规则/维护见 [游戏包说明](../game-packages/awari/README.md)。
+- 实现 Abapa 双人播种棋：48 子、每边六坑、绕圈跳过原坑、末子触发二/三子逆向连吃、Grand Slam 整串取消、空侧强制喂子、无法喂子收取余子、25 子获胜与平局。三次重复局面及连续 200 手无吃子后按侧收子为明确公开的线上裁定约定，计数持久化，不宣称是所有线下比赛的统一规则。合法候选按吃子与对手立即反吃排序，脚本/兜底仍走原对局验证，不调用外部模型。
+- 原创深木暖金棋桌与 SVG/PNG 封面、图标；本人六坑在下方，点坑后预览每坑播入数量、末子落点、可吃坑及吃光取消，再确认。局面变化/忙碌清除草稿，明确拒绝后可重新操作；键盘按钮、弹窗焦点返回、减少动态效果与内容高度桥保持。数字是准确子数，装饰种子有显示上限。无独立主题框架、音效、图包切换、互动教程或成长系统；ZIP 最终得分由自身桌面展示，未接入平台胜者/成绩摘要。
+- 平台最终 `0.15.0 → 0.16.0`，按新增游戏 MINOR+1；开发中原从 0.14.3 预留 0.15.0，交付前远程 main 已合入波多黎各 0.15.0，因此顺延最终版本，README 同步；游戏包独立版本为 `1.0.0`，其余 workspace/游戏/锁文件未改。原工作区回放、导航和波多黎各未提交内容保留，在 `/tmp/playboard-awari` 从最新 origin/main 建立 `codex/awari` 独立工作树，避免夹带其他任务提交。
+
+本轮实际验证：
+
+- `pnpm --config.verify-deps-before-run=false typecheck`、`lint`、`build` 通过；含 20 目录 AST 分层、格式、生产 bundle、编译 API、隔离 ZIP 与 AI worker 检查。最终测试/内联桌面定向 Prettier 与 `git diff --check` 通过。保留已有 model-viewer 大 chunk 提示。
+- 交付前 main 新增独立波多黎各包，核对其变更后合并基线，只解决 README/进度追加区冲突，保留双方游戏；最终版本顺延为 0.16.0 后执行 `pnpm ... --filter @boardgame/web build` 和 `node scripts/check-production-bundle.mjs`，均通过。规则、ZIP、API 与共享运行源码未改，不重复已通过的规则/数据库/联机用例。
+- `pnpm ... test tests/unit/awari-package.test.ts`：9/9。真实 QuickJS 覆盖身份/行动候选、非法输入与存档、长播种多圈、逆向连吃、吃光取消、强制喂子与无法喂子、胜负/平局、重复/无吃子裁定、双脚本整局、精确预览与序列化恢复。初轮两个合成残局在预期吃光取消/重复之前就触发了真实“无法喂子”结算，调整夹具保留己方种子并按坑号选预览后通过，未放宽规则。
+- `node scripts/package-awari.mjs`：生成最终 `awari-1.0.0.zip`，仅三根文件并内嵌原创 icon/cover PNG，约 110 KiB。首次 Chromium 因执行沙箱 IPC 限制未启动，允许本机 IPC 后按原命令成功；未更改浏览器隔离或包运行限制。
+- `pnpm ... exec playwright test --config playwright.awari-ui.config.ts --output .data/awari/ui`：1440×900、1280×720、390×844、320×640 四个项目 4/4。最终增加逐坑播入数量、统一手机得分排列后，仅重跑 desktop/narrow 至 `.data/awari/ui-final`，2/2。实际查看桌面、手机与窄屏截图，检查选坑预览、确认、忙碌、同 revision 明确拒绝后重试、双方座位方向、键盘/弹窗焦点、保存重载、最终得分、减少动态效果、44px 触点、sandbox 父页面访问阻断及无横向溢出。该层为真实规则和消息桥的浏览器证据，不冒充真人 HTTP 联机。
+- `pnpm ... test:integration --config .data/awari/vitest.integration.config.ts`：阿瓦里文件 1/1，经过原准备/迁移/游戏/资源脚本；覆盖实际管理员审核安装 PNG ZIP、房间/正式行动、非参与者拒绝、非法动作、事务回滚、去重及 requestId 内容冲突、API 重启恢复、整局结算与本人回放。使用本轮 PostgreSQL 17 容器 15439 及专用 `boardgame_awari_test_20261024`，未清理开发/生产库。首次追加单文件时原脚本把目录和文件过滤作并集，意外扩展到无关测试；发现后中断，不计全套通过，TTS 图包缺失及未打包拉密的无关失败未改断言。
+
+- 真人/脚本 AI 联机：最终 2 个独立桌面/手机用例通过，无 skip。通过项目原 `db:test:prepare`、`migrate.ts --test`、`sync-games.ts --test`、`seed-assets.ts --test` 后，运行 `.data/awari/run-e2e.ts --config .data/awari/playwright.real.config.ts`，该运行器仅将原 `scripts/run-e2e.ts` 的端口替换为 5279/3119。真实管理员上传审核、图像响应、大厅入口、建房/准备、真人与脚本 AI 整局、刷新、最终 View 与返回房间均通过。桌面首轮通过；手机原断言等待被平台 CSS 明确隐藏的小图标解码失败，按实际设计改为验证隐藏状态与原 PNG 接口签名，随后只重跑 `--project mobile` 通过，保留封面及全部对局断言。
+
+首轮原 E2E 固定 5273 端口遇到已有进程，停止仅本轮子进程，改用独立端口；中断结果不计通过。最终桌面 ZIP 改变哈希后，已安装测试版按不可变规则正确拒绝同版本覆盖，因此使用新的 `boardgame_awari_e2e_test_20261024` 库并执行原隔离准备脚本。开发/生产配置与数据库均保留，不以中断/未完成用例计作通过。服务器实际同步结果在最终交付报告中说明。
+
+限制：未验证物理手机、WebKit、真实外部模型供应商或付费调用；本轮不重跑无关后台/社交及全库验收。服务器无已配置的管理员登录凭据，源码同步不会让数据库中的在线包自动上架；需要通过现有管理员上传审核安装最终 ZIP，不能绕过会话/管理员检查。Git 命令行 HTTPS 推送 dry-run 缺少凭据，后续使用已连接 GitHub 应用同步精确核对的提交树；远程/服务器实际交付结果另记，不以请求受理或 Git 推送推断上线。
 ## PR #23 合并复核（2026-10-25，平台版本不变）
 
 - 同步最新 main，保留已合并的分仓规则与体验指南。修正导出目录清单中的平台来源为 `PlayBoardgameTogether/PlayBoardgameTogether`，生成的来源记录、README 与 Release 目标随之使用新组织；文档中的游戏仓库仍为待确认建议目标，未创建仓库或发布 Release。
