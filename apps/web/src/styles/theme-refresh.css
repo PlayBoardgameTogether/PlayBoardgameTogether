@@ -1196,11 +1196,27 @@
   .page-feedback-spinner {
     display: grid;
     place-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+  }
+  .page-feedback-spinner::before {
+    content: '';
+    display: block;
+    width: 64px;
+    height: 64px;
+    border: 2px solid var(--line-strong, #3d2920);
+    border-radius: 4px;
+    box-shadow: 3px 3px 0 var(--line, #cca957);
+    background: #fcf6e6 url('/platform-art/playboard-dice-animated.gif') no-repeat center / cover;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
   .page-feedback-spinner .spinner-icon {
-    animation: spin 1s linear infinite;
-    color: var(--accent);
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-feedback-spinner::before {
+      background-image: url('/platform-art/pixel-dice.png');
+    }
   }
   @keyframes spin {
     to {

@@ -347,3 +347,29 @@ export function PixelNotFoundIllustration() {
     </svg>
   );
 }
+export function PixelLoadingDice({
+  size = 64,
+  className = '',
+  label = '正在加载…',
+}: {
+  size?: number;
+  className?: string;
+  label?: string;
+}) {
+  return (
+    <div
+      className={`pixel-loading-dice ${className}`}
+      style={{ width: size, height: size }}
+      role="status"
+      aria-label={label}
+    >
+      <img
+        src="/platform-art/playboard-dice-animated.gif"
+        alt=""
+        width={size}
+        height={size}
+        className="pixel-loading-dice-img"
+      />
+    </div>
+  );
+}
