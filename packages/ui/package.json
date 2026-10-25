@@ -1,5 +1,5 @@
 {
-  "name": "@boardgame/ui", "version": "0.1.0", "type": "module", "exports": { ".": { "production": "./dist/index.js", "default": "./src/index.tsx" } },
+  "name": "@boardgame/ui", "license": "GPL-3.0-only", "version": "0.1.0", "type": "module", "exports": { ".": { "production": "./dist/index.js", "default": "./src/index.tsx" } },
   "scripts": { "typecheck": "tsc --noEmit", "build": "tsc -p tsconfig.build.json" },
   "dependencies": { "react": "19.1.1" }, "devDependencies": { "@types/react": "19.1.12", "typescript": "5.9.2" }
 }

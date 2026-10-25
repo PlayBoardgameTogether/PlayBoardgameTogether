@@ -1,5 +1,12 @@
 # 开发进度
 
+## 组织项目开源协议（2026-10-25，许可与元数据更新）
+
+- 用户确认组织下全部 12 个仓库采用 GPL-3.0，版权持有人为 TheTopBoardgameAssociation。各仓库新增包含项目版权声明与完整 GPL v3 正文的 LICENSE；README 链接许可，所有已跟踪的 package.json 声明 `GPL-3.0-only`。
+- 原有 CC0-1.0、第三方和素材许可声明保留；本轮不变更游戏规则、资源内容、SDK 契约、运行逻辑、锁文件或历史游戏版本。平台以 origin/main 的 0.17.0 为基线，许可/元数据更新不递增平台或游戏版本。
+- 在隔离副本中检查 Git 分支、远程与工作区，并在修改前逐仓 fetch origin main、确认与基线一致；原工作区中的像素风提交及未提交改动不带入本轮。各仓库使用 codex/gpl-3-license 分支、独立提交和 PR。
+- 本轮验证为 GPL 完整正文一致性、版权及 SPDX 一致性、JSON 解析与除 license 外内容不变、README 链接、版本一致性、资源原许可保留和 git diff --check。未运行业务测试/构建，本批无运行行为变化；未合并 PR、发布游戏包或变更生产运行版本。下一步审阅各仓库许可 PR。
+
 ## 浏览器测试配置整理（2026-10-25，开发工具更新）
 
 - 根目录 Playwright 配置从 15 个减少到 1 个默认联机入口；专项配置统一放在 [tests/config](../tests/config/README.md)，总入口从 15 个收敛到 8 个。生产页面的 8 份重叠配置合并为 ui.config.ts，同一文件只运行一次；保留 test:ui/test:developers，新增 test:admin-ui，可用文件参数筛选聊天、游戏包管理等范围。
