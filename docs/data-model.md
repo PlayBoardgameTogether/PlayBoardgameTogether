@@ -129,4 +129,6 @@ rooms.asset_version_id 与 matches.asset_version_id 外键绑定精确版本；m
 
 ## 官方 AI 点数（031，2026-10-16）
 
+035（0.19.0）为 official_ai_offers 增加 deleted_at，约束归档项必须停用。目录编辑保留旧行的来源/价格、推进旧 revision 并归档，同事务插入新 ID 替代项；删除仅归档并停用。查询目录和 100 项上限排除归档项，外键、历史配置、预留和账单继续引用旧行。原持久回执在新状态检查前重放，归档项不可重新开放。
+
 031 新增 official_ai_offers（固定来源配置/行动点价、可停用 revision）、ai_point_wallets（整数余额）、ai_point_ledger（发放/行动审计）、ai_point_receipts（账户+请求去重）和 official_ai_reservations（task 唯一、attempt 唯一、预留/ready/charged/released、唯一消费账本引用）。model_profiles 增加 official_offer_id/official_match_budget，官方占位端点不可被普通模型输入选用。余额以钱包行锁串行消费与发放，预留/已消费按 match/seat/payer 累计；正式动作与钱包/账本/回执在原事务提交。model_attempts 保存供应商返回用量或 unknown，不保存 View/State/密钥。独立于桌游币，详见 [官方 AI](official-ai.md)。

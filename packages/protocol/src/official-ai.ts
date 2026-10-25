@@ -43,6 +43,26 @@ export const officialAiStatusSchema = z
     enabled: z.boolean(),
   })
   .strict();
+export const officialAiEditSchema = z
+  .object({
+    requestId: z.string().uuid(),
+    expectedRevision: z.number().int().positive(),
+    name: z.string().trim().min(1).max(60),
+    profileId: z.string().uuid().optional(),
+    pointsPerAction: z.number().int().min(1).max(10000),
+    tokenPricing: officialAiTokenPricingSchema.nullable(),
+  })
+  .strict();
+export const officialAiDeleteSchema = z
+  .object({
+    requestId: z.string().uuid(),
+    expectedRevision: z.number().int().positive(),
+  })
+  .strict();
+export const officialAiDeletedSchema = z.object({
+  id: z.string().uuid(),
+  deleted: z.literal(true),
+});
 export const officialAiEnrollSchema = z
   .object({
     requestId: z.string().uuid(),

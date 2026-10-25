@@ -4,6 +4,7 @@ import {
   officialAiOffersSchema, officialAiOfferSchema, officialAiPublishSchema, officialAiStatusSchema,
   officialAiEnrollSchema, officialAiEnrollmentSchema, aiPointWalletSchema, aiPointLedgerSchema,
   aiPointGrantSchema, officialAiStatsSchema,
+  officialAiEditSchema, officialAiDeleteSchema, officialAiDeletedSchema,
 } from '@boardgame/protocol';
 import { coinAdjustmentSchema, coinHistoryQuerySchema, coinWalletPageSchema, coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import {
@@ -183,6 +184,22 @@ export class ApiClient {
     return aiPointWalletSchema.parse(await this.request<unknown>('/admin/ai-points/grant', {
       method: 'POST', body: JSON.stringify(aiPointGrantSchema.parse(input)),
     }));
+  }
+  async editOfficialAi(id: string, input: z.input<typeof officialAiEditSchema>) {
+    return officialAiOfferSchema.parse(
+      await this.request<unknown>(`/admin/official-ai/offers/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(officialAiEditSchema.parse(input)),
+      }),
+    );
+  }
+  async deleteOfficialAi(id: string, input: z.input<typeof officialAiDeleteSchema>) {
+    return officialAiDeletedSchema.parse(
+      await this.request<unknown>(`/admin/official-ai/offers/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        body: JSON.stringify(officialAiDeleteSchema.parse(input)),
+      }),
+    );
   }
   async officialAiStats(signal?: AbortSignal) {
     return officialAiStatsSchema.parse(await this.request<unknown>('/admin/official-ai/stats', signal ? { signal } : undefined));

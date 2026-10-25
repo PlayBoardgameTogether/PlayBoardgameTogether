@@ -263,6 +263,137 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     profileId = enrollment.json().data.profileId;
   });
 
+  it('edits catalog entries with immutable old bindings, revision checks and durable receipts', async () => {
+    const path = `/admin/official-ai/offers/${offerId}`;
+    const input = {
+      requestId: randomUUID(),
+      expectedRevision: 1,
+      name: '更新陪玩',
+      pointsPerAction: 8,
+      tokenPricing: {
+        inputPointsPerMillion: 2000,
+        outputPointsPerMillion: 4000,
+        markupPercent: 15,
+      },
+    };
+    expect((await write(alice, 'PATCH', path, input)).statusCode).toBe(403);
+    expect(
+      (
+        await app.inject({
+          method: 'PATCH',
+          url: `/api/v1${path}`,
+          headers: { origin, cookie: admin.cookie },
+          payload: input,
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect((await write(admin, 'PATCH', path, { ...input, profileId })).statusCode).toBe(403);
+    const foreign = await write(bob, 'POST', '/me/model-profiles', {
+      name: 'Foreign source',
+      endpointId: 'mock',
+      modelId: 'mock-v1',
+    });
+    expect(
+      (await write(admin, 'PATCH', path, { ...input, profileId: foreign.json().data.id }))
+        .statusCode,
+    ).toBe(403);
+    const nextSource = await write(admin, 'POST', '/me/model-profiles', {
+      name: 'Next source',
+      endpointId: 'mock',
+      modelId: 'mock-v2',
+    });
+    const edit = { ...input, profileId: nextSource.json().data.id as string };
+    const response = await write(admin, 'PATCH', path, edit);
+    expect(response.statusCode, response.body).toBe(200);
+    const replacement = response.json().data;
+    expect(replacement).toMatchObject({
+      name: input.name,
+      pointsPerAction: 8,
+      tokenPricing: input.tokenPricing,
+      enabled: true,
+    });
+    expect(replacement.id).not.toBe(offerId);
+    expect((await write(admin, 'PATCH', path, edit)).json().data).toEqual(replacement);
+    expect((await write(admin, 'PATCH', path, { ...edit, name: '不同请求' })).statusCode).toBe(409);
+    expect(
+      (await write(admin, 'PATCH', path, { ...edit, requestId: randomUUID() })).statusCode,
+    ).toBe(409);
+    expect((await service.offers(true)).map((item) => item.id)).toEqual([replacement.id]);
+    expect(JSON.stringify(await service.offers())).not.toContain(nextSource.json().data.id);
+    expect(await service.runtime(profileId, alice.id)).toBeNull();
+    const old = (
+      await db.query(
+        'SELECT source_profile_id,points_per_action,enabled,deleted_at FROM official_ai_offers WHERE id=$1',
+        [offerId],
+      )
+    ).rows[0];
+    expect(old).toMatchObject({
+      source_profile_id: sourceId,
+      points_per_action: 2,
+      enabled: false,
+    });
+    expect(old.deleted_at).not.toBeNull();
+    expect(
+      (
+        await write(alice, 'POST', '/me/official-ai/enroll', {
+          requestId: randomUUID(),
+          offerId,
+          matchBudget: 10,
+        })
+      ).statusCode,
+    ).toBe(403);
+  });
+
+  it.each(['PATCH', 'DELETE'] as const)(
+    'preserves in-flight token billing after catalog %s and blocks revival',
+    async (method) => {
+      await tokenOffer();
+      await grant(20);
+      const match = await activeMatch();
+      const profile = await claim(match.taskId);
+      await service.reserve(match.taskId, 'official-test', 1, profile, alice.id, match.decisionKey);
+      const path = `/admin/official-ai/offers/${offerId}`;
+      const input = {
+        requestId: randomUUID(),
+        expectedRevision: 1,
+        ...(method === 'PATCH' ? { name: '新价格', pointsPerAction: 10, tokenPricing: null } : {}),
+      };
+      expect((await write(bob, method, path, input)).statusCode).toBe(403);
+      const response = await write(admin, method, path, input);
+      expect(response.statusCode, response.body).toBe(200);
+      expect((await write(admin, method, path, input)).json().data).toEqual(response.json().data);
+      expect(
+        (await write(admin, method, path, { ...input, requestId: randomUUID() })).statusCode,
+      ).toBe(409);
+      expect(
+        (
+          await write(admin, 'PUT', path, {
+            requestId: randomUUID(),
+            expectedRevision: 2,
+            enabled: true,
+          })
+        ).statusCode,
+      ).toBe(409);
+      expect((await service.offers(true)).some((offer) => offer.id === offerId)).toBe(false);
+      expect(await service.runtime(profileId, alice.id)).toBeNull();
+      // Response arriving after removal still freezes the original price, then commits exactly once.
+      await service.recordResponse(match.taskId, { inputTokens: 1000, outputTokens: 1000 }, 10);
+      await propose(match.taskId);
+      const matches = new MatchService(db, registry);
+      expect(await matches.actAutomation(match.taskId, 'official-test', 1)).toMatchObject({
+        revision: 2,
+      });
+      await db.query("UPDATE ai_tasks SET status='proposed' WHERE id=$1", [match.taskId]);
+      await matches.actAutomation(match.taskId, 'official-test', 1);
+      expect(
+        (await service.ledger(alice.id)).items.filter((item) => item.kind === 'action'),
+      ).toMatchObject([
+        { delta: -4, tokenBilling: { offerId, chargedPoints: 4, pricing: profile.token_pricing } },
+      ]);
+      expect(await service.wallet(alice.id)).toEqual({ balance: 16, reserved: 0, available: 16 });
+    },
+  );
+
   it('protects grants, replays receipts before new state, and isolates wallet/ledger/catalog credentials', async () => {
     const input = { requestId: randomUUID(), accountId: alice.id, points: 25, note: '首批体验' };
     expect((await write(alice, 'POST', '/admin/ai-points/grant', input)).statusCode).toBe(403);

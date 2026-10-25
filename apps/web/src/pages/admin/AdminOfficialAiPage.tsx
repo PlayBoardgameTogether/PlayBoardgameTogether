@@ -31,6 +31,10 @@ function OfficialAiAdmin() {
   const [inputRate, setInputRate] = useState(0);
   const [outputRate, setOutputRate] = useState(0);
   const [markup, setMarkup] = useState(0);
+  const [editing, setEditing] = useState<OfficialAiOffer>();
+  const [deleting, setDeleting] = useState<string>();
+  const [useTokens, setUseTokens] = useState(true);
+  const editor = useRef<HTMLFormElement>(null);
   const tokenPricing = {
     inputPointsPerMillion: inputRate,
     outputPointsPerMillion: outputRate,
@@ -50,6 +54,16 @@ function OfficialAiAdmin() {
   const requestId = useAdminRequestId();
   const grantSequence = useRef(0);
   const pending = useRef<{ work: () => Promise<unknown>; message: string } | undefined>(undefined);
+  function resetEditor() {
+    setEditing(undefined);
+    setProfileId('');
+    setName('');
+    setPrice(100);
+    setInputRate(0);
+    setOutputRate(0);
+    setMarkup(0);
+    setUseTokens(true);
+  }
   useEffect(() => {
     alive.current = true;
     const controller = new AbortController();
@@ -114,7 +128,7 @@ function OfficialAiAdmin() {
       )}
       {uncertain && (
         <div className="ai-feedback" role="status">
-          <p>上次操作结果尚未确认，已暂时锁定表单。请以原请求重试，避免重复发放。</p>
+          <p>上次操作结果尚未确认，已暂时锁定表单。请以原请求重试，避免重复操作。</p>
           <button
             disabled={busy}
             onClick={() => {
@@ -147,8 +161,27 @@ function OfficialAiAdmin() {
       )}
       <fieldset className="ai-admin-forms" disabled={busy || uncertain}>
         <form
+          ref={editor}
+          aria-label={editing ? '编辑官方 AI' : '发布官方 AI'}
           onSubmit={(event) => {
             event.preventDefault();
+            if (editing) {
+              const input = {
+                name,
+                ...(profileId ? { profileId } : {}),
+                pointsPerAction: price,
+                tokenPricing: useTokens ? tokenPricing : null,
+                expectedRevision: editing.revision,
+              };
+              void run(async () => {
+                await api.editOfficialAi(editing.id, {
+                  ...input,
+                  requestId: requestId({ operation: 'edit', id: editing.id, ...input }),
+                });
+                if (alive.current) resetEditor();
+              }, '官方 AI 已修改，玩家需重新启用新档位。旧账单保留。');
+              return;
+            }
             const input = { name, profileId, pointsPerAction: price, tokenPricing };
             void run(
               () =>
@@ -156,20 +189,20 @@ function OfficialAiAdmin() {
                   ...input,
                   requestId: requestId({ operation: 'publish', ...input }),
                 }),
-              '官方 AI 已发布。价格与模型绑定固定，调整时请发布新档位。',
+              '官方 AI 已发布。可在官方模型目录编辑或删除。',
             );
           }}
         >
-          <h2>发布官方 AI</h2>
+          <h2>{editing ? `编辑官方 AI：${editing.name}` : '发布官方 AI'}</h2>
           <a href="/settings/models">配置平台使用的模型密钥</a>
           <label>
             来源模型配置
             <select
-              required
+              required={!editing}
               value={profileId}
               onChange={(event) => setProfileId(event.target.value)}
             >
-              <option value="">请选择本人模型配置</option>
+              <option value="">{editing ? '保留原来源模型' : '请选择本人模型配置'}</option>
               {profiles
                 .filter((profile) => profile.enabled && profile.has_credential)
                 .map((profile) => (
@@ -188,48 +221,64 @@ function OfficialAiAdmin() {
               onChange={(event) => setName(event.target.value)}
             />
           </label>
+          {editing && (
+            <label>
+              计费方式
+              <select
+                value={useTokens ? 'token' : 'fixed'}
+                onChange={(event) => setUseTokens(event.target.value === 'token')}
+              >
+                <option value="token">按实际 token 计费</option>
+                <option value="fixed">每次成功行动固定点价</option>
+              </select>
+            </label>
+          )}
+          {useTokens && (
+            <>
+              <label>
+                输入基础点价（点 / 百万 token）
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  max={1000000000}
+                  step="1"
+                  value={inputRate}
+                  onChange={(event) => setInputRate(event.target.valueAsNumber)}
+                />
+              </label>
+              <label>
+                输出基础点价（点 / 百万 token）
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  max={1000000000}
+                  step="1"
+                  value={outputRate}
+                  onChange={(event) => setOutputRate(event.target.valueAsNumber)}
+                />
+              </label>
+              <label>
+                加价比例（%）
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  max={1000}
+                  step="1"
+                  value={markup}
+                  onChange={(event) => setMarkup(event.target.valueAsNumber)}
+                />
+              </label>
+              <p className="muted" aria-live="polite">
+                售价预览：{tokenSellingRates(tokenPricing)}（加价 {markup}%）。
+                输入与输出基础点价至少一项大于 0；不自动获取供应商价格或汇率。
+              </p>
+            </>
+          )}
           <label>
-            输入基础点价（点 / 百万 token）
-            <input
-              type="number"
-              required
-              min={0}
-              max={1000000000}
-              step="1"
-              value={inputRate}
-              onChange={(event) => setInputRate(event.target.valueAsNumber)}
-            />
-          </label>
-          <label>
-            输出基础点价（点 / 百万 token）
-            <input
-              type="number"
-              required
-              min={0}
-              max={1000000000}
-              step="1"
-              value={outputRate}
-              onChange={(event) => setOutputRate(event.target.valueAsNumber)}
-            />
-          </label>
-          <label>
-            加价比例（%）
-            <input
-              type="number"
-              required
-              min={0}
-              max={1000}
-              step="1"
-              value={markup}
-              onChange={(event) => setMarkup(event.target.valueAsNumber)}
-            />
-          </label>
-          <p className="muted" aria-live="polite">
-            售价预览：{tokenSellingRates(tokenPricing)}（加价 {markup}%）。
-            输入与输出基础点价至少一项大于 0；不自动获取供应商价格或汇率。
-          </p>
-          <label>
-            单次预留上限（点）
+            {useTokens ? '单次预留上限（点）' : '每次成功行动点价（点）'}
             <input
               type="number"
               required
@@ -241,12 +290,24 @@ function OfficialAiAdmin() {
             />
           </label>
           <p className="muted">
-            按售价与实际用量合计向上取整。缺少用量或费用超过预留时免费兜底。
-            发布后锁定点价、加价比例、模型和地址；调价需发布新档位。密钥可轮换或撤销。
+            {editing
+              ? '保存后替换目录项并停用旧档位，玩家需重新启用；已有席位不会自动换价或换模型。旧账单保留，已发送的有效决策仍按原价格结算。'
+              : '按售价与实际用量合计向上取整。缺少用量或费用超过预留时免费兜底。密钥可轮换或撤销。'}
           </p>
-          <button disabled={busy || !profileId || !(inputRate + outputRate > 0)}>
-            发布官方 AI
-          </button>
+          <div className="ai-catalog-actions">
+            <button
+              disabled={
+                busy || (!editing && !profileId) || (useTokens && !(inputRate + outputRate > 0))
+              }
+            >
+              {editing ? '保存修改' : '发布官方 AI'}
+            </button>
+            {editing && (
+              <button type="button" className="secondary" onClick={resetEditor}>
+                取消编辑
+              </button>
+            )}
+          </div>
         </form>
         <form
           onSubmit={(event) => {
@@ -354,27 +415,91 @@ function OfficialAiAdmin() {
                   </small>
                 )}
               </div>
-              <button
-                className="secondary"
-                disabled={busy || uncertain}
-                onClick={() => {
-                  const input = { expectedRevision: offer.revision, enabled: !offer.enabled };
-                  void run(
-                    () =>
-                      api.setOfficialAiStatus(offer.id, {
-                        ...input,
-                        requestId: requestId({ operation: 'status', id: offer.id, ...input }),
-                      }),
-                    '开放状态已更新。',
-                  );
-                }}
-              >
-                {offer.enabled ? '停用' : '开放'}
-              </button>
+              <div className="ai-catalog-actions" aria-label={`${offer.name}操作`}>
+                <button
+                  className="secondary"
+                  disabled={busy || uncertain}
+                  onClick={() => {
+                    setEditing(offer);
+                    setDeleting(undefined);
+                    setProfileId('');
+                    setName(offer.name);
+                    setPrice(offer.pointsPerAction);
+                    setInputRate(offer.tokenPricing?.inputPointsPerMillion ?? 0);
+                    setOutputRate(offer.tokenPricing?.outputPointsPerMillion ?? 0);
+                    setMarkup(offer.tokenPricing?.markupPercent ?? 0);
+                    setUseTokens(Boolean(offer.tokenPricing));
+                    editor.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+                    editor.current?.querySelector('select')?.focus({ preventScroll: true });
+                  }}
+                >
+                  编辑
+                </button>
+                <button
+                  className="secondary"
+                  disabled={busy || uncertain}
+                  onClick={() => {
+                    const input = { expectedRevision: offer.revision, enabled: !offer.enabled };
+                    void run(
+                      () =>
+                        api.setOfficialAiStatus(offer.id, {
+                          ...input,
+                          requestId: requestId({ operation: 'status', id: offer.id, ...input }),
+                        }),
+                      '开放状态已更新。',
+                    );
+                  }}
+                >
+                  {offer.enabled ? '停用' : '开放'}
+                </button>
+                <button
+                  className="danger"
+                  disabled={busy || uncertain}
+                  onClick={() => setDeleting(offer.id)}
+                >
+                  删除
+                </button>
+                {deleting === offer.id && (
+                  <div className="ai-delete-confirm" role="group" aria-label={`删除${offer.name}`}>
+                    <p>
+                      删除“{offer.name}
+                      ”后停止新调用并从目录移除。旧账单保留，已发送的有效决策仍按原价格结算。
+                    </p>
+                    <button
+                      className="danger"
+                      disabled={busy || uncertain}
+                      onClick={() => {
+                        const input = { expectedRevision: offer.revision };
+                        void run(async () => {
+                          await api.deleteOfficialAi(offer.id, {
+                            ...input,
+                            requestId: requestId({ operation: 'delete', id: offer.id, ...input }),
+                          });
+                          if (alive.current) {
+                            setDeleting(undefined);
+                            if (editing?.id === offer.id) resetEditor();
+                          }
+                        }, '官方 AI 已从目录删除，历史记录已保留。');
+                      }}
+                    >
+                      确认删除
+                    </button>
+                    <button
+                      className="secondary"
+                      disabled={busy || uncertain}
+                      onClick={() => setDeleting(undefined)}
+                    >
+                      取消删除
+                    </button>
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ul>
-        <p className="muted">停用会阻止新调用；已发送的有效决策仍可能完成并按原价格结算。</p>
+        <p className="muted">
+          编辑会替换目录项，玩家需重新启用。停用或删除会阻止新调用；已发送的有效决策仍可能完成并按原价格结算。
+        </p>
       </section>
     </div>
   );
