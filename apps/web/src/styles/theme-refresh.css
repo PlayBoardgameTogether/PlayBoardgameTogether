@@ -1203,10 +1203,11 @@
     display: block;
     width: 64px;
     height: 64px;
-    border: 2px solid var(--line-strong, #3d2920);
-    border-radius: 4px;
-    box-shadow: 3px 3px 0 var(--line, #cca957);
-    background: #fcf6e6 url('/platform-art/playboard-dice-animated.gif') no-repeat center / cover;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent url('/platform-art/playboard-dice-animated.gif') no-repeat center /
+      contain;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }

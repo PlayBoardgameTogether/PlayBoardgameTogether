@@ -5,9 +5,9 @@
 | 文件 | 用途 |
 | --- | --- |
 | [playboard-pixel-dice.bbmodel](playboard-pixel-dice.bbmodel) | Blockbench 通用模型，内嵌调色板和完整动画，无外部纹理依赖 |
-| [playboard-dice-animated.gif](playboard-dice-animated.gif) | 512×512 深绿底动态头像，48 帧、20 FPS、2.4 秒无限循环 |
+| [playboard-dice-animated.gif](playboard-dice-animated.gif) | 512×512 透明底动态动画/头像，48 帧、20 FPS、2.4 秒无限循环 |
 | [playboard-dice-avatar.png](playboard-dice-avatar.png) | 1024×1024 深绿底静态头像 |
-| [playboard-dice-avatar-64.png](playboard-dice-avatar-64.png) | 64×64 小尺寸头像 |
+| [playboard-dice-avatar-64.png](playboard-dice-avatar-64.png) | 64×64 透明底静态小图标/Logo |
 | [playboard-dice-transparent.png](playboard-dice-transparent.png) | 1024×1024 透明底静态 Logo，适合叠放在其他背景上 |
 
 ## 编辑与动画

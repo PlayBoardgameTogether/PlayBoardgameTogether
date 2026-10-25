@@ -1,5 +1,41 @@
 # 开发进度
 
+## 搜索图标重合修复与模型配置操作栏 Popover 规范化（2026-10-25，0.18.2）
+
+- **彻底修复搜索框图标与文字重合缺陷**：
+  - 排查用户反馈的“所有搜索图标都与字体重合”（模型配置搜索框及大厅搜索框中的放大镜图标直接压在占位符与输入文字上方）。
+  - **根因分析**：由于像素风格基础样式选择器 `.desktop-shell--pixel :is(select, textarea, input...)` 设定了高优先级且紧凑的 `padding: 8px 12px`，导致各搜索输入框原本预留给左侧绝对定位图标的 40px+ 安全内边距被全局规则强行冲刷为 12px，使文字直接从第 12px 处渲染并覆盖在绝对定位图标上。
+  - **样式修补**：
+    - 在 `pixel-lobby.css` 中为 `.catalog-search input` 和 `.model-search-box input` 加上受保护的专用内边距（`padding-left: 46px !important` / `padding-left: 42px !important`，右侧预留清除按钮 48px）；
+    - 将模型配置页原本内嵌的普通 SVG 升级为统一的原生 `<PixelSearchIcon size={16} />`，并通过 `top: 50%; transform: translateY(-50%)` 精确居中对齐，杜绝重叠。
+- **重构模型配置卡片底部按钮为悬浮 Popover 菜单**：
+  - 针对用户反馈“模型配置按钮布局也有问题”（点击“更多”后，`编辑`、`测试连接`、`更多`、`复制`、`撤销凭证`、`删除` 按钮发生多行阶梯式错位与断行下掉）。
+  - 将原本内联撑开折叠的 `<details className="model-more">` 重构为**优雅的悬浮操作层（Popover Dropdown）**：
+    - 主操作栏 `.model-actions` 保持水平排列（`编辑`、`测试连接`、`更多 ▾`），视觉重心平衡规整；
+    - 展开后：在“更多”按键右下方以绝对定位弹出浮层（带 4px 像素硬阴影与微米白底色），垂直收纳次要操作（复制、撤销凭证、危险删除）；
+    - 交互体验完善：支持点击外部（`pointerdown`）自动收起、按 `Escape` 键自动收起，以及选项点击后自动收起；
+    - 自动化测试兼容：既有端到端测试断言 `await updated.getByText('更多').click(); await updated.getByRole('button', { name: '删除' }).click()` 100% 保持无缝兼容。
+- **全量自动化与静态回归**：
+  - `pnpm typecheck`：通过（0 error）。
+  - `pnpm lint`：ESLint、20 个源码根目录 AST 边界检查、Prettier 格式化检查全部通过。
+  - `pnpm build`：Web 生产打包完成，API runtime、QuickJS 隔离 ZIP 校验通过。
+  - `pnpm test:ui`：82 项完整端到端静态 UI 回归（包含桌面与移动双端视口），78 passed, 4 skipped 全部通过。
+- **版本规范**：平台版本由 `0.18.1 → 0.18.2`（修复搜索框文字重合与模型按钮阶梯错位样式缺陷，PATCH+1），README 同步更新。
+
+## 品牌 Logo 与加载动画背景透明化（2026-10-25，0.18.1）
+
+- **Logo 与静态图背景透明化**：
+  - 针对顶栏 Header 品牌 Logo（`apps/web/public/platform-art/pixel-dice.png`）和设计源资产（`design/brand/pixel-dice/playboard-dice-avatar-64.png`），去除原导出时残留的深绿（`#233d32`）实心底色，转换为 64×64 高清近邻透明 RGBA PNG。
+  - 顶栏像素骰子与亮暗主题背景无缝融合，彻底消除周围矩形深绿底块；在 CSS 中显式声明 `.brand-symbol.pixel-symbol { background: transparent; }`。
+- **动态骰子加载动画原生透明化**：
+  - 针对平台加载动画（`apps/web/public/platform-art/playboard-dice-animated.gif` 及 `design/brand/pixel-dice/playboard-dice-animated.gif`），修正 48 帧 GIF89a 图形控制扩展（GCE）的透明标志与调色板背景索引，使原本实心的深绿底变为原生透明通道。
+  - 保持全部 48 帧 20 FPS 完整翻转动作、旋转火花及像素点阵无损，文件体积维持 ~305KB 无重压缩伪影。
+- **全站加载状态容器透明无框化**：
+  - 针对 `@boardgame/ui` 的 `PageFeedback`（大厅初始加载、路由 Suspense 回退、房间等待等）以及模型配置页局部加载（`.loading-spinner-ring`、`.pixel-loading-dice`）：
+  - 移除原有多余的实体米白底色卡片包装（去除 `border`、`box-shadow` 与 `#fcf6e6` 背景），改为无框纯透明背景展示（`background: transparent url(...) no-repeat center / contain;`）。
+  - 像素翻滚骰子与火花自然浮动在当前页面或弹窗背景之上，自适应亮暗色主题。
+- **版本规范**：平台版本由 `0.18.0 → 0.18.1`（兼容的视觉与资产修补 PATCH+1），README 平台版本保持一致。
+
 ## 电脑开局默认官方 AI、额度不足免费脚本接续（2026-10-25，0.18.0）
 
 - 电脑开局页默认选择可用官方档位，优先本人已启用配置；展示价格、本人可用点数和每席位单局上限，可选择纯脚本。新配置默认上限 `max(100, 单次点数/预留上限)`，已保存配置复用原上限；开始时经原 enroll 显式提交，说明同档位其他进行中席位也使用该上限。未开放官方 AI 时使用免费脚本，读取失败明确报错，不冒充目录为空。
