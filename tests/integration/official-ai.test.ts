@@ -530,6 +530,105 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     },
   );
 
+  it('groups complete match bills before paging and isolates payer details and cursors', async () => {
+    await grant(100);
+    const first = await activeMatch();
+    const firstRoom = await get(alice, `/rooms/${first.roomId}`);
+    expect(
+      (
+        await write(alice, 'POST', `/rooms/${first.roomId}/close`, {
+          requestId: randomUUID(),
+          expectedRoomRevision: firstRoom.roomRevision,
+        })
+      ).statusCode,
+    ).toBe(200);
+    const second = await activeMatch();
+    const pricing = {
+      inputPointsPerMillion: 1000,
+      outputPointsPerMillion: 2000,
+      markupPercent: 25,
+    };
+    for (let index = 0; index < 25; index++) {
+      await db.query(
+        `INSERT INTO ai_point_ledger
+        (id,account_id,delta,balance_after,kind,note,match_id,token_billing)
+        VALUES($1,$2,-4,0,'action','官方 AI token 用量',$3,$4)`,
+        [
+          randomUUID(),
+          alice.id,
+          first.matchId,
+          index === 0
+            ? null
+            : { offerId, pricing, inputTokens: 1000, outputTokens: 1000, chargedPoints: 4 },
+        ],
+      );
+    }
+    await db.query(
+      `INSERT INTO ai_point_ledger(id,account_id,delta,balance_after,kind,note,match_id)
+      VALUES($1,$2,-2,0,'action','按次计费',$3),($4,$5,-9,0,'action','他人账单',$6)`,
+      [randomUUID(), alice.id, second.matchId, randomUUID(), bob.id, first.matchId],
+    );
+    for (let index = 0; index < 22; index++) await grant(1);
+    // Exercise the UUID tie breaker as well as grouping across more than one raw page.
+    await db.query("UPDATE ai_point_ledger SET created_at='2026-10-25T00:00:00Z'");
+    const firstPage = await get(alice, '/me/ai-points/bills');
+    expect(firstPage.items).toHaveLength(20);
+    const nextPage = await get(alice, `/me/ai-points/bills?before=${firstPage.nextCursor}`);
+    expect(nextPage.items).toHaveLength(5);
+    expect(nextPage.nextCursor).toBeNull();
+    const all = [...firstPage.items, ...nextPage.items];
+    expect(new Set(all.map((item) => item.id)).size).toBe(25);
+    expect(all.filter((item) => item.kind === 'grant')).toHaveLength(23);
+    const bill = all.find((item) => item.matchId === first.matchId);
+    expect(bill).toMatchObject({
+      delta: -100,
+      actionCount: 25,
+      inputTokens: 24000,
+      outputTokens: 24000,
+      missingUsageCount: 1,
+    });
+    expect(bill.gameName).toBeTruthy();
+    expect(all.filter((item) => item.matchId === first.matchId)).toHaveLength(1);
+    const details = await get(alice, `/me/ai-points/ledger?matchId=${first.matchId}`);
+    expect(details.items).toHaveLength(20);
+    const older = await get(
+      alice,
+      `/me/ai-points/ledger?matchId=${first.matchId}&before=${details.nextCursor}`,
+    );
+    expect(older.items).toHaveLength(5);
+    expect(older.nextCursor).toBeNull();
+    expect([...details.items, ...older.items].every((item) => item.matchId === first.matchId)).toBe(
+      true,
+    );
+    expect((await get(bob, `/me/ai-points/ledger?matchId=${first.matchId}`)).items).toMatchObject([
+      { delta: -9 },
+    ]);
+    expect((await get(bob, `/me/ai-points/bills?before=${firstPage.nextCursor}`)).items).toEqual(
+      [],
+    );
+    expect(
+      (await get(bob, `/me/ai-points/ledger?matchId=${first.matchId}&before=${details.nextCursor}`))
+        .items,
+    ).toEqual([]);
+    expect(
+      (
+        await get(
+          alice,
+          `/me/ai-points/ledger?matchId=${second.matchId}&before=${details.nextCursor}`,
+        )
+      ).items,
+    ).toEqual([]);
+    expect((await app.inject({ url: '/api/v1/me/ai-points/bills' })).statusCode).toBe(401);
+    expect(
+      (
+        await app.inject({
+          url: '/api/v1/me/ai-points/ledger?matchId=invalid',
+          headers: { cookie: alice.cookie },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
+
   it('settles actual token usage at the locked markup, releases excess and never charges recovery twice', async () => {
     await tokenOffer();
     await grant(20);
@@ -567,6 +666,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     expect(ledger).toHaveLength(1);
     expect(ledger[0]).toMatchObject({
       delta: -4,
+      usage: { inputTokens: 1000, outputTokens: 1000 },
       tokenBilling: {
         offerId,
         inputTokens: 1000,
@@ -574,6 +674,17 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
         chargedPoints: 4,
         pricing: { inputPointsPerMillion: 1000, outputPointsPerMillion: 2000, markupPercent: 25 },
       },
+    });
+    expect(
+      (await get(alice, '/me/ai-points/bills')).items.find(
+        (item) => item.matchId === match.matchId,
+      ),
+    ).toMatchObject({
+      delta: -4,
+      actionCount: 1,
+      inputTokens: 1000,
+      outputTokens: 1000,
+      missingUsageCount: 0,
     });
   });
 

@@ -1,0 +1,56 @@
+@layer components.models {
+  .ai-match-bills > .ai-match-bill {
+    display: block;
+  }
+  .official-ai-page .ai-bill-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem;
+    text-align: left;
+    white-space: normal;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--line);
+  }
+  .ai-bill-label {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .ai-match-bills .ai-bill-toggle small {
+    color: inherit;
+  }
+  .ai-bill-amount {
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+  .ai-match-bills .ai-match-bill > .ai-bill-detail {
+    display: block;
+    padding: 0.5rem 1rem 1rem;
+    background: var(--panel);
+  }
+  .ai-bill-tokens {
+    font-variant-numeric: tabular-nums;
+  }
+  .ai-charge-list {
+    padding: 0;
+    list-style: none;
+  }
+  .ai-charge-list p {
+    margin: 0.25rem 0;
+  }
+  .ai-bill-detail > a {
+    display: inline-block;
+    margin-top: 1rem;
+  }
+  @media (max-width: 600px) {
+    .official-ai-page .ai-bill-toggle {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+  }
+}

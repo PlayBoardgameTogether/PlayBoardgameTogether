@@ -88,7 +88,35 @@ export const aiPointWalletSchema = z.object({
   reserved: z.number().int().nonnegative(),
   available: z.number().int().nonnegative(),
 });
-export const aiPointLedgerQuerySchema = z.object({ before: z.string().uuid().optional() }).strict();
+export const aiPointLedgerQuerySchema = z
+  .object({
+    before: z.string().uuid().optional(),
+    matchId: z.string().uuid().optional(),
+  })
+  .strict();
+export const aiPointBillsQuerySchema = z.object({ before: z.string().uuid().optional() }).strict();
+const tokenUsageSchema = z.object({
+  inputTokens: z.number().int().nonnegative().nullable(),
+  outputTokens: z.number().int().nonnegative().nullable(),
+});
+export const aiPointBillsSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string().uuid(),
+      kind: z.enum(['grant', 'action']),
+      matchId: z.string().uuid().nullable(),
+      gameName: z.string().nullable(),
+      note: z.string(),
+      delta: z.number().int(),
+      actionCount: z.number().int().nonnegative(),
+      inputTokens: z.number().int().nonnegative(),
+      outputTokens: z.number().int().nonnegative(),
+      missingUsageCount: z.number().int().nonnegative(),
+      createdAt: z.string().datetime(),
+    }),
+  ),
+  nextCursor: z.string().uuid().nullable(),
+});
 export const aiPointLedgerSchema = z.object({
   items: z.array(
     z.object({
@@ -100,6 +128,7 @@ export const aiPointLedgerSchema = z.object({
       matchId: z.string().uuid().nullable(),
       createdAt: z.string().datetime(),
       tokenBilling: officialAiTokenBillingSchema.nullable().optional(),
+      usage: tokenUsageSchema.optional(),
     }),
   ),
   nextCursor: z.string().uuid().nullable(),
@@ -120,3 +149,4 @@ export type OfficialAiTokenPricing = z.infer<typeof officialAiTokenPricingSchema
 export type OfficialAiEnrollment = z.infer<typeof officialAiEnrollmentSchema>;
 export type AiPointWallet = z.infer<typeof aiPointWalletSchema>;
 export type AiPointLedger = z.infer<typeof aiPointLedgerSchema>;
+export type AiPointBills = z.infer<typeof aiPointBillsSchema>;

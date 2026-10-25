@@ -23,6 +23,12 @@ import type { AuthContext } from '../auth.js';
 import type { Database } from '../db/index.js';
 import { AppError } from '../errors.js';
 import { tokenCharge } from './pricing.js';
+import {
+  readPointBills,
+  ledgerUsageJoin,
+  ledgerInputTokens,
+  ledgerOutputTokens,
+} from './billing.js';
 
 type Reservation = {
   task_id: string;
@@ -116,14 +122,22 @@ export class OfficialAiService {
     return aiPointWalletSchema.parse(row);
   }
 
-  async ledger(accountId: string, before?: string) {
+  async bills(accountId: string, before?: string) {
+    return readPointBills(this.db, accountId, before);
+  }
+
+  async ledger(accountId: string, before?: string, matchId?: string) {
     const rows = (
       await this.db.query(
-        `SELECT id,delta,balance_after AS "balanceAfter",kind,note,
-      match_id AS "matchId",token_billing AS "tokenBilling",created_at FROM ai_point_ledger WHERE account_id=$1 AND
-      ($2::uuid IS NULL OR (created_at,id)<(SELECT created_at,id FROM ai_point_ledger WHERE id=$2 AND account_id=$1))
-      ORDER BY created_at DESC,id DESC LIMIT 21`,
-        [accountId, before ?? null],
+        `SELECT l.id,l.delta,l.balance_after AS "balanceAfter",l.kind,l.note,
+      l.match_id AS "matchId",l.token_billing AS "tokenBilling",l.created_at,
+      jsonb_build_object('inputTokens',${ledgerInputTokens},'outputTokens',${ledgerOutputTokens}) AS usage
+      FROM ai_point_ledger l ${ledgerUsageJoin}
+      WHERE l.account_id=$1 AND ($3::uuid IS NULL OR (l.match_id=$3 AND l.kind='action')) AND
+      ($2::uuid IS NULL OR (l.created_at,l.id)<(SELECT created_at,id FROM ai_point_ledger
+        WHERE id=$2 AND account_id=$1 AND ($3::uuid IS NULL OR (match_id=$3 AND kind='action'))))
+      ORDER BY l.created_at DESC,l.id DESC LIMIT 21`,
+        [accountId, before ?? null, matchId ?? null],
       )
     ).rows;
     const items = rows
