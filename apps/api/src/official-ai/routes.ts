@@ -53,6 +53,16 @@ export function registerOfficialAiRoutes(
   app.post('/api/v1/admin/ai-points/grant', async (request) =>
     ok(request, await service.grant(await administrator(request, true), request.body)),
   );
+  app.patch('/api/v1/admin/official-ai/offers/:id', async (request) => {
+    const current = await administrator(request, true);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    return ok(request, await service.edit(current, id, request.body));
+  });
+  app.delete('/api/v1/admin/official-ai/offers/:id', async (request) => {
+    const current = await administrator(request, true);
+    const { id } = z.object({ id: z.string().uuid() }).parse(request.params);
+    return ok(request, await service.delete(current, id, request.body));
+  });
   app.get('/api/v1/admin/official-ai/stats', async (request) => {
     await administrator(request);
     return ok(request, await service.stats());

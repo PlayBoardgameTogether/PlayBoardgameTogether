@@ -213,4 +213,6 @@ POST `/api/v1/admin/game-packages/review` 接收 application/zip 字节，沿用
 
 ## 官方 AI 与 AI 点数（2026-10-16）
 
+0.19.0 增加管理员 PATCH/DELETE `/admin/official-ai/offers/:id`，均含 requestId/expectedRevision。PATCH 包含 name、可选 profileId、pointsPerAction、tokenPricing（可为 null），原子归档停用旧项并返回新 ID 的替代档位；DELETE 返回 `{ id, deleted: true }`。玩家需显式启用替代项，历史绑定/账单保持原身份和价格。旧 PUT 启停保持兼容且不可恢复归档项；公共目录不暴露来源 ID。完整语义见 [目录编辑与删除](official-ai.md#目录编辑与删除01902026-10-25)。
+
 新增共享 `official-ai.ts` schema 与 typed SDK：登录读取 `/official-ai/offers`、本人 `/me/official-ai/profiles`、POST `/me/official-ai/enroll`（requestId/offerId/matchBudget）、GET `/me/ai-points` 和 `/me/ai-points/ledger?before=UUID`。管理员 GET/POST `/admin/official-ai/offers`、PUT `/:id`（requestId/expectedRevision/enabled）、POST `/admin/ai-points/grant`（requestId/accountId/points/note）及 GET `/admin/official-ai/stats`。全部 no-store，写入 Origin/CSRF、事务会话与角色重验，持久成功回执优先；错误复用既有代码。modelProfile DTO 增加可选官方档位/上限/行动价格，个人模型列表仍仅个人配置，官方目录不暴露来源 ID/密钥。房间/控制动作继续使用已有 model+本人 profileId，不新增 seat 授权方式。详见 [官方 AI API](official-ai.md#api-与存储)。

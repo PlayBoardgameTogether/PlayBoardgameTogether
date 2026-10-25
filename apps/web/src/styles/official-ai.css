@@ -119,7 +119,31 @@
     width: 100%;
     min-width: 0;
   }
+  .ai-ledger li > .ai-catalog-actions,
+  .ai-catalog-actions {
+    display: flex;
+    align-items: center;
+    align-self: start;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .ai-delete-confirm {
+    flex-basis: 100%;
+    max-width: 32rem;
+  }
+  .ai-catalog-actions button {
+    margin-top: 0;
+  }
+  .ai-delete-confirm p {
+    margin: 0.5rem 0;
+  }
+  .ai-delete-confirm button + button {
+    margin-left: 0.5rem;
+  }
   @media (max-width: 600px) {
+    .ai-ledger li:has(.ai-catalog-actions) {
+      flex-direction: column;
+    }
     .official-ai-page {
       gap: 1.25rem;
     }
@@ -130,6 +154,11 @@
 }
 
 @layer theme {
+  :root .official-ai-page .ai-catalog-actions button.danger {
+    background: var(--panel);
+    color: var(--danger);
+    border-color: var(--danger);
+  }
   :root .official-ai-page :is(input, select) {
     background: var(--panel);
     color: var(--text);

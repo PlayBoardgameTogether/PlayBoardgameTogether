@@ -164,3 +164,84 @@ test('official AI has real empty states, phone/laptop layouts and denies player 
   const forbidden = await page.request.get('/api/v1/admin/official-ai/stats');
   expect(forbidden.status()).toBe(403);
 });
+
+test('administrator edits and deletes catalog models with confirmed retries', async ({ page }) => {
+  await login(page, 'stage7_admin');
+  const me = (await (await page.request.get('/api/v1/auth/me')).json()).data;
+  const source = await page.request.post('/api/v1/me/model-profiles', {
+    headers: { origin: 'http://127.0.0.1:5273', 'x-csrf-token': me.csrfToken },
+    data: {
+      name: '目录编辑来源',
+      endpointId: 'openai',
+      modelId: 'fixture-not-dispatched',
+      apiKey: 'fixture-official-api-key',
+    },
+  });
+  expect(source.ok()).toBe(true);
+  await page.goto('/admin/official-ai');
+  await page.getByLabel('来源模型配置').selectOption((await source.json()).data.id);
+  await page.getByLabel('玩家可见名称').fill('待编辑模型');
+  await page.getByLabel('输入基础点价（点 / 百万 token）').fill('1000');
+  await page.getByRole('button', { name: '发布官方 AI', exact: true }).click();
+  const row = page.locator('.ai-ledger li');
+  await expect(row).toContainText('待编辑模型');
+  await row.getByRole('button', { name: '编辑', exact: true }).click();
+  await expect(page.getByLabel('来源模型配置')).toBeFocused();
+  await expect(page.getByLabel('玩家可见名称')).toHaveValue('待编辑模型');
+  await page.getByRole('button', { name: '取消编辑' }).click();
+  await expect(row).toContainText('待编辑模型');
+  await row.getByRole('button', { name: '编辑', exact: true }).click();
+  await page.getByLabel('玩家可见名称').fill('已编辑模型');
+  await page.getByLabel('加价比例（%）').fill('15');
+  await page.getByLabel('单次预留上限（点）').fill('12');
+  await expect(page.getByText(/玩家需重新启用；已有席位/)).toBeVisible();
+  for (const width of [1440, 1280, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.screenshot({
+      path: test.info().outputPath(`official-ai-edit-${width}.png`),
+      fullPage: true,
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.getByRole('button', { name: '保存修改' }).click();
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText('已编辑模型');
+  await expect(row).toContainText('单次最多 12 点');
+  await row.getByRole('button', { name: '停用', exact: true }).click();
+  await expect(row).toContainText('已停用');
+  await row.getByRole('button', { name: '开放', exact: true }).click();
+  await expect(row).toContainText('开放中');
+  await row.getByRole('button', { name: '删除', exact: true }).click();
+  await row.getByRole('button', { name: '取消删除' }).click();
+  await expect(row).toContainText('已编辑模型');
+  await row.getByRole('button', { name: '删除', exact: true }).click();
+  await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+  await page.screenshot({
+    path: test.info().outputPath('official-ai-delete-dark-phone.png'),
+    fullPage: true,
+  });
+  let lost = false;
+  let original: string | null = null;
+  await page.route('**/api/v1/admin/official-ai/offers/*', async (route) => {
+    if (route.request().method() !== 'DELETE') return route.continue();
+    if (!lost) {
+      original = route.request().postData();
+      expect((await route.fetch()).status()).toBe(200);
+      lost = true;
+      await route.abort('failed');
+    } else {
+      expect(route.request().postData()).toBe(original);
+      await route.continue();
+    }
+  });
+  await row.getByRole('button', { name: '确认删除', exact: true }).click();
+  await expect(page.getByRole('button', { name: '重试上次未确认操作' })).toBeVisible();
+  await expect(page.getByLabel('玩家可见名称')).toBeDisabled();
+  await page.getByRole('button', { name: '重试上次未确认操作' }).click();
+  await expect(page.getByText('尚未发布官方 AI。')).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('已从目录删除');
+});
