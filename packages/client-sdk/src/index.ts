@@ -123,9 +123,11 @@ import {
 export type { AssetDraft, AssetVersion } from './assets.js';
 
 import {
-  registrationInputSchema,
+  emailRegistrationInputSchema,
+  registrationEmailRequestSchema,
+  registrationEmailSentSchema,
   registrationResultSchema,
-  type RegistrationInput,
+  type EmailRegistrationInput,
 } from '@boardgame/protocol';
 
 export class ApiError extends Error {
@@ -222,11 +224,19 @@ export class ApiClient {
       }),
     );
   }
-  async register(input: RegistrationInput) {
+  async requestRegistrationEmailCode(email: string) {
+    return registrationEmailSentSchema.parse(
+      await this.request<unknown>('/auth/register/email-code', {
+        method: 'POST',
+        body: JSON.stringify(registrationEmailRequestSchema.parse({ email })),
+      }),
+    );
+  }
+  async register(input: EmailRegistrationInput) {
     return registrationResultSchema.parse(
       await this.request<unknown>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(registrationInputSchema.parse(input)),
+        body: JSON.stringify(emailRegistrationInputSchema.parse(input)),
       }),
     );
   }

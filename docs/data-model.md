@@ -47,6 +47,8 @@
 
 ## 公开注册（2026-10-03）
 
+1.0.0 邮箱验证：新增迁移 `035_registration_email.sql`。accounts 新增私有 `email_canonical`/`email_verified_at`，二者同时为空或同时非空；邮箱有非空唯一索引，旧账号与维护 CLI 保留 null，公开 DTO 不增加邮箱。`registration_email_challenges` 按规范邮箱保留一个 UUID challenge、Argon2id 验证码摘要、10 分钟过期时间、发送/申请时间、最多 5 次错误计数、小时发送窗口和最多 5 封计数。发送预留先提交，再请求 SMTP，成功后标记 sent_at；失败不标成功但保留配额。重发事务替换 challenge 并清零尝试数，邮箱配额不清零；全局短 advisory lock 排序首次申请及配额容量。注册沿用 social-write 锁，锁定本人提交的邮箱/challenge，成功核销与写账户原子提交，唯一冲突和数据库失败回滚；无效码的错误次数单独提交。临时表申请时清理超过一小时未申请的记录，上限 10,000。下段无迁移说明为历史记录。
+
 无新增迁移。注册复用 accounts 与现有唯一约束，在共享 social-write advisory lock 的事务中同时写入规范 username_canonical、显示昵称、Argon2id password_hash、固定 user/active 和相同的显式 friend_id。登录 ID 或好友 ID 冲突整笔回滚，不由默认 ID trigger 添加后缀；不创建 session 或保存明文密码。social_revision、好友 ID 修改时间等继续使用原默认值，注册 ID 是初始值，首次后续自定义遵循现有政策。
 
 ## 在线游戏包 023/024（2026-10-03）

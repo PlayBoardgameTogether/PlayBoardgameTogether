@@ -6,7 +6,8 @@ import type { Database } from './db/index.js';
 import type pg from 'pg';
 import type { ApiConfig } from './config.js';
 import { AppError } from './errors.js';
-import { registrationInputSchema, registrationResultSchema } from '@boardgame/protocol';
+import { emailRegistrationInputSchema, registrationResultSchema } from '@boardgame/protocol';
+import { RegistrationEmailService, smtpRegistrationMailer, type RegistrationMailer } from './registration-email.js';
 
 export const usernameSchema = z.string().regex(/^[A-Za-z0-9_]{3,32}$/);
 export const passwordSchema = z.string().min(12).max(128);
@@ -47,7 +48,9 @@ export class AuthService {
   private notificationClient: pg.PoolClient | undefined;
   private notificationRetry: NodeJS.Timeout | undefined;
   private closed = false;
-  constructor(private db: Database, private config: ApiConfig) {
+  readonly registrationEmail: RegistrationEmailService;
+  constructor(private db: Database, private config: ApiConfig, mailer?: RegistrationMailer) {
+    this.registrationEmail = new RegistrationEmailService(db, mailer ?? smtpRegistrationMailer(config));
     this.ipLimiter = new FailureLimiter(config.LOGIN_IP_FAILURES ?? 10, config.LOGIN_WINDOW_MS ?? 10 * 60_000);
     this.userLimiter = new FailureLimiter(config.LOGIN_USER_FAILURES ?? 5, config.LOGIN_WINDOW_MS ?? 10 * 60_000);
     this.cleanupTimer = setInterval(() => void db.query('DELETE FROM sessions WHERE expires_at < now() OR revoked_at < now() - interval \'7 days\'').catch(() => undefined), 60 * 60_000);
@@ -77,17 +80,21 @@ export class AuthService {
   }
   assertOrigin(request: FastifyRequest) { if (request.headers.origin !== this.config.WEB_ORIGIN) throw new AppError('FORBIDDEN', 'Request origin is not allowed', 403); }
   async register(raw: unknown) {
-    const input = registrationInputSchema.parse(raw);
+    const input = emailRegistrationInputSchema.parse(raw);
     const passwordHash = await hashPassword(input.password);
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
       // Serialize with friend ID edits and automatic CLI account ID allocation.
       await client.query("SELECT pg_advisory_xact_lock(hashtextextended('social-write', 0))");
+      if (!await this.registrationEmail.verify(client, input)) {
+        await client.query('COMMIT');
+        throw new AppError('VALIDATION_ERROR', '验证码无效、已过期或尝试次数过多，请重新发送', 400);
+      }
       await client.query(`INSERT INTO accounts
-        (id,username_canonical,display_name,password_hash,role,status,friend_id)
-        VALUES($1,$2,$3,$4,'user','active',$5)`,
-      [randomUUID(), input.userId, input.displayName, passwordHash, input.userId]);
+        (id,username_canonical,display_name,password_hash,role,status,friend_id,email_canonical,email_verified_at)
+        VALUES($1,$2,$3,$4,'user','active',$5,$6,now())`,
+      [randomUUID(), input.userId, input.displayName, passwordHash, input.userId, input.email]);
       await client.query('COMMIT');
       return registrationResultSchema.parse({
         username: input.userId, displayName: input.displayName, friendId: input.userId,
@@ -95,7 +102,7 @@ export class AuthService {
     } catch (error) {
       await client.query('ROLLBACK');
       if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
-        throw new AppError('STATE_CONFLICT', '这个用户 ID 已被使用，请换一个', 409);
+        throw new AppError('STATE_CONFLICT', '用户 ID 或邮箱已被使用，请更换后重试', 409);
       }
       throw error;
     } finally {

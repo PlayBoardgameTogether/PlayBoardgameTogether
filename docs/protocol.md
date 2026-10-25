@@ -90,6 +90,10 @@ POST `/api/v1/admin/updates/check` 严格接收 `{requestId: UUID}`，验证 ses
 
 ## 账号注册（2026-10-03）
 
+### 邮箱验证扩展（1.0.0，2026-10-25）
+
+当前强制邮箱验证，以下原三字段注册记录为历史。新增 POST `/api/v1/auth/register/email-code`，严格 JSON `{email}`，返回 `{challengeId,expiresInSeconds:600,retryAfterSeconds:60}`；不创建账号或 session，不返回验证码。注册请求扩展为 `{displayName,userId,password,email,challengeId,emailCode}`，由 `emailRegistrationInputSchema` 校验；成功仍为原 201 公开结果。email trim/lowercase，最长 254 字；emailCode 必须 6 位数字，challengeId 为 UUID。验证码必须已发送、匹配邮箱、未过期/用尽/核销。原三字段请求返回 VALIDATION_ERROR；失败验证码也为该错误，不泄露真实验证码或邮箱存在性。用户 ID/邮箱唯一冲突统一 STATE_CONFLICT，邮件未配置/发送失败 SERVICE_UNAVAILABLE，发送冷却/配额 RATE_LIMITED。两接口均要求精确 Origin、JSON、4 KiB 上限、no-store；分别每 IP 每分钟 5 次，同邮箱另有 60 秒冷却与每小时 5 次持久化配额。`ApiClient.requestRegistrationEmailCode` 与 `register` 均用共享 schema 解析。需要配对升级网页与 API，既有登录/session/WS 契约不变；版本升级获用户明确授权。
+
 POST `/api/v1/auth/register`：严格 JSON `{displayName,userId,password}`，由 `protocol/auth.ts` 共享 schema 校验。displayName trim 后 1–32 字，userId 可带单个 @、名字部分 3–32 位 ASCII 字母/数字/下划线，trim/lowercase；password 6–128 位，含 ASCII 字母和数字，不 trim。成功 201 返回 `{username,displayName,friendId}`，username/friendId 是无 @ 的规范 ID。固定普通账户，不创建 session；Origin 必须匹配，4 KiB 上限，每 IP 每分钟 5 次。ID 已被登录名或好友 ID 使用返回 STATE_CONFLICT/409；无效输入 VALIDATION_ERROR/400，频控 RATE_LIMITED/429。响应 no-store，无密码/摘要/令牌。ApiClient.register 使用共享输入/响应 schema，返回类型由 schema 推导。登录 username 最大 33 位，以接受 32 位 ID 加 @，服务端去前缀后沿用既有身份认证。
 
 ## 在线游戏 ZIP 的 AI 与展示图（2026-10-03）

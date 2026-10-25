@@ -1,5 +1,9 @@
 # 架构
 
+## 注册邮箱验证（2026-10-25，1.0.0）
+
+`registration-email.ts` 拥有临时验证码、持久化发送/尝试配额与 SMTP 适配，`registration-routes.ts` 沿用 Origin、JSON、体积限制与有界 IP 限流。`AuthService.register` 在原 social-write 事务中验证并核销挑战、创建绑定已验证邮箱的账户；未验证前没有账户或 session。protocol/client-sdk 提供邮箱请求与完整注册 schema，RegisterPage 管理发送、重发倒计时和账号表单；不新增路由、登录身份或邮箱公开 DTO。SMTP 连接不占数据库事务，失败不回退。旧账号/CLI 登录不受影响；新增公开注册必填契约，版本升级已获用户明确授权。测试收件箱仅由 E2E 专用启动入口注入，生产 `main.ts` 使用实际 SMTP，生产 createApp 也忽略测试 mailer。
+
 ## 游戏仓库所有权分离（2026-10-25）
 
 10 个游戏仓库在 PlayBoardgameTogether 组织分别维护规则、棋桌、策略、资源和发布；平台主仓库保留其锁定集成副本，用于既有 registry、workspace、资源准备与回归，不再直接开发游戏。`game-repositories.lock.json` 记录远程完整提交和 Git blob SHA，`check-game-repositories.mjs --remote` 同时核对副本和远程 tree；`import-game-repository.mjs` 引入经过审查的精确版本并保护本地修改。独立仓库中的 SDK/包解析器只是固定兼容性测试快照，平台仍是通用 SDK 和运行时的维护来源。

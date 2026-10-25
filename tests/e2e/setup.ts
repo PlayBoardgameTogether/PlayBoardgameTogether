@@ -7,6 +7,7 @@ export default async function setup() {
   const db = createDatabase(url);
   try {
     await db.query('TRUNCATE accounts CASCADE');
+    await db.query('TRUNCATE registration_email_challenges');
     await db.query('UPDATE game_installations SET enabled=true');
     await db.query('UPDATE social_settings SET friend_id_change_days=30,revision=1');
     for (const [username, displayName] of [

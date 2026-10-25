@@ -14,6 +14,7 @@ import { type GameRegistry } from './registry/index.js';
 import { LabRunner, RunnerError } from './runtime/runner.js';
 import { AppError } from './errors.js';
 import { AuthService } from './auth.js';
+import type { RegistrationMailer } from './registration-email.js';
 import { RoomService } from './rooms.js';
 import { MatchService } from './matches.js';
 import { AiScheduler } from './ai-scheduler.js';
@@ -39,6 +40,7 @@ export type AppDeps = {
   db: Database;
   registry: GameRegistry;
   runner?: LabRunner;
+  registrationMailer?: RegistrationMailer;
   testMatchFaults?: {
     beforeCommit?: () => void;
     afterCommit?: () => void;
@@ -100,7 +102,11 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     genReqId: () => randomUUID(),
   });
   const runner = deps.runner ?? new LabRunner(deps.registry);
-  const auth = new AuthService(deps.db, config);
+  const auth = new AuthService(
+    deps.db,
+    config,
+    config.NODE_ENV !== 'production' ? deps.registrationMailer : undefined,
+  );
   const models = new ModelProfileService(deps.db, config.MODEL_CREDENTIALS_KEY);
   registerOfficialAiRoutes(app, auth, new OfficialAiService(deps.db, config.NODE_ENV === 'test'));
   const rooms = new RoomService(deps.db, deps.registry, config);

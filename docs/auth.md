@@ -1,5 +1,26 @@
 # 认证与账户管理
 
+## 注册邮箱验证（1.0.0）
+
+新网页注册必须填写邮箱并输入邮件中的 6 位数字验证码。先调用 `POST /api/v1/auth/register/email-code`，再将 email、challengeId、emailCode 与原注册字段一起提交 `/api/v1/auth/register`。邮箱 trim/lowercase，最长 254 字；每个邮箱限一个注册账号。未验证前不创建 accounts/session，也不能登录。既有账户和维护 CLI 账户不追补邮箱，登录、房间及会话权限保持原实现；邮箱不加入公开账户 DTO，也不作为登录名或密码找回入口。
+
+验证码 10 分钟内有效，每次最多输错 5 次；同一邮箱至少间隔 60 秒、每小时最多申请 5 次（含发送失败）。重发替换旧 challenge，验证码仅存 Argon2id 哈希。错误次数持久化；错误提交会提交次数，成功时核销 challenge 与创建账号同事务，失败插入回滚核销。验证码请求和注册分别每 IP 每分钟最多 5 次，单进程有界限流；邮箱限额在数据库串行化，重启不清零。挑战表最多保留 10,000 个近期邮箱，申请时清理一小时前的记录；不为发信持有数据库事务。
+
+发信使用 Nodemailer SMTP，服务端私有环境设置以下变量，不要向聊天、仓库、浏览器或日志提供授权码：
+
+```dotenv
+SMTP_HOST=smtp.example.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=sender@example.com
+SMTP_PASSWORD=由邮箱服务提供的SMTP授权码
+SMTP_FROM=sender@example.com
+```
+
+465 使用直接 TLS；587 使用 `SMTP_PORT=587`、`SMTP_SECURE=false`，仍强制 STARTTLS 并校验证书，不支持明文发信。发件地址须是供应商允许的地址；按服务商要求完成域名和发信身份验证。配置加入实际服务加载的私有环境文件，再按原维护流程重启 API；在线更新器继承其启动环境，因此也需加载新配置。缺项、连接、认证或投递拒绝一律返回 SERVICE_UNAVAILABLE/503；不返回验证码、不伪造发送成功、不回退到免验证注册。SMTP 接受表示邮件服务受理，不能保证最终进入收件箱。
+
+迁移 `035_registration_email.sql` 为账户增加私有邮箱/验证时间和唯一索引，新增临时挑战表；保留旧账户 null 值。前后端必须成对更新，新 API 拒绝旧三字段注册。此次属于公开注册契约不兼容变更，用户明确授权平台 `0.18.2 → 1.0.0`；部署前必须先配置真实 SMTP。以下日期章节记录原有行为，以本节为准。
+
 ## 公开注册（2026-10-03）
 
 `/register` 提供用户名（displayName，trim 后 1–32 字，支持中文）、用户 ID（userId，例如 `@rst307`）和密码/确认密码。ID 接受可选单个 @，trim 后规范为 lowercase ASCII 字母/数字/下划线，名字部分 3–32 位；同一 ID 写入不可变登录名 username_canonical 和初始 friend_id。已有登录名或好友 ID 被占用均明确拒绝，不追加后缀。后续修改好友 ID 不改变登录 ID。
