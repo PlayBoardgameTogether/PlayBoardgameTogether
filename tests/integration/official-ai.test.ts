@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createAccount } from '../../apps/api/src/auth.js';
 import { createApp } from '../../apps/api/src/app.js';
@@ -18,7 +18,7 @@ type Session = { cookie: string; csrf: string; id: string };
 describe.skipIf(!url)('official AI points and authoritative actions', () => {
   let db: Database;
   let app: Awaited<ReturnType<typeof createApp>>;
-  const registry = createRegistry(false);
+  let registry: ReturnType<typeof createRegistry>;
   const config = normalizeConfig({
     NODE_ENV: 'test',
     API_HOST: '127.0.0.1',
@@ -220,16 +220,16 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     expect(enrollment.statusCode, enrollment.body).toBe(200);
     profileId = enrollment.json().data.profileId;
   }
-  beforeAll(async () => {
-    db = createDatabase(url!);
-    service = new OfficialAiService(db, true);
-    app = await createApp({ db, registry, config });
-  });
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   beforeEach(async () => {
+    db = createDatabase(url!);
+    registry = createRegistry(false);
+    service = new OfficialAiService(db, true);
+    // Complete destructive fixture cleanup before starting background recovery.
     await db.query('TRUNCATE accounts CASCADE');
+    app = await createApp({ db, registry, config });
     for (const username of ['admin', 'alice', 'bob'])
       await createAccount(db, {
         username,

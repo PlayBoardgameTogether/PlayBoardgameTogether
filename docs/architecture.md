@@ -3,6 +3,7 @@
 ## 注册邮箱验证（2026-10-25，1.0.0）
 
 `registration-email.ts` 拥有临时验证码与持久化发送/尝试配额，`mail-settings.ts` 拥有后台 SMTP 配置、主密钥加密与运行时读取，`mail-transport.ts` 负责公网地址解析/固定 IP、TLS 和脱敏 SMTP 投递。`registration-routes.ts` 沿用 Origin、JSON、体积限制与有界 IP 限流。`AuthService.register` 在原 social-write 事务中验证并核销挑战、创建绑定已验证邮箱的账户；未验证前没有账户或 session。protocol/client-sdk 提供邮箱、后台设置和测试契约，RegisterPage 管理发码与注册，AdminMailSettingsPage 在既有后台外壳中管理保存/测试/未知回复恢复。后台写入复用 AdminService 原管理员事务与回执，只保存秘密输入的 HMAC 指纹；测试先提交 sending 回执，再从事务外调用 SMTP，重复请求只读取原结果。没有新的身份、规则、进程或邮箱公开 DTO。旧账号/CLI 登录不受影响；新增公开注册必填契约，版本升级已获用户明确授权。测试传输只在非生产依赖注入；生产 `main.ts` 及 createApp 使用实际 SMTP，不暴露测试开关或收件箱路由。
+
 ## 官方 AI 目录管理（2026-10-25，0.19.0）
 
 OfficialAiService 继续拥有目录写入、管理员身份重验及持久回执。PATCH 编辑在原事务内归档旧档位并建立新 ID 替代项，DELETE 逻辑归档；旧来源与计费参数保留，预留和正式动作结算继续原流程，玩家显式启用新档位。035 迁移增加 deleted_at 与归档项停用约束；Web 复用原发布表单编辑，目录提供取消和删除确认，不新增身份、结算或运行单元。

@@ -1,5 +1,17 @@
 # 开发进度
 
+## 全部待交付 PR 整合与 1.0.0 验收（2026-10-25）
+
+- 按用户“都合并”的授权，从已包含 Logo 修复 #37 的 main `13a24bd` 建立独立整合分支 `codex/merge-all-1-0-0`，通过 merge commit 保留 #33、#34、#35、#36、#38、#39 的全部原始提交。整合入口为 [PR #40](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/40)，原工作区及其他聊天 worktree 的未提交内容保持原样。
+- 统一根 package.json 与 README 为 `0.18.3 → 1.0.0`；最高影响是用户已授权的注册邮箱验证公开契约变化。目录管理/按局账单此前的 0.19.0 为分支候选版本，本批一并纳入 1.0.0，未单独发布 0.19.0；不重复递增游戏、SDK 或资源版本。SDK 保留三组新增接口，双方协议、架构与开发记录均保留。
+- 保留 `035_official_ai_catalog_management.sql`、`035_registration_email.sql`、`036_registration_mail_settings.sql` 的完整文件名与内容。迁移器按完整文件名及 checksum 记录，三者已在本轮新建的 `boardgame_merge_all_20261025_test` 独立库成功应用；未改写已应用迁移、开发/生产库或根 .env。游戏锁定源码、游戏仓库锁及各游戏版本没有变更。
+- 静态及生产检查：`pnpm typecheck`、`pnpm lint`、`pnpm build` 均通过，包含 20 个根目录 AST 边界、生产 bundle、编译 API、隔离 ZIP 规则与恢复检查；`pnpm test tests/unit` 为 49 文件、288/288 通过。13 份改动 Markdown 的新增相对链接存在，版本与 README 一致，`git diff --check` 通过。
+- 完整 `pnpm test:integration` 首轮 31 文件、233 项，230 通过、3 失败。失败为官方 AI/花砖测试 `TRUNCATE accounts CASCADE` 与启动中的 AI 恢复查询争锁，以及新工作区缺少拉密 ZIP 测试产物。PostgreSQL 死锁日志确认冲突双方；两个平台集成夹具改为每例先清理再启动应用、结束时完整关闭，官方 AI 同步每例新建 registry，避免重启后重复装配在线包。没有修改生产调度器、业务锁或任何业务断言，也没有增加超时或跳过测试。
+- 按既有脚本准备锁定游戏 ZIP，保留原测试准备、迁移、游戏同步和资源同步步骤，仅复验失败文件：花砖 5/5、拉密 1/1 通过；官方 AI 首次生命周期调整后暴露复用 registry 的重复注册，修正后最终整文件 26/26 通过，包含目录归档、本人完整账单、迟到计费及原请求恢复。最终夹具的 ESLint、测试 TypeScript 检查通过。其余首轮已通过文件未重复执行，不将首轮报告改写为单次全绿。
+- 真实 E2E 使用原 `pnpm test:e2e` 准备链，选择 registration、admin-mail-settings、official-ai、ai-point-bills、puerto-rico、color-match 六个文件，桌面/手机分别启动同一测试服务：`--project desktop --output .data/merge-e2e-desktop` 为 12/12，随后 `--project mobile --output .data/merge-e2e-mobile` 为 12/12，无 skip。覆盖真实注册与好友 ID 恢复、SMTP 配置/私有测试收件箱/未知回复、目录编辑删除、账单重试分页、双人完整对局，以及波多黎各锁定 1.0.0 ZIP 的三账号安装/行动/刷新恢复。分开启动避免两个项目共用本机 IP 的每分钟发码配额，不修改正式限流。
+- `pnpm test:ui mobile-discovery.spec.ts` 为 6 通过、2 个既有桌面项目下的手机专用用例跳过，跳过不计为通过。实际查看 1440/320px 账单、桌面/手机邮件设置与游戏详情、手机暗色目录删除确认截图；已有用例同时检查 1280/390px、键盘与溢出。截图及 trace 保留在该整合工作区的忽略目录，不提交生成产物。未验证物理手机、Safari、真实 SMTP 供应商收件或收费模型调用；测试传输不等于真实发信。
+- 发布边界：合并前匿名公网检查 `https://bg.rst307.cn/health/ready` 为 HTTP 200 / ready，实际浏览器首页页脚仍为 0.18.2。当前环境只有 Docker Desktop WSL，缺少已确认的 SSH/管理员更新连接，尚未操作服务器或核验私有 current.json、systemd active、新版本 SHA 与备份/迁移结果。合并不等于上线；下一步在获得原服务器连接后沿用既有更新器完成服务器同步与独立验收。
+
 ## 邮箱验证补齐后台发信设置（2026-10-25，同批 1.0.0）
 
 - 在原邮箱验证 PR #38 补齐「系统维护 → 邮件设置」(`/admin/mail`)：启停、SMTP 公网域名、TLS 465/STARTTLS 587、账号、发件邮箱、授权码、保存与测试邮件。保存立即生效，密码留空保留、显式清除，改变服务器/端口/账号需重新填写；网页及重读 API 不返回授权码。复用既有后台外壳、主题、SPA 导航和 typed SDK，公开协议源码白名单同步。该 PR 尚未合并，本轮是同一邮箱验证功能的后台配置补齐，最高影响仍为此前明确授权的 `0.18.2 → 1.0.0`，不重复升号。
