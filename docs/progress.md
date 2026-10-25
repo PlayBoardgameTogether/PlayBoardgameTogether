@@ -1,5 +1,20 @@
 # 开发进度
 
+## 顶栏品牌 Logo 重塑为纯净复古像素黄金骰子（2026-10-25，0.18.3）
+
+- **根因排查与重塑**：
+  - 针对用户反馈“当前logo显示感觉有点难看请你修改实在不行就删除”进行根因排查：此前采用的 `pixel-dice.png` 为 3D 旋转模型导出截图，在缩放到 32×32 并开启 `image-rendering: pixelated` 后，原本的 3D 速度线火花和投影边缘破碎成孤立的黑绿脏点/杂散噪点，且倾角发闷、对比度低，与右侧规整的 2D 大写像素字标严重脱节。
+  - **重构为纯正复古 2D 像素黄金骰子**：
+    - 全新设计规整对齐的纯矢量像素骰子（`apps/web/public/platform-art/pixel-dice.svg`），采用 24×24 点阵基准网格、深棕像素边框（`#49382d`，与右侧字标完全一致）、圆润微倒角、暖金体面（`#f6c445`）、顶部/左侧高光（`#fff2c6`）、底部/右侧阴影（`#d9971e`）以及 5 点标准深色点数；
+    - 同步生成 100% 纯净透明通道的 64×64 PNG（`pixel-dice.png` 与 `design/brand/pixel-dice/playboard-dice-avatar-64.png`），确保暗色/亮色主题与动画减弱降级场景下均无任何杂散噪点或模糊；
+    - 在 `App.tsx` 中使用原生矢量像素骰子，并在 `pixel-lobby.css` 中固定 `.brand-symbol.pixel-symbol` 尺寸（32×32，`flex-shrink: 0`），确保跨设备与缩放比例下始终绝对清晰、居中对称。
+- **验证与规范**：
+  - `pnpm --filter @boardgame/web typecheck`：通过（0 error）。
+  - `pnpm --filter @boardgame/web build`：Web 生产打包完成。
+  - `pnpm test:ui platform-shell.spec.ts`：桌面与移动端 6 项用例全部通过。
+  - `pnpm test:ui theme.spec.ts`：亮暗色主题 8 项用例全部通过。
+  - 平台版本由 `0.18.2 → 0.18.3`（品牌视觉优化与噪点修复，PATCH+1），README 同步更新。
+
 ## 搜索图标重合修复与模型配置操作栏 Popover 规范化（2026-10-25，0.18.2）
 
 - **彻底修复搜索框图标与文字重合缺陷**：
