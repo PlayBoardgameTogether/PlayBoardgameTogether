@@ -29,7 +29,7 @@ node scripts/package-awari.mjs
 ```powershell
 pnpm test tests/unit/awari-package.test.ts
 node scripts/package-awari.mjs
-pnpm exec playwright test --config playwright.awari-ui.config.ts --output .data/awari/ui
+pnpm exec playwright test --config tests/config/awari.config.ts --output .data/awari/ui
 pnpm typecheck
 pnpm lint
 pnpm build

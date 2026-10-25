@@ -10,7 +10,25 @@
 - 平台本轮 `pnpm --config.verify-deps-before-run=false typecheck`、同选项 `lint` 全部通过（20 源目录 AST 边界及既有格式检查）；`pnpm ... exec vitest run tests/unit/game-repositories.test.ts tests/unit/game-repository-pins.test.ts` **6/6 通过**，覆盖内置/ZIP 精确导出、脏工作区与秘密排除、已有目标保护、锁定副本增改删拒绝、来源/完整 SHA 校验及导入前保护本地修改。`node scripts/check-game-repositories.mjs --remote` 实际核对 10 仓、142 文件通过。
 - 所有 10 仓首次 main CI 通过后，按各现有版本推送 11 个精确标签并完成独立 Release：`uno-v1.2.0`、`uno-no-mercy-v1.0.0`、`gomoku-v1.0.3`、`rummikub-v1.0.3`、`catan-v1.0.1`、`puerto-rico-v1.0.0`、`awari-v1.0.0`、`color-match-v1.0.0`、`grid-garden-v1.0.0`、`splendor-v1.0.0`、`azul-v1.0.0`。发布工作流全部通过，附件包含对应游戏 ZIP/tgz、SHA256SUMS 和 release.json；逐项核对标签来源 SHA、发布描述中的提交以及 GitHub 附件摘要。没有覆盖任何已有版本，普通 GitHub Source code.zip 与内置 tgz 均不能作为在线安装 ZIP。
 - 本批仅开发/发布工具与内部文档，平台版本保持 **0.17.0 → 0.17.0**，游戏版本也不改号；不因分仓重跑无运行行为影响的全平台 build、数据库集成、E2E 或 UI 截图，独立游戏构建已实测。没有上传安装、上架或改变生产数据库，不能将 GitHub 发布当作平台上线。当前本机 WSL 仅发现 docker-desktop，未取得已确认服务器的有效连接信息，未同步服务器文档或重启服务，也没有声称生产版本更新。主平台配套变更通过独立功能分支/PR 交付。
+- 交付前远程 main 新增测试配置整理 PR #26（`b6c9cef`），已核对并合入，只在进度追加处保留双方全文解决冲突。四处游戏说明的新测试命令分别通过 [阿瓦里 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-awari/pull/1)、[卡坦岛 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-catan/pull/1)、[五子棋 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-gomoku/pull/1)、[拉密 PR #1](https://github.com/PlayBoardgameTogether/playboard-game-rummikub/pull/1) 在检查通过、核对单文件一行差异后锁定 head 合并，平台来源锁指向这些已审查且已进入各仓 main 的文档提交。游戏运行源码与原 11 个 Release 的标签/附件全部保持；平台最终组合再次 typecheck（含新的 tests/config 检查）、lint 和远程 142 文件来源核对通过，不重复运行无运行变化的业务验收。GitHub 插件对新仓库 PR 写入返回 403，改用已授权的 GitHub CLI 完成交付，没有申请额外权限。
 - 后续游戏继续在该组织独立建仓和发布；通用平台能力分别进入主仓库。版本升级时仍须审查精确 registry 与旧局恢复，来源导入器不代替历史版本保留方案；平台 Git 中保留集成副本的物理存储事实不变。详见 [ADR-009](adr/009-independent-game-repositories.md)。
+
+## 浏览器测试配置整理（2026-10-25，开发工具更新）
+
+- 根目录 Playwright 配置从 15 个减少到 1 个默认联机入口；专项配置统一放在 [tests/config](../tests/config/README.md)，总入口从 15 个收敛到 8 个。生产页面的 8 份重叠配置合并为 ui.config.ts，同一文件只运行一次；保留 test:ui/test:developers，新增 test:admin-ui，可用文件参数筛选聊天、游戏包管理等范围。
+- shared.ts 复用目录、产物路径、单 worker、失败 trace、设备和 Vite 启动设置。保留游戏原项目名称、视口和触屏参数，路径以配置位置解析；真实联机仍走原 test:e2e 隔离准备链，UI 配置不加载数据库环境或 globalSetup。新增配置专用 tsconfig，并纳入常规 typecheck。
+- 实测发现原拉密配置未启动回放用例依赖的 Vite，导致 page.goto('/') 无效；补齐 5380 开发服务，保留四个视口。按当前主线实际界面校准公共聊天、社交和拉密回放的旧按钮/提示选择器，保留身份、请求正文、消息安全、未读、滚动锚点、焦点与动画断言，并补查访客登录链接目标。未改产品源码、游戏规则、协议或数据库。
+- 同步 README、管理/UI 开发指南及四个游戏说明中的现行命令；历史验收记录保留旧命令事实。本批仅为测试/开发工具更新，平台版本保持 0.17.0，README 一致，游戏版本和锁文件均不变。
+
+本轮实际验证（独立 codex/test-config-cleanup 工作树）：
+
+- pnpm --config.verify-deps-before-run=false typecheck、lint、build 通过；配置专用 tsc、定向 ESLint、配置 Prettier 与 git diff --check 通过。构建包括生产 bundle、编译 API、隔离 ZIP、恢复和 AI worker 校验，保留原 model-viewer 大 chunk 提示。
+- 整理前保存 15 份配置的 --list 结果，与新入口逐项对比：默认联机仍为 274 项，合并 UI 为原配置去重并集 80 项，游戏/组件专项共 43 项。原有设备参数、trace、worker、初始化和产物位置逐项一致；拉密新增开发服务为本轮明确修复。
+- pnpm ... test:ui --reporter=dot --output .data/config-cleanup/ui 首轮 64 通过、12 失败、4 项原有桌面不适用条件跳过。6 个双端用例均因旧文案/入口选择器失败；修正后仅定向重跑 public-chat.spec.ts/social-shell.spec.ts 的这 6 个标题，12/12 通过、无 skip，最终 76 个独立用例通过、4 项条件跳过，不重复累加。
+- 按原脚本打包四个游戏后，分别运行 tests/config/{awari,gomoku,catan,rummikub,azul,player-names}.config.ts：4/4、3/3、8/8、12/12、12/12、4/4，合计 43 个独立用例通过，无 skip。拉密最初暴露缺少 baseURL/服务，补齐后旧“开头”选择器超时，中止后校准为现行“第一步”，最终该配置完整 12/12 通过；中止轮不计通过。
+- 原共享工作区同时进行大厅改版，首次浏览器运行使用该目录旧构建，出现断言失败后中止，未计为验收；本批已移入独立工作树重新安装锁定依赖、构建和验证，原工作区仅保留并行任务改动。临时配置对比脚本、截图、trace、ZIP 和无凭据验证环境均在忽略目录，不提交。
+- 未执行真实数据库集成/联机 E2E：本批未改其业务或初始化，只核对默认配置的完整测试清单和参数。静态夹具与棋桌验证不冒充真实联机、物理手机或生产验收；本批为开发配置整理，无产品运行更新，不合并发布、不重启服务器。后续游戏测试迁移继续遵守独立游戏仓库规则。
+
 
 ## PR #21 合并复核与版本顺延（2026-10-25，0.17.0）
 

@@ -133,7 +133,7 @@ test('public chat renders safe expressions, sends and opens a friend request fro
   await page.getByLabel('查看 桌友小明 的名片', { exact: true }).click();
   await expect(page.getByRole('dialog')).toContainText('@bob');
   await page.getByRole('button', { name: '发送好友申请', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText('好友申请已提交');
+  await expect(page.getByRole('dialog')).toContainText('好友申请已发送');
   expect(state.application()).toMatchObject({ friendId: 'bob', expectedAccountId: other });
   await page.getByLabel('关闭名片').click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -220,7 +220,8 @@ test('guests are invited to log in without loading public messages', async ({ pa
     });
   });
   await page.goto('/chat');
-  await expect(page.getByRole('link', { name: '登录参与聊天' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '前往登录', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: '前往登录', exact: true })).toHaveAttribute('href', '/login');
   expect(messageReads).toBe(0);
 });
 
@@ -266,7 +267,7 @@ test('loading older messages preserves the reading position and new messages off
         message.getBoundingClientRect().top - message.closest('ol')!.getBoundingClientRect().top,
     );
   const top = await relativeTop();
-  await page.getByRole('button', { name: '加载更早消息', exact: true }).click();
+  await page.getByRole('button', { name: '查看更早消息', exact: true }).click();
   await expect(history.getByRole('listitem')).toHaveCount(40);
   expect(await relativeTop()).toBeCloseTo(top, 0);
   messages.push({ ...original, id: crypto.randomUUID(), sequence: '41', text: '刚到的新消息' });

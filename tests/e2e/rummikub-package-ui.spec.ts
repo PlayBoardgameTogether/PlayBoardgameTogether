@@ -83,13 +83,13 @@ test('platform replays the unchanged old package and waits for its original anim
   for (const button of await frame.getByRole('button').all()) await expect(button).toBeDisabled();
   await expect(frame.locator('html')).toHaveAttribute('data-instance', 'retained');
   await page.screenshot({ path: info.outputPath('replay-arrangement.png') });
-  await page.getByRole('button', { name: '开头', exact: true }).click();
+  await page.getByRole('button', { name: '第一步', exact: true }).click();
   await expect(frame.locator('#table .meld')).toHaveCount(1);
   const flights = await frame.locator('html').getAttribute('data-flights');
   await page.getByLabel('回放进度').fill('1');
   await expect(frame.locator('#table .meld')).toHaveCount(2);
   expect(await frame.locator('html').getAttribute('data-flights')).toBe(flights);
-  await page.getByRole('button', { name: '开头', exact: true }).click();
+  await page.getByRole('button', { name: '第一步', exact: true }).click();
   await expect(page.getByLabel('回放进度')).toHaveValue('0');
   await page.getByLabel('播放速度').selectOption('4');
   await page.getByRole('button', { name: '播放', exact: true }).click();
@@ -99,7 +99,7 @@ test('platform replays the unchanged old package and waits for its original anim
   await expect(page.getByLabel('回放进度')).toHaveValue('2');
   await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.getByRole('button', { name: '开头', exact: true }).click();
+  await page.getByRole('button', { name: '第一步', exact: true }).click();
   await expect(page.getByLabel('回放进度')).toHaveValue('0');
   const beforeReduced = await frame.locator('html').getAttribute('data-flights');
   await page.getByRole('button', { name: '下一步', exact: true }).click();

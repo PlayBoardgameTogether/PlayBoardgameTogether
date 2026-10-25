@@ -1,6 +1,6 @@
 # UI 开发与回归
 
-生产外壳回归：先 `pnpm build`，再 `pnpm test:ui`。playwright.ui.config.ts 复用公开文档生产预览，运行文档、更多导航及 platform-shell 测试，不调用数据库准备/清理。新增覆盖按页加载、浏览器标题、历史返回与焦点、320px/横屏/桌面布局、登录请求锁与分类反馈、页面加载失败和跨页恢复；截图在测试输出目录。正式身份、房间和完整对局仍使用 `pnpm test:e2e`，不能用模拟登录失败响应替代真实登录验收。
+生产界面回归：先 `pnpm build`，再 `pnpm test:ui`。`tests/config/ui.config.ts` 统一启动生产预览，运行文档、导航、外壳、主题、移动发现、社交、后台和游戏包管理测试，不调用数据库准备/清理。可追加测试文件缩小范围，例如 `pnpm test:ui platform-shell.spec.ts`；全部入口见 [浏览器测试配置](../tests/config/README.md)。覆盖按页加载、浏览器标题、历史返回与焦点、320px/横屏/桌面布局、登录请求锁与分类反馈、页面加载失败和跨页恢复；截图在测试输出目录。正式身份、房间和完整对局仍使用 `pnpm test:e2e`，不能用模拟登录失败响应替代真实登录验收。
 
 2026-10-02 起 color-match、grid-garden、profile、navigation 回归将新截图写入 testInfo.outputPath，使用 `--output=.data/…` 可隔离本地验收产物；下方 docs/screenshots 路径保留历史记录。Color Match 心跳测试在按需页面加载完成后冻结时钟，并在刷新回归前恢复；不删除会话失效、心跳/重连或单连接断言。
 

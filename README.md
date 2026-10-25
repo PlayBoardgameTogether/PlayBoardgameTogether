@@ -194,7 +194,7 @@ pnpm build
 
 集成与 E2E 会准备并清理测试数据：必须使用独立 `TEST_DATABASE_URL`，不能指向开发或生产库；不要同时运行共享测试库的两套测试命令。跳过用例不等于验证通过。
 
-构建后还可执行 `pnpm test:developers` 或 `pnpm test:ui`，检查生产静态页面与公开文档；这两项不清理数据库。历史验收与本轮实际结果见 [开发进度](docs/progress.md)。
+构建后可执行 `pnpm test:ui` 检查生产页面，或用 `pnpm test:developers`、`pnpm test:admin-ui` 单独检查公开文档和管理后台；这些命令不清理数据库。专项入口统一放在 [tests/config](tests/config/README.md)，可按文件选择测试，例如 `pnpm test:ui public-chat.spec.ts`。历史验收与本轮实际结果见 [开发进度](docs/progress.md)。
 
 ## 运行边界
 

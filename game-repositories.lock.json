@@ -33,7 +33,7 @@
     },
     "gomoku": {
       "repository": "PlayBoardgameTogether/playboard-game-gomoku",
-      "commit": "6fee46b49071475688257ff13c51cbe60ac86af6",
+      "commit": "d6357497c1cc1c0fdaddd09c9f482a0f62903393",
       "kind": "zip",
       "source": "game-packages/gomoku",
       "compatibility": {
@@ -41,7 +41,7 @@
         "sdk": "0.1.0"
       },
       "files": {
-        "game-packages/gomoku/README.md": "03471f075b66643d9ba99675c96d636c79457057",
+        "game-packages/gomoku/README.md": "3254626487aba018d306d6a30f357cb608e1a568",
         "game-packages/gomoku/art/background.svg": "d934aa7b985cae53dffd02c0c269c7651882a99b",
         "game-packages/gomoku/art/cover.svg": "4eeb4bb75d86055319369dd6c548c27737deaf38",
         "game-packages/gomoku/art/icon.svg": "bf5c7ef8b7b88e88e00f0a7c9559e2067d0bc9b1",
@@ -54,7 +54,7 @@
     },
     "rummikub": {
       "repository": "PlayBoardgameTogether/playboard-game-rummikub",
-      "commit": "f3d9237c521adc56327059abef11f590c161221d",
+      "commit": "c2d6724f527bb29670a2bcb2c19904222777635d",
       "kind": "zip",
       "source": "game-packages/rummikub",
       "compatibility": {
@@ -62,7 +62,7 @@
         "sdk": "0.1.0"
       },
       "files": {
-        "game-packages/rummikub/README.md": "b06cd947cf8b7fe06364ceb88d3de3540753d33c",
+        "game-packages/rummikub/README.md": "918e96f722d08bc1850f93059cb86c1600169b35",
         "game-packages/rummikub/art/cover.svg": "80f18d1701c141fcbc083d60cd0a6745018b96bf",
         "game-packages/rummikub/art/icon.svg": "ab335854b14f771b53b8cb5d18a8c4d2063ae3a4",
         "game-packages/rummikub/client.html": "16ce6c36b424e46e83a0f10d5a1751175fc67c9f",
@@ -77,7 +77,7 @@
     },
     "catan": {
       "repository": "PlayBoardgameTogether/playboard-game-catan",
-      "commit": "76291db61dae0ab2bf89ec0a7229ff92279433f7",
+      "commit": "e12620d31daf08c46fc8303bc74b8a9a80988df2",
       "kind": "zip",
       "source": "game-packages/catan",
       "compatibility": {
@@ -85,7 +85,7 @@
         "sdk": "0.1.0"
       },
       "files": {
-        "game-packages/catan/README.md": "188ea8fc72db814caf7f7f136c187fc2eeb6dd92",
+        "game-packages/catan/README.md": "96402688b61e051aa0a9701e55d8b13331ca6c5f",
         "game-packages/catan/art/cover-prompt.md": "a37b459063ecfa8775fe3b959dacd1c6b80f51b2",
         "game-packages/catan/art/cover.png": "2a52c8cc55c7b9408eab7011bd603677c3459f85",
         "game-packages/catan/art/cover.svg": "88bcdfb2d6a25cc7f80f158d31f1103935b94749",
@@ -123,7 +123,7 @@
     },
     "awari": {
       "repository": "PlayBoardgameTogether/playboard-game-awari",
-      "commit": "4260abc7c9b5965921d29645bae38865fff04b78",
+      "commit": "7052e9bb171f58f70d452a9ad35a071674f70b3a",
       "kind": "zip",
       "source": "game-packages/awari",
       "compatibility": {
@@ -131,7 +131,7 @@
         "sdk": "0.1.0"
       },
       "files": {
-        "game-packages/awari/README.md": "86ac0331c748db28f3255c5909ed866e8e81a234",
+        "game-packages/awari/README.md": "6865f24dd36612345a21efb577edc500a1e01091",
         "game-packages/awari/art/cover.svg": "c544938d5679e548fe40e8837f3d8d5b8ee288e9",
         "game-packages/awari/art/icon.svg": "60ebce40d10a22e25ec5466d0792833ecb70303f",
         "game-packages/awari/client.html": "ac856cb8668f2682914df5ef77ff71f7f7c9df74",
