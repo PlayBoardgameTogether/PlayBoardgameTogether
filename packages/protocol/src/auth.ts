@@ -51,3 +51,19 @@ export const registrationResultSchema = z
   })
   .strict();
 export type RegistrationInput = z.input<typeof registrationInputSchema>;
+
+export const registrationEmailSchema = z.string().trim().max(254).email().toLowerCase();
+export const registrationEmailRequestSchema = z.object({ email: registrationEmailSchema }).strict();
+export const registrationEmailSentSchema = z
+  .object({
+    challengeId: z.string().uuid(),
+    expiresInSeconds: z.number().int().positive(),
+    retryAfterSeconds: z.number().int().positive(),
+  })
+  .strict();
+export const emailRegistrationInputSchema = registrationInputSchema.extend({
+  email: registrationEmailSchema,
+  challengeId: z.string().uuid(),
+  emailCode: z.string().regex(/^\d{6}$/),
+});
+export type EmailRegistrationInput = z.input<typeof emailRegistrationInputSchema>;

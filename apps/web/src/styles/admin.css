@@ -1,5 +1,64 @@
 /* Owned by components.admin. Cascade order is declared in index.css. */
 @layer components.admin {
+  .mail-settings-workspace {
+    display: grid;
+    gap: 20px;
+    max-width: 920px;
+  }
+  .mail-settings-fields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+    display: grid;
+    gap: 14px;
+  }
+  .mail-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .mail-settings-workspace label {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+  .mail-settings-workspace :is(input:not([type='checkbox']), select) {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  .mail-settings-workspace .mail-settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+  }
+  .mail-settings-workspace .mail-settings-toggle input {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+  @media (max-width: 760px) {
+    .mail-settings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+@layer theme {
+  .desktop-shell--admin .mail-settings-workspace input[type='checkbox'] {
+    appearance: auto;
+    background: initial;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+    min-height: 20px;
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+  }
+}
+@layer components.admin {
   .admin-workspace {
     display: grid;
     gap: 20px;

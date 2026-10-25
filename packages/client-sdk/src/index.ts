@@ -1,4 +1,5 @@
 import { createRoomResponseSchema } from '@boardgame/protocol';
+import { mailSettingsSchema, mailSettingsInputSchema, mailTestInputSchema, mailTestResultSchema } from '@boardgame/protocol';
 import type { z } from 'zod';
 import {
   officialAiOffersSchema, officialAiOfferSchema, officialAiPublishSchema, officialAiStatusSchema,
@@ -124,9 +125,11 @@ import {
 export type { AssetDraft, AssetVersion } from './assets.js';
 
 import {
-  registrationInputSchema,
+  emailRegistrationInputSchema,
+  registrationEmailRequestSchema,
+  registrationEmailSentSchema,
   registrationResultSchema,
-  type RegistrationInput,
+  type EmailRegistrationInput,
 } from '@boardgame/protocol';
 
 export class ApiError extends Error {
@@ -140,6 +143,19 @@ export class ApiError extends Error {
   }
 }
 export class ApiClient {
+  async adminMailSettings(signal?: AbortSignal) {
+    return mailSettingsSchema.parse(await this.request<unknown>('/admin/mail-settings', signal ? { signal } : undefined));
+  }
+  async saveAdminMailSettings(input: z.input<typeof mailSettingsInputSchema>) {
+    return mailSettingsSchema.parse(await this.request<unknown>('/admin/mail-settings', {
+      method: 'PUT', body: JSON.stringify(mailSettingsInputSchema.parse(input)),
+    }));
+  }
+  async testAdminMailSettings(input: z.input<typeof mailTestInputSchema>) {
+    return mailTestResultSchema.parse(await this.request<unknown>('/admin/mail-settings/test', {
+      method: 'POST', body: JSON.stringify(mailTestInputSchema.parse(input)),
+    }));
+  }
   async officialAiOffers(admin = false, signal?: AbortSignal) {
     return officialAiOffersSchema.parse(
       await this.request<unknown>(`${admin ? '/admin' : ''}/official-ai/offers`, signal ? { signal } : undefined),
@@ -254,11 +270,19 @@ export class ApiClient {
       }),
     );
   }
-  async register(input: RegistrationInput) {
+  async requestRegistrationEmailCode(email: string) {
+    return registrationEmailSentSchema.parse(
+      await this.request<unknown>('/auth/register/email-code', {
+        method: 'POST',
+        body: JSON.stringify(registrationEmailRequestSchema.parse({ email })),
+      }),
+    );
+  }
+  async register(input: EmailRegistrationInput) {
     return registrationResultSchema.parse(
       await this.request<unknown>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(registrationInputSchema.parse(input)),
+        body: JSON.stringify(emailRegistrationInputSchema.parse(input)),
       }),
     );
   }

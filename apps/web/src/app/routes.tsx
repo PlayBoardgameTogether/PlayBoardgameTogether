@@ -2,6 +2,7 @@ import { lazy, type ReactNode } from 'react';
 import { guides } from './developer-guides.js';
 
 const RootPage = lazy(() => import('./RootPage.js'));
+const AdminMailSettingsPage = lazy(() => import('../pages/admin/AdminMailSettingsPage.js').then(module => ({ default: module.AdminMailSettingsPage })));
 const OfficialAiPage = lazy(() => import('../pages/OfficialAiPage.js').then(module => ({ default: module.OfficialAiPage })));
 const AdminOfficialAiPage = lazy(() => import('../pages/admin/AdminOfficialAiPage.js').then(module => ({ default: module.AdminOfficialAiPage })));
 const CoinWalletPage = lazy(() => import('../pages/CoinWalletPage.js').then(module => ({ default: module.CoinWalletPage })));
@@ -101,6 +102,7 @@ export function resolvePage(path: string): PageRoute {
     case '/admin/official-ai': return { title: '官方 AI 与点数', page: <AdminOfficialAiPage /> };
     case '/admin': return { title: '管理员后台', page: <AdminOverviewPage /> };
     case '/admin/updates': return { title: '服务更新', page: <AdminUpdatesPage /> };
+    case '/admin/mail': return { title: '邮件设置', page: <AdminMailSettingsPage /> };
     case '/admin/badges': return { title: '徽章设计', page: <AdminBadgeDesignerPage /> };
     case '/admin/accounts': return { title: '账户管理', page: <AdminAccountsPage /> };
     case '/admin/catalog': return { title: '游戏管理', page: <AdminGamesPage /> };

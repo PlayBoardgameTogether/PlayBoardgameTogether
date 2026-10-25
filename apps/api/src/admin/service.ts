@@ -16,6 +16,9 @@ import { BadgeService } from '../badges/service.js';
 import { badgeCollectionSchema, badgeDefinitionSchema, type BadgeDefinitionInput, type BadgeGrantInput } from '@boardgame/protocol';
 import { coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import { CoinService } from '../coins/service.js';
+import { mailSettingsSchema, mailTestResultSchema, type MailSettingsInput, type MailTestInput } from '@boardgame/protocol';
+import type { MailSettingsService } from '../mail-settings.js';
+import type { SmtpCredentials } from '../mail-transport.js';
 
 type AccountRow = {
   id: string;
@@ -85,7 +88,55 @@ export class AdminService {
     private db: Database,
     private registry: GameRegistry,
     private production: boolean,
+    private mail?: MailSettingsService,
   ) {}
+
+  private mailService() {
+    if (!this.mail) throw new AppError('SERVICE_UNAVAILABLE', '邮件设置服务未装配', 503);
+    return this.mail;
+  }
+
+  mailSettings() { return this.mailService().status(); }
+
+  async saveMailSettings(current: AuthContext, input: MailSettingsInput) {
+    const mail = this.mailService();
+    return mailSettingsSchema.parse(await this.command(
+      current, input.requestId, { operation: 'mail.settings', fingerprint: mail.fingerprint(input) },
+      client => mail.save(client, current.account.id, input),
+    ));
+  }
+
+  async testMailSettings(current: AuthContext, input: MailTestInput) {
+    const mail = this.mailService();
+    let settings: SmtpCredentials | undefined;
+    const receipt = mailTestResultSchema.parse(await this.command(
+      current, input.requestId, { operation: 'mail.test', ...input }, async client => {
+        const status = await mail.status(client);
+        if (status.revision !== input.expectedRevision) throw new AppError('STATE_CONFLICT', '请测试当前已保存的邮件设置', 409);
+        settings = await mail.credentials(client);
+        const limit = await client.query(`UPDATE registration_mail_test_limit SET requested_at=clock_timestamp()
+          WHERE singleton=true AND (requested_at IS NULL OR requested_at < clock_timestamp()-interval '60 seconds') RETURNING singleton`);
+        if (!limit.rowCount) throw new AppError('RATE_LIMITED', '测试邮件每分钟最多发送一次，请稍后重试', 429, true);
+        return { requestId: input.requestId, status: 'sending' };
+      },
+    ));
+    // An existing receipt means the request was already attempted. A crash or a
+    // lost response must never cause another SMTP send for the same request ID.
+    if (!settings) return receipt;
+    let status: 'sent' | 'failed' = 'sent';
+    try {
+      await mail.transport(settings, {
+        to: input.email,
+        subject: 'PlayBoard 邮件设置测试',
+        text: '这是一封 PlayBoard 管理员邮件配置测试邮件。收到本邮件说明发信配置可以正常投递。',
+      });
+    } catch { status = 'failed'; }
+    const result = mailTestResultSchema.parse({ requestId: input.requestId, status });
+    await this.db.query(`UPDATE admin_command_receipts SET result=$3
+      WHERE account_id=$1 AND request_id=$2 AND result->>'status'='sending'`,
+    [current.account.id, input.requestId, result]);
+    return result;
+  }
 
   private gameDto(row: GameRow) {
     const manifest = manifestSchema.parse(row.manifest);
