@@ -9,6 +9,8 @@ import {
   coinAdjustmentSchema,
   coinHistoryQuerySchema,
   badgeDefinitionInputSchema,
+  mailSettingsInputSchema,
+  mailTestInputSchema,
 } from '@boardgame/protocol';
 import type { AuthService } from '../auth.js';
 import { AppError } from '../errors.js';
@@ -34,6 +36,24 @@ export function registerAdminRoutes(
     ok: true,
     data,
     traceId: request.id,
+  });
+  app.get('/api/v1/admin/mail-settings', async (request) => {
+    await administrator(request);
+    return ok(request, await service.mailSettings());
+  });
+  app.put('/api/v1/admin/mail-settings', { bodyLimit: 4096 }, async (request) => {
+    const current = await administrator(request, true);
+    return ok(
+      request,
+      await service.saveMailSettings(current, mailSettingsInputSchema.parse(request.body)),
+    );
+  });
+  app.post('/api/v1/admin/mail-settings/test', { bodyLimit: 4096 }, async (request) => {
+    const current = await administrator(request, true);
+    return ok(
+      request,
+      await service.testMailSettings(current, mailTestInputSchema.parse(request.body)),
+    );
   });
   app.get('/api/v1/admin/accounts/:id/coins', async (request) => {
     await administrator(request);

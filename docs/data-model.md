@@ -1,5 +1,11 @@
 # 数据模型
 
+## 后台邮件设置（036，1.0.0）
+
+`registration_mail_settings` 为单例配置，按 revision 控制并发编辑，保存启停、SMTP 公网域名、465/587、账号、发件地址、更新者/时间和 AES-256-GCM 密文/nonce/tag；三项加密字段同时存在或同时为空，主密钥复用服务器既有 MODEL_CREDENTIALS_KEY 并使用独立 AAD，不存入数据库。未保存行时兼容环境回退；保存过的停用/空密码不回退。配置每次发送单条查询读取，保存立即生效。`registration_mail_test_limit` 为单例持久化测试冷却，最多每分钟一次。
+
+写配置复用 admin_command_receipts，仅记录基于主密钥的秘密输入 HMAC 指纹和公开结果，不能保存密码或可解密副本。测试用同一回执表保存非秘密收件地址、revision 与 sending/sent/failed 状态；先授权/占用配额/提交 sending，再事务外发送，最后更新结果。重复请求不再次发送；中断后的 sending 保留未知结果，不猜测投递失败或自动补发。数据库备份与原主密钥须配套保留。
+
 ## 官方 AI 优先电脑开局（0.18.0）
 
 无新迁移。电脑创建可填充原 `seats.bot_model_profile_id`、`bot_policy_id='model'`，开局按原逻辑固定 `match_participants.model_owner_account_id`。余额/单局预算不足时预留事务回滚，不创建模型调用和扣费记录；同一 AI task 保存免费脚本提案并走原动作事务，`safe_error_code='AI_FALLBACK_USED'`。不更改控制类型、epoch、付款身份或预算，不重放已完成的脚本行动。

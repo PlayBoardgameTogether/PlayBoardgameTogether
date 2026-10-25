@@ -15,6 +15,8 @@ import { LabRunner, RunnerError } from './runtime/runner.js';
 import { AppError } from './errors.js';
 import { AuthService } from './auth.js';
 import type { RegistrationMailer } from './registration-email.js';
+import { MailSettingsService } from './mail-settings.js';
+import type { MailTransport } from './mail-transport.js';
 import { RoomService } from './rooms.js';
 import { MatchService } from './matches.js';
 import { AiScheduler } from './ai-scheduler.js';
@@ -41,6 +43,7 @@ export type AppDeps = {
   registry: GameRegistry;
   runner?: LabRunner;
   registrationMailer?: RegistrationMailer;
+  mailTransport?: MailTransport;
   testMatchFaults?: {
     beforeCommit?: () => void;
     afterCommit?: () => void;
@@ -102,10 +105,16 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     genReqId: () => randomUUID(),
   });
   const runner = deps.runner ?? new LabRunner(deps.registry);
+  const mail = new MailSettingsService(
+    deps.db,
+    config,
+    config.NODE_ENV !== 'production' ? deps.mailTransport : undefined,
+  );
   const auth = new AuthService(
     deps.db,
     config,
-    config.NODE_ENV !== 'production' ? deps.registrationMailer : undefined,
+    (config.NODE_ENV !== 'production' ? deps.registrationMailer : undefined) ??
+      mail.registrationMailer(),
   );
   const models = new ModelProfileService(deps.db, config.MODEL_CREDENTIALS_KEY);
   registerOfficialAiRoutes(app, auth, new OfficialAiService(deps.db, config.NODE_ENV === 'test'));
@@ -138,7 +147,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
   registerAdminRoutes(
     app,
     auth,
-    new AdminService(deps.db, deps.registry, config.NODE_ENV === 'production'),
+    new AdminService(deps.db, deps.registry, config.NODE_ENV === 'production', mail),
   );
   registerSocialRoutes(app, auth, new SocialService(deps.db, rooms));
   const packages = await GamePackageService.create(deps.db, deps.registry);

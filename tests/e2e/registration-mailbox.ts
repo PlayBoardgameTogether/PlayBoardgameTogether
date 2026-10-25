@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -15,4 +15,14 @@ export async function deliverRegistrationMail(email: string, code: string) {
 }
 export async function readRegistrationCode(email: string) {
   return readFile(path(email), 'utf8');
+}
+
+export async function deliverTestMail(email: string, subject: string) {
+  await mkdir(resolve('.data/e2e-registration-mail'), { recursive: true });
+  await writeFile(`${path(email)}.json`, JSON.stringify({ deliveryId: randomUUID(), subject }), {
+    mode: 0o600,
+  });
+}
+export async function readTestMail(email: string) {
+  return readFile(`${path(email)}.json`, 'utf8');
 }

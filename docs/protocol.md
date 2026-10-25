@@ -1,5 +1,11 @@
 # 协议
 
+## 后台邮件设置（1.0.0）
+
+GET `/api/v1/admin/mail-settings` 返回 `{enabled,host,port,username,from,revision,source,hasPassword,encryptionAvailable,configured}`，source 为 database/environment/none；只返回授权码是否存在，不返回密码、密文、nonce/tag。PUT 同路径严格接受 `{enabled,host,port,username,from,expectedRevision,requestId,password?,clearPassword?}`，password 省略保留，clearPassword 明确清除且不能同时给新密码。端口仅 465/587，host 为不含协议/路径的公网域名；启用需要完整字段与有效加密主密钥。更换 host/port/username 时必须提交新授权码。并发编辑 STATE_CONFLICT，同 requestId 异内容 REQUEST_ID_CONFLICT。
+
+POST `/api/v1/admin/mail-settings/test` 接受 `{email,expectedRevision,requestId}`，使用当前已保存版本，返回 `{requestId,status}`，status 为 sending/sent/failed。sent 只代表 SMTP 接受，需实际收件确认；failed 不含供应商原始错误，sending 为未完成/未知结果。重复同请求优先返回原状态，不再次发送；新的测试全平台每分钟一次，超限 RATE_LIMITED。两写接口 4 KiB 上限，沿用管理员 session/Origin/CSRF、事务内角色/会话重验与原管理回执；读取同样仅限管理员，响应 no-store。配置保存不测试连接、不产生发信副作用，后续发送即时读取。共享契约位于 protocol/mail-settings.ts，typed client-sdk 提供 adminMailSettings/saveAdminMailSettings/testAdminMailSettings，公开源码白名单包含该新协议文件。
+
 ## 官方 AI 优先电脑开局（0.18.0）
 
 `createRoomInputSchema` 增加可选 `computerModelProfileId: UUID`，必须同时提供 `computerOpponents: true`，且为当前创建者自己的有效官方配置。原创建事务验证并填充 bot 的 model 配置，准备/开局、身份、revision 和回执语义不变；省略字段保持免费脚本兼容。Web 先通过原 enroll 请求显式保存档位及每席位预算，再创建房间；整个分步进度保存在会话存储，重试复用各步骤原请求。无新端点或数据库迁移。

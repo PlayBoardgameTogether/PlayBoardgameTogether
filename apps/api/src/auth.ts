@@ -7,7 +7,7 @@ import type pg from 'pg';
 import type { ApiConfig } from './config.js';
 import { AppError } from './errors.js';
 import { emailRegistrationInputSchema, registrationResultSchema } from '@boardgame/protocol';
-import { RegistrationEmailService, smtpRegistrationMailer, type RegistrationMailer } from './registration-email.js';
+import { RegistrationEmailService, type RegistrationMailer } from './registration-email.js';
 
 export const usernameSchema = z.string().regex(/^[A-Za-z0-9_]{3,32}$/);
 export const passwordSchema = z.string().min(12).max(128);
@@ -49,8 +49,8 @@ export class AuthService {
   private notificationRetry: NodeJS.Timeout | undefined;
   private closed = false;
   readonly registrationEmail: RegistrationEmailService;
-  constructor(private db: Database, private config: ApiConfig, mailer?: RegistrationMailer) {
-    this.registrationEmail = new RegistrationEmailService(db, mailer ?? smtpRegistrationMailer(config));
+  constructor(private db: Database, private config: ApiConfig, mailer: RegistrationMailer) {
+    this.registrationEmail = new RegistrationEmailService(db, mailer);
     this.ipLimiter = new FailureLimiter(config.LOGIN_IP_FAILURES ?? 10, config.LOGIN_WINDOW_MS ?? 10 * 60_000);
     this.userLimiter = new FailureLimiter(config.LOGIN_USER_FAILURES ?? 5, config.LOGIN_WINDOW_MS ?? 10 * 60_000);
     this.cleanupTimer = setInterval(() => void db.query('DELETE FROM sessions WHERE expires_at < now() OR revoked_at < now() - interval \'7 days\'').catch(() => undefined), 60 * 60_000);

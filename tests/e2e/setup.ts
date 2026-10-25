@@ -8,6 +8,8 @@ export default async function setup() {
   try {
     await db.query('TRUNCATE accounts CASCADE');
     await db.query('TRUNCATE registration_email_challenges');
+    await db.query('TRUNCATE registration_mail_settings');
+    await db.query('UPDATE registration_mail_test_limit SET requested_at=NULL');
     await db.query('UPDATE game_installations SET enabled=true');
     await db.query('UPDATE social_settings SET friend_id_change_days=30,revision=1');
     for (const [username, displayName] of [

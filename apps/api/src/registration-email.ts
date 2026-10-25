@@ -1,48 +1,11 @@
 import { randomInt, randomUUID } from 'node:crypto';
-import nodemailer from 'nodemailer';
 import * as argon2 from 'argon2';
 import type pg from 'pg';
 import type { Database } from './db/index.js';
-import type { ApiConfig } from './config.js';
 import { AppError } from './errors.js';
 import { registrationEmailRequestSchema, type EmailRegistrationInput } from '@boardgame/protocol';
 
 export type RegistrationMailer = (email: string, code: string) => Promise<void>;
-
-export function smtpRegistrationMailer(config: ApiConfig): RegistrationMailer {
-  return async (email, code) => {
-    if (!config.SMTP_HOST || !config.SMTP_USER || !config.SMTP_PASSWORD || !config.SMTP_FROM) {
-      throw new AppError('SERVICE_UNAVAILABLE', '邮件服务尚未配置，请稍后注册', 503, true);
-    }
-    const transport = nodemailer.createTransport({
-      host: config.SMTP_HOST,
-      port: config.SMTP_PORT,
-      secure: config.SMTP_SECURE,
-      requireTLS: true,
-      auth: { user: config.SMTP_USER, pass: config.SMTP_PASSWORD },
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 15_000,
-      logger: false,
-      debug: false,
-    });
-    try {
-      const result = await transport.sendMail({
-        from: { name: 'PlayBoard 顶尖桌游联盟', address: config.SMTP_FROM },
-        to: email,
-        subject: 'PlayBoard 注册邮箱验证码',
-        text: `你的 PlayBoard 注册验证码是：${code}\n\n10 分钟内有效，最多尝试 5 次。请勿向他人透露验证码。\n如果你没有申请注册，请忽略本邮件。`,
-        disableFileAccess: true,
-        disableUrlAccess: true,
-      });
-      if (result.rejected.length || !result.accepted.length) throw new Error('Mail rejected');
-    } catch {
-      throw new AppError('SERVICE_UNAVAILABLE', '验证码发送失败，请稍后重试', 503, true);
-    } finally {
-      transport.close();
-    }
-  };
-}
 
 export class RegistrationEmailService {
   constructor(

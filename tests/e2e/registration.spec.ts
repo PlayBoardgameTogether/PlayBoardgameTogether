@@ -1,6 +1,29 @@
 import { test, expect, type Page } from './fixtures.js';
 import { readRegistrationCode } from './registration-mailbox.js';
 
+test.beforeEach(async ({ request }) => {
+  const origin = 'http://127.0.0.1:5273';
+  const login = await request.post('/api/v1/auth/login', {
+    headers: { origin },
+    data: { username: 'stage7_admin', password: 'stage two password' },
+  });
+  expect(login.ok()).toBe(true);
+  const response = await request.put('/api/v1/admin/mail-settings', {
+    headers: { origin, 'x-csrf-token': (await login.json()).data.csrfToken },
+    data: {
+      requestId: crypto.randomUUID(),
+      expectedRevision: 0,
+      enabled: true,
+      host: 'smtp.example.com',
+      port: 465,
+      username: 'test@example.com',
+      from: 'test@example.com',
+      password: 'e2e-only-credential',
+    },
+  });
+  expect(response.ok()).toBe(true);
+});
+
 async function mockEmailDelivery(page: Page) {
   await page.route('**/auth/register/email-code', (route) =>
     route.fulfill({
