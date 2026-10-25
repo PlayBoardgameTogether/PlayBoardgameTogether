@@ -43,8 +43,12 @@ export function GameCatalog() {
         <section className="discovery-spotlight" aria-label="先试一手">
           <div className="discovery-spotlight-copy">
             <p className="eyebrow">免登录单人练习</p>
-            <h2>{gameDiscovery(featured)?.invitation ?? `从 ${featured.name} 的第一手开始。`}</h2>
-            <p>{gameDiscovery(featured)?.hook ?? featured.description}</p>
+            <h2>
+              好朋友，
+              <br />
+              来一桌。
+            </h2>
+            <p>{gameDiscovery(featured)?.invitation ?? `从 ${featured.name} 的第一手开始。`}</p>
             <div className="discovery-spotlight-actions">
               <a className="button-link" href={`${gamePath(featured)}/tutorial`}>
                 先试一手 <span aria-hidden="true">→</span>
@@ -58,11 +62,20 @@ export function GameCatalog() {
             href={`${gamePath(featured)}/tutorial`}
             aria-label={`试玩 ${featured.name}`}
           >
-            <GameCover game={featured} />
-            <span className="discovery-art-caption">
+            <img
+              className="pixel-club-art"
+              src="/platform-art/pixel-club.svg"
+              alt=""
+              width="640"
+              height="400"
+            />
+            <div className="discovery-art-caption">
+              <div className="pixel-featured-cover">
+                <GameCover game={featured} />
+              </div>
               <strong>{featured.name}</strong>
               <span>从第一手开始，边玩边学</span>
-            </span>
+            </div>
           </a>
         </section>
       )}

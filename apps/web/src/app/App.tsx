@@ -34,11 +34,25 @@ function AppShell({ path }: { path: string }) {
   useEffect(() => {
     document.title = route.documentTitle ?? `${route.title} · 桌游平台`;
   }, [route.title, route.documentTitle]);
-  return <div className={`desktop-shell ${route.game ? 'desktop-shell--game' : ''} ${path === '/admin' || path.startsWith('/admin/') ? 'desktop-shell--admin' : ''}`} onClick={followLink}>
+  return <div
+    className={`desktop-shell ${path === '/' ? 'desktop-shell--pixel-lobby' : ''} ${route.game ? 'desktop-shell--game' : ''} ${path === '/admin' || path.startsWith('/admin/') ? 'desktop-shell--admin' : ''}`}
+    onClick={followLink}
+  >
     <a className="skip-link" href="#main-content">跳到主要内容</a>
     <header className="site-header" ref={header}>
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
-      <a className="brand" href="/"><svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="4" y="4" width="24" height="24" rx="6" /><path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" /></svg><span className="brand-name">PlayBoard<span>顶尖桌游联盟</span></span></a>
+      <a className="brand" href="/">
+        <svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect x="4" y="4" width="24" height="24" rx="6" />
+          <path d="M11 11h3v3h-3zm7 7h3v3h-3zM18 11h3v3h-3zm-7 7h3v3h-3z" />
+        </svg>
+        <span className="brand-name">
+          {path === '/' ? (
+            <img className="pixel-wordmark" src="/platform-art/pixel-wordmark.svg" alt="PlayBoard" width="132" height="18" />
+          ) : 'PlayBoard'}
+          <span>顶尖桌游联盟</span>
+        </span>
+      </a>
       <nav className="platform-navigation" aria-label="主导航">
         <span className="nav-caption">游戏空间</span>
         <a href="/" aria-label="游戏大厅" aria-current={path === '/' ? 'page' : undefined}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg><span className="nav-desktop-label">游戏大厅</span><span className="nav-mobile-label">首页</span></a>

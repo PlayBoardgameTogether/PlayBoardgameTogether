@@ -101,3 +101,43 @@ test('light mobile game chrome retains readable text around the immersive table'
   expect(decisionBox!.y + decisionBox!.height).toBeLessThanOrEqual(navBox!.y);
   await page.screenshot({ path: info.outputPath('mobile-decision-above-navigation.png') });
 });
+
+test('pixel lobby retains filters across themes and leaves tutorial presentation independent', async ({ page }, info) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByRole('searchbox', { name: '搜索游戏' }).fill('Color');
+  const widths = info.project.name === 'desktop' ? [1440, 1280, 390, 320] : [390];
+  for (const theme of ['light', 'dark']) {
+    await page.locator('.nav-tools summary').click();
+    await page.getByLabel('外观', { exact: true }).selectOption(theme);
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('searchbox')).toHaveValue('Color');
+    await expect(page.locator('.game-card')).toHaveCount(1);
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(page.locator('.pixel-club-art')).toBeVisible();
+      expect(await page.locator('.pixel-club-art').evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0)).toBe(true);
+      await page.getByRole('link', { name: '先试一手', exact: true }).focus();
+      await expect(page.getByRole('link', { name: '先试一手', exact: true })).toBeFocused();
+      await page.screenshot({ path: info.outputPath(`pixel-${theme}-${width}.png`), fullPage: true, animations: 'disabled' });
+    }
+  }
+  // Compare a tutorial reached from the lobby with a fresh direct visit. Lobby
+  // palette and control overrides must not survive in the game presentation.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole('link', { name: '先试一手', exact: true }).click();
+  await expect(page).toHaveURL('/games/color-match/1.0.0/tutorial');
+  await expect(page.getByRole('region', { name: '教程指引' })).toBeVisible();
+  const presentation = () => page.locator('.site-header').evaluate(element => {
+    const header = getComputedStyle(element);
+    const button = getComputedStyle(document.querySelector('main button')!);
+    return { surface: header.backgroundColor, layout: header.flexDirection, button: button.backgroundColor, radius: button.borderRadius };
+  });
+  const fromLobby = await presentation();
+  await expect(page.locator('.pixel-wordmark')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('region', { name: '教程指引' })).toBeVisible();
+  expect(await presentation()).toEqual(fromLobby);
+  await page.getByRole('link', { name: '游戏大厅', exact: true }).click();
+  await expect(page.locator('.pixel-wordmark')).toBeVisible();
+});

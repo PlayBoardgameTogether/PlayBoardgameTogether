@@ -1,0 +1,676 @@
+/* A lobby-only preview. No selectors or tokens reach a game or another route. */
+@layer theme {
+  .desktop-shell--pixel-lobby {
+    --bg: #f6efdc;
+    --panel: #fffbed;
+    --panel-raised: #eee4c9;
+    --panel-hover: #e7dbb8;
+    --text: #3f3229;
+    --text-secondary: #655342;
+    --muted: #75624d;
+    --line: #d7c8a8;
+    --line-strong: #514030;
+    --control-line: #8b765b;
+    --accent: #f4c45e;
+    --accent-hover: #f8d17d;
+    --accent-active: #e1ad40;
+    --accent-soft: #f8e6b5;
+    --accent-text: #3f3229;
+    --accent-gradient: #f4c45e;
+    --link: #365e3c;
+    --success: #365e3c;
+    --success-soft: #e0ead1;
+    --warning: #76551b;
+    --danger: #a0342a;
+    --danger-soft: #fbe4d9;
+    --neutral-rgb: 63 50 41;
+    --surface-rgb: 255 251 237;
+    --radius-sm: 0px;
+    --radius: 0px;
+    --radius-lg: 0px;
+    --radius-pill: 0px;
+    --shadow-card: 4px 4px 0 var(--line);
+    --shadow-sm: 2px 2px 0 var(--line);
+    color: var(--text);
+    background: var(--bg);
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  }
+
+  :root[data-theme='dark'] .desktop-shell--pixel-lobby {
+    --bg: #242720;
+    --panel: #303329;
+    --panel-raised: #3b3e31;
+    --panel-hover: #474a3a;
+    --text: #fff2d3;
+    --text-secondary: #e0d5b7;
+    --muted: #bfb496;
+    --line: #545846;
+    --line-strong: #b8ac8c;
+    --control-line: #a1977d;
+    --accent-soft: #51462a;
+    --accent-text: #3f3229;
+    --link: #b8d49a;
+    --success: #b8d49a;
+    --success-soft: #384a32;
+    --warning: #f4c45e;
+    --danger: #ffb3a0;
+    --danger-soft: #51352e;
+    --neutral-rgb: 255 242 211;
+    --surface-rgb: 48 51 41;
+  }
+
+  .desktop-shell--pixel-lobby .workspace {
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--line) 0.7px, transparent 0.7px);
+    background-size: 12px 12px;
+  }
+
+  .desktop-shell--pixel-lobby .site-header {
+    background: var(--panel);
+    border-right: 2px solid var(--line-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .desktop-shell--pixel-lobby .window-marks {
+    display: none;
+  }
+
+  .desktop-shell--pixel-lobby .brand {
+    padding: 12px 6px 28px;
+  }
+
+  .desktop-shell--pixel-lobby .brand .brand-name {
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -1px;
+  }
+
+  .desktop-shell--pixel-lobby .brand-name > span {
+    margin-top: 8px;
+    color: var(--muted);
+    font-family: 'Microsoft YaHei', sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .desktop-shell--pixel-lobby .pixel-wordmark {
+    display: block;
+    width: 132px;
+    height: auto;
+    image-rendering: pixelated;
+  }
+
+  :root[data-theme='dark'] .desktop-shell--pixel-lobby .pixel-wordmark {
+    filter: brightness(0) saturate(100%) invert(93%) sepia(12%) saturate(614%) hue-rotate(338deg);
+  }
+
+  .desktop-shell--pixel-lobby .brand-symbol {
+    filter: none;
+  }
+
+  .desktop-shell--pixel-lobby .brand-symbol rect {
+    rx: 0;
+    fill: var(--accent);
+    stroke: var(--line-strong);
+    stroke-width: 2px;
+  }
+
+  .desktop-shell--pixel-lobby .brand-symbol path {
+    fill: var(--accent-text);
+  }
+
+  .desktop-shell--pixel-lobby .platform-navigation {
+    margin-top: 12px;
+    gap: 10px;
+  }
+
+  .desktop-shell--pixel-lobby .site-header .platform-navigation > a,
+  .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary {
+    min-height: 46px;
+    border: 2px solid transparent;
+    border-radius: 0;
+    color: var(--text-secondary);
+    font-weight: 700;
+    transition: none;
+  }
+
+  .desktop-shell--pixel-lobby.desktop-shell
+    .site-header
+    .platform-navigation
+    > a[aria-current='page'] {
+    color: var(--accent-text);
+    background: var(--accent);
+    border-color: var(--line-strong);
+    box-shadow: 3px 3px 0 var(--line-strong);
+  }
+
+  .desktop-shell--pixel-lobby .site-header .platform-navigation > a:hover,
+  .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary:hover {
+    background: var(--panel-raised);
+    color: var(--text);
+    transform: none;
+  }
+
+  .desktop-shell--pixel-lobby .platform-navigation svg {
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+  }
+
+  .desktop-shell--pixel-lobby .nav-tools > div,
+  .desktop-shell--pixel-lobby .shell-help a,
+  .desktop-shell--pixel-lobby.desktop-shell .chat-dock {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    background: var(--panel);
+    box-shadow: 4px 4px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .workspace-toolbar {
+    background: var(--panel);
+    border-bottom: 2px solid var(--line);
+    color: var(--muted);
+  }
+
+  .desktop-shell--pixel-lobby main {
+    width: min(1200px, calc(100% - 80px));
+    padding-top: 32px;
+  }
+
+  .desktop-shell--pixel-lobby :is(h1, h2, h3) {
+    color: var(--text);
+    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading {
+    margin-bottom: 28px;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading .eyebrow {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading h1 {
+    margin-block: 8px;
+    font-size: 30px;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading-copy > p:last-child {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading .lobby-invite {
+    flex-basis: 236px;
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading .lobby-invite[open] {
+    flex-basis: 360px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 24px;
+    padding: 32px 32px 24px;
+    margin-bottom: 40px;
+    background: var(--panel);
+    border: 3px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 6px 6px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-copy .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--success);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-copy .eyebrow::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    box-shadow: 3px 3px 0 var(--success-soft);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 {
+    margin: 18px 0;
+    font-size: clamp(36px, 4vw, 58px);
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    text-shadow: 3px 3px 0 var(--panel-raised);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-copy > p:not(.eyebrow) {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-copy > small {
+    font-size: 11px;
+  }
+
+  .desktop-shell--pixel-lobby :is(.button-link, button.secondary, .room-row, select, input) {
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+    transition: none;
+  }
+
+  .desktop-shell--pixel-lobby .button-link {
+    min-height: 46px;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 800;
+    box-shadow: 3px 3px 0 var(--line-strong);
+  }
+
+  .desktop-shell--pixel-lobby .button-link:hover {
+    background: var(--accent-hover);
+    color: var(--accent-text);
+    transform: none;
+  }
+
+  .desktop-shell--pixel-lobby .button-link:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--line-strong);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions {
+    gap: 12px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions > a:not(.button-link) {
+    font-size: 12px;
+    text-decoration: underline;
+    text-underline-offset: 5px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-art {
+    align-self: center;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .desktop-shell--pixel-lobby .pixel-club-art {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 268px;
+    object-fit: contain;
+    background: #eef1d9;
+    image-rendering: pixelated;
+    border: 2px solid var(--line-strong);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-art-caption {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    justify-content: start;
+    column-gap: 12px;
+    row-gap: 2px;
+    padding: 14px 0 0;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-art-caption strong {
+    font-size: 13px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-art-caption > span:last-child {
+    font-size: 11px;
+  }
+
+  .desktop-shell--pixel-lobby .pixel-featured-cover {
+    grid-row: span 2;
+    border: 2px solid var(--line-strong);
+  }
+
+  .desktop-shell--pixel-lobby .pixel-featured-cover .game-cover {
+    aspect-ratio: 1;
+  }
+
+  .desktop-shell--pixel-lobby .catalog-section-heading h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+  }
+
+  .desktop-shell--pixel-lobby .catalog-section-heading h2::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border: 2px solid var(--line-strong);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .catalog-discovery {
+    margin-bottom: 24px;
+  }
+
+  .desktop-shell--pixel-lobby .catalog-search {
+    min-height: 46px;
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    background: var(--panel);
+    box-shadow: 3px 3px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .catalog-search input {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--text);
+  }
+
+  .desktop-shell--pixel-lobby .catalog-filters button {
+    min-height: 44px;
+    padding: 8px 14px;
+    background: var(--panel);
+    color: var(--text-secondary);
+    border: 2px solid var(--line);
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: none;
+  }
+
+  .desktop-shell--pixel-lobby .catalog-filters button[aria-pressed='true'] {
+    background: var(--success-soft);
+    color: var(--success);
+    border-color: var(--success);
+    box-shadow: 2px 2px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .game-catalog-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-catalog .game-card {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+    transition: none;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-catalog .game-card:hover {
+    border-color: var(--success);
+    box-shadow: 4px 4px 0 var(--success);
+    transform: none;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-catalog .game-card .game-cover {
+    aspect-ratio: 16 / 9;
+    border-radius: 0;
+    border-bottom: 2px solid var(--line-strong);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-practice-tag {
+    inset: 10px auto auto 10px;
+    padding: 3px 7px;
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 2px 2px 0 var(--line-strong);
+    font-size: 10px;
+  }
+
+  .desktop-shell--pixel-lobby .game-card-icon {
+    display: none;
+  }
+
+  .desktop-shell--pixel-lobby .game-card-info {
+    padding: 16px;
+  }
+
+  .desktop-shell--pixel-lobby .game-card-heading h3 {
+    font-size: 16px;
+  }
+
+  .desktop-shell--pixel-lobby .game-card-desc {
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .desktop-shell--pixel-lobby .game-card-footer {
+    gap: 8px;
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+  }
+
+  .desktop-shell--pixel-lobby .game-card-action {
+    color: var(--success);
+    font-size: 11px;
+  }
+
+  .desktop-shell--pixel-lobby
+    :is(.discovery-empty, .guest-welcome-banner, .discovery-resume, .page-feedback) {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 4px 4px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby .mobile-lobby-actions a {
+    background: var(--panel);
+    border: 2px solid var(--line-strong);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--line);
+  }
+
+  .desktop-shell--pixel-lobby :is(a, button, summary, input, select):focus-visible {
+    outline: 3px solid var(--success);
+    outline-offset: 4px;
+  }
+
+  .desktop-shell--pixel-lobby footer {
+    border-top: 2px solid var(--line);
+    color: var(--muted);
+    font-family: 'Courier New', 'Microsoft YaHei', monospace;
+    background: var(--panel);
+  }
+
+  @media (max-width: 1100px) {
+    .desktop-shell--pixel-lobby main {
+      width: calc(100% - 48px);
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight {
+      padding: 24px;
+      gap: 20px;
+    }
+
+    .desktop-shell--pixel-lobby .catalog-discovery {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .desktop-shell--pixel-lobby .game-catalog-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    .desktop-shell--pixel-lobby .site-header {
+      padding: 14px 18px;
+      border-right: 0;
+      border-bottom: 2px solid var(--line-strong);
+    }
+
+    .desktop-shell--pixel-lobby .brand {
+      padding: 0;
+    }
+
+    .desktop-shell--pixel-lobby .workspace-toolbar {
+      background: transparent;
+      border: 0;
+    }
+
+    .desktop-shell--pixel-lobby .platform-navigation {
+      margin: 0;
+      padding-inline: 8px;
+      gap: 4px;
+      background: var(--panel);
+      border-top: 2px solid var(--line-strong);
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .desktop-shell--pixel-lobby .site-header .platform-navigation > a,
+    .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary {
+      border: 0;
+      font-size: 10px;
+    }
+
+    .desktop-shell--pixel-lobby.desktop-shell
+      .site-header
+      .platform-navigation
+      > a[aria-current='page'] {
+      color: var(--success);
+      background: var(--success-soft);
+      border: 0;
+      box-shadow: none;
+    }
+
+    .desktop-shell--pixel-lobby .site-header .platform-navigation > a[aria-current='page'] svg {
+      color: var(--success);
+    }
+
+    .desktop-shell--pixel-lobby main {
+      width: calc(100% - 36px);
+      padding-top: 24px;
+    }
+
+    .desktop-shell--pixel-lobby .lobby-heading {
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .desktop-shell--pixel-lobby .lobby-heading .eyebrow {
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+
+    .desktop-shell--pixel-lobby .lobby-heading h1 {
+      font-size: 25px;
+    }
+
+    .desktop-shell--pixel-lobby .lobby-heading .lobby-invite,
+    .desktop-shell--pixel-lobby .lobby-heading .lobby-invite[open] {
+      flex-basis: 100%;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
+      padding: 22px 18px 18px;
+      margin-bottom: 32px;
+      box-shadow: 4px 4px 0 var(--line);
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 {
+      margin-block: 12px;
+      font-size: 38px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 br {
+      display: none;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight-copy > p:not(.eyebrow) {
+      font-size: 12px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight-actions {
+      margin-top: 16px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight-art {
+      order: 0;
+    }
+
+    .desktop-shell--pixel-lobby .pixel-club-art {
+      max-height: 160px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-art-caption {
+      display: none;
+    }
+
+    .desktop-shell--pixel-lobby .game-catalog-grid {
+      gap: 14px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-catalog .game-card .game-cover {
+      aspect-ratio: 1;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-catalog .game-card-info {
+      gap: 8px;
+      padding: 12px 10px;
+    }
+
+    .desktop-shell--pixel-lobby .game-card-heading h3 {
+      font-size: 13px;
+    }
+
+    .desktop-shell--pixel-lobby .game-card-players {
+      font-size: 11px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-practice-tag {
+      inset: 6px auto auto 6px;
+      padding: 2px 5px;
+      font-size: 9px;
+    }
+
+    .desktop-shell--pixel-lobby .catalog-filters {
+      gap: 8px;
+    }
+
+    .desktop-shell--pixel-lobby .catalog-filters button {
+      flex: 1 1 auto;
+      padding-inline: 8px;
+      font-size: 11px;
+    }
+
+    .desktop-shell--pixel-lobby .catalog-section-heading h2 {
+      font-size: 19px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 {
+      font-size: 31px;
+    }
+
+    .desktop-shell--pixel-lobby .discovery-spotlight-actions > a {
+      width: 100%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .desktop-shell--pixel-lobby .button-link:active {
+      transform: none;
+    }
+  }
+}
