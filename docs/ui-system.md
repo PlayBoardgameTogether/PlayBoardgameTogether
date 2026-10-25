@@ -242,6 +242,6 @@ splendor.css 仅针对该扩展及包含其桌面的 match-page 调整布局：�
 宝石点击从同一交互组合三色或同色双拿，非法原因直接显示；确认面板允许逐枚移除草稿，支持 Esc。轮到其他人时卡牌仍可查看，提交按钮保持权限／阶段禁用。保存反馈不再占据棋盘垂直空间；公开行动在视口内展示五秒，买牌卡面带短进入动画；日志保留真实公开事件，不展示私密预留，不补播刷新历史，计时器在事件替换或卸载时清理。
 ## 像素加载动画与透明规范（2026-10-25，0.18.2）
 
-- **统一动态骰子**：全站加载与等待状态（PageFeedback、model-loading-panel、Suspense 回退）统一采用原生透明底的 /platform-art/playboard-dice-animated.gif 像素跃动骰子。
-- **视觉包装与透明融合**：采用 64px–72px 纯透明无边框、无阴影设计（ackground: transparent，去除框线和卡片阴影），动态翻滚骰子与像素速度火花无缝浮动在页面或弹窗上，自然融合亮色与暗色模式。
-- **组件与无障碍退避**：在 pps/web/src/ui/PixelIcons.tsx 中提供 PixelLoadingDice 独立组件；当检测到 prefers-reduced-motion: reduce 时，样式自动退避展示同样为透明底的静态 pixel-dice.png，保护光敏或偏好减少动态的玩家。
+- **统一动态骰子**：全站加载与等待状态（`PageFeedback`、`model-loading-panel`、Suspense 回退）统一采用原生透明底的 `/platform-art/playboard-dice-animated.gif` 像素跃动骰子。
+- **视觉包装与透明融合**：采用 64px–72px 纯透明无边框、无阴影设计（`background: transparent`，去除框线和卡片阴影），动态翻滚骰子与像素速度火花无缝浮动在页面或弹窗上，自然融合亮色与暗色模式。
+- **组件与无障碍退避**：在 `apps/web/src/ui/PixelIcons.tsx` 中提供 `PixelLoadingDice` 独立组件；当检测到 `prefers-reduced-motion: reduce` 时，样式自动退避展示同样为透明底的静态 `pixel-dice.png`，保护光敏或偏好减少动态的玩家。
