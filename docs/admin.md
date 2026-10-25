@@ -8,7 +8,7 @@
 
 账户页提供本页结果数量，长账户 ID 默认折叠、展开后可选中复制；启停状态与管理操作分层展示。游戏列表在选择版本前显示是否存在已上架版本；版本页仍按精确版本管理。账户启停、上下架、审核、徽章、钱包、官方 AI 和更新器继续使用原有权限、确认、revision 与 requestId 回执，不新增管理 API 或写入链路。
 
-生产静态界面回归：构建后运行 `pnpm exec playwright test --config playwright.admin-ui.config.ts`。真实身份及写操作仍使用原 `pnpm test:e2e` 准备流程；静态测试的合成 DTO 不代表生产统计或真实操作验收。
+生产静态界面回归：构建后运行 `pnpm test:admin-ui`，配置集中在 [tests/config](../tests/config/README.md)。真实身份及写操作仍使用原 `pnpm test:e2e` 准备流程；静态测试的合成 DTO 不代表生产统计或真实操作验收。
 
 ## 桌游币管理（2026-10-16）
 
