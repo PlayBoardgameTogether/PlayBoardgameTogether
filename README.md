@@ -155,6 +155,12 @@ pnpm start:online
 
 构建会生成 `/llms-full.txt` 和白名单 SDK 源码 `/developer-sdk/sdk-sources.json`，并提供 `/llms.txt`。生产托管需保留这些静态路径及页面回退。
 
+### 主项目与游戏分仓
+
+平台主仓库为 [PlayBoardgameTogether/PlayBoardgameTogether](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether)。后续采用**每个游戏单独一个仓库**：平台能力与通用 SDK 在主仓库维护，游戏规则、棋桌、AI 策略、资源、测试和打包工具在各自游戏仓库开发与发布，分别维护版本和提交记录。具体仓库地址待确认。
+
+当前下列 `games/`、`game-packages/` 仍保留现有实现，尚未完成迁移；内置游戏仍依赖平台构建装配，在线游戏仍通过管理员审核安装符合规范的游戏 ZIP。迁移须保留依赖、精确版本和旧对局兼容，详见 [开发指引](AGENTS.md#主项目与游戏分仓规则2026-10-25)。
+
 ### 仓库结构
 
 ```text
