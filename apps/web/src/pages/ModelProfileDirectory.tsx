@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { detectProvider, PROVIDER_PRESETS } from './model-presets.js';
 import type { useModelSettings } from './useModelSettings.js';
+import { PixelSearchIcon } from '../ui/PixelIcons.js';
 
 type Props = Pick<
   ReturnType<typeof useModelSettings>,
@@ -51,6 +53,33 @@ export function ModelProfileDirectory({
   const needsKeyCount = profiles.filter(
     (p) => p.enabled && p.endpoint_id !== 'mock' && !p.has_credential,
   ).length;
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const openDetails = document.querySelectorAll<HTMLDetailsElement>('details.model-more[open]');
+      for (const details of openDetails) {
+        if (!details.contains(event.target as Node)) {
+          details.open = false;
+        }
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        const openDetails = document.querySelectorAll<HTMLDetailsElement>(
+          'details.model-more[open]',
+        );
+        for (const details of openDetails) {
+          details.open = false;
+        }
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   return (
     <section className="model-directory" aria-label="已保存配置">
@@ -117,21 +146,7 @@ export function ModelProfileDirectory({
       {profiles.length > 0 && (
         <div className="model-filter-toolbar">
           <div className="model-search-box">
-            <svg
-              className="model-search-icon"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <PixelSearchIcon size={16} className="model-search-icon" />
             <input
               type="search"
               aria-label="搜索配置"
@@ -360,7 +375,12 @@ export function ModelProfileDirectory({
                         type="button"
                         className="secondary"
                         disabled={!!busy}
-                        onClick={() => clone(profile)}
+                        onClick={(event) => {
+                          (
+                            event.currentTarget.closest('details') as HTMLDetailsElement | null
+                          )?.removeAttribute('open');
+                          clone(profile);
+                        }}
                       >
                         复制
                       </button>
@@ -369,7 +389,12 @@ export function ModelProfileDirectory({
                           type="button"
                           className="secondary"
                           disabled={!!busy}
-                          onClick={() => void action(profile, 'revoke')}
+                          onClick={(event) => {
+                            (
+                              event.currentTarget.closest('details') as HTMLDetailsElement | null
+                            )?.removeAttribute('open');
+                            void action(profile, 'revoke');
+                          }}
                         >
                           撤销凭证
                         </button>
@@ -378,7 +403,12 @@ export function ModelProfileDirectory({
                         type="button"
                         className="secondary danger"
                         disabled={!!busy}
-                        onClick={() => setDeleteId(profile.id)}
+                        onClick={(event) => {
+                          (
+                            event.currentTarget.closest('details') as HTMLDetailsElement | null
+                          )?.removeAttribute('open');
+                          setDeleteId(profile.id);
+                        }}
                       >
                         删除
                       </button>

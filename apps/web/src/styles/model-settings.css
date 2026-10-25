@@ -345,14 +345,21 @@
   .model-search-icon {
     position: absolute;
     left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--muted);
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .model-search-box input {
     width: 100%;
     min-height: 44px;
-    padding: 10px 40px 10px 40px;
+    padding-inline: 42px 48px;
+    padding-left: 42px;
+    padding-right: 48px;
     border-radius: var(--radius, 16px);
     border: 1px solid var(--line-strong);
     background: var(--panel);
@@ -647,6 +654,7 @@
 
   /* Details & Summary */
   .model-more {
+    position: relative;
     display: inline-block;
   }
 
@@ -670,11 +678,50 @@
   }
 
   .model-more-actions {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 130px;
+    background: var(--panel);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm, 10px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15);
+    padding: 6px;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0 4px;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 60;
+  }
+
+  .model-more-actions button {
+    width: 100%;
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 13px;
+    justify-content: flex-start;
+    border-radius: var(--radius-xs, 6px);
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+    color: var(--text);
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+  }
+
+  .model-more-actions button:hover:not(:disabled) {
+    background: var(--panel-raised);
+    color: var(--text);
+  }
+
+  .model-more-actions button.danger {
+    color: var(--danger, #ef4444);
+  }
+
+  .model-more-actions button.danger:hover:not(:disabled) {
+    background: var(--danger-soft, rgba(239, 68, 68, 0.12));
+    color: var(--danger, #ef4444);
   }
 
   /* Delete box */
