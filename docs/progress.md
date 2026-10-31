@@ -1,5 +1,74 @@
 # 开发进度
 
+## 1.0.0 合并前复验（2026-10-31）
+
+- 按用户本轮“合并代码更新版本、先不同步服务器”的指令，继续交付已整合六个原 PR 的 [PR #40](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/40)。重新获取 main 后确认基线仍为 `13a24bd`，六个原 head 均为整合分支祖先，无遗漏或额外游戏变更；主工作区未提交的 AGENTS.md 改动及其他聊天工作区保持原样。
+- 平台仍按本批最高影响统一为 `0.18.3 → 1.0.0`，根 package.json 与 README 一致；注册邮箱验证改变公开注册必填契约，其余目录管理、按局账单、后台邮件和展示修补一并交付。本轮新增的夹具修复与验收记录不再次递增版本，不调整游戏或 SDK 包版本。
+- 本轮重新执行 `pnpm --config.verify-deps-before-run=false typecheck`、`lint`、`build`，全部通过，包含 20 目录 AST 边界、格式、生产 bundle、编译 API、隔离 ZIP 和策略 worker 检查；`pnpm --config.verify-deps-before-run=false test tests/unit` 为 49 文件、288/288 通过。差异、版本、新增相对文档链接及交付路径/凭据模式扫描通过，无生成产物或秘密配置入库。
+- 本机 Docker 原先未启动；恢复既有服务并等 PostgreSQL 就绪后，通过忽略目录 runner 仅在进程中设置全新 `TEST_DATABASE_URL=boardgame_merge_20261031_test`，保留原测试准备、迁移、游戏和资源同步链，不覆盖 .env 或开发库。完整 `test:integration` 首轮为 31 文件、231/233；两项失败由 PostgreSQL 日志确认为 Color Match 与 stage2-flow 的 `TRUNCATE accounts CASCADE` 和已启动后台恢复查询争锁。两文件改为每例先清理再启动、结束时完整关闭，保留生产调度器和全部业务断言，没有提高超时或跳过失败项。
+- 通过原 `test:integration --testNamePattern 'Color Match formal action flow|stage 2 account to initial match flow'` 准备链复验，两个完整文件为 20/20 与 27/27，共 47/47；其余 186 项仅在该定向命令中筛选未执行，已有本轮首测通过记录，不计作该轮通过或宣称全套单次全绿。修复后的两文件 ESLint 与 `tsc --project tests/config/tsconfig.json` 通过；运行代码未改变，不重复已通过的 build/单元测试。
+- 经原 `test:e2e` 顺序执行 registration、admin-mail-settings、official-ai、ai-point-bills、puerto-rico、color-match 六文件，桌面 12/12、手机 12/12，无 skip。覆盖真实注册、后台 SMTP 配置与原请求恢复、目录编辑删除、按局账单、完整双人对局与三账号在线包恢复。实际查看 1440px 邮件设置和账单、320px 手机邮件设置截图，产物分别保留在整合工作区 `.data/merge-20261031-e2e-desktop`、`.data/merge-20261031-e2e-mobile`。未重复无关 E2E，未验证物理手机、Safari、真实 SMTP 供应商收件或收费模型。
+- 本轮交付仅为代码合并和版本更新，明确不操作服务器、不作上线或真实邮件投递声明。真实发信仍需管理员配置 SMTP 并实际收件验收；下一步按本轮 GitHub 最新检查与已审查 head 完成 merge commit，合并结果以 PR #40 的合并记录为准。
+
+## 全部待交付 PR 整合与 1.0.0 验收（2026-10-25）
+
+- 按用户“都合并”的授权，从已包含 Logo 修复 #37 的 main `13a24bd` 建立独立整合分支 `codex/merge-all-1-0-0`，通过 merge commit 保留 #33、#34、#35、#36、#38、#39 的全部原始提交。整合入口为 [PR #40](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/40)，原工作区及其他聊天 worktree 的未提交内容保持原样。
+- 统一根 package.json 与 README 为 `0.18.3 → 1.0.0`；最高影响是用户已授权的注册邮箱验证公开契约变化。目录管理/按局账单此前的 0.19.0 为分支候选版本，本批一并纳入 1.0.0，未单独发布 0.19.0；不重复递增游戏、SDK 或资源版本。SDK 保留三组新增接口，双方协议、架构与开发记录均保留。
+- 保留 `035_official_ai_catalog_management.sql`、`035_registration_email.sql`、`036_registration_mail_settings.sql` 的完整文件名与内容。迁移器按完整文件名及 checksum 记录，三者已在本轮新建的 `boardgame_merge_all_20261025_test` 独立库成功应用；未改写已应用迁移、开发/生产库或根 .env。游戏锁定源码、游戏仓库锁及各游戏版本没有变更。
+- 静态及生产检查：`pnpm typecheck`、`pnpm lint`、`pnpm build` 均通过，包含 20 个根目录 AST 边界、生产 bundle、编译 API、隔离 ZIP 规则与恢复检查；`pnpm test tests/unit` 为 49 文件、288/288 通过。13 份改动 Markdown 的新增相对链接存在，版本与 README 一致，`git diff --check` 通过。
+- 完整 `pnpm test:integration` 首轮 31 文件、233 项，230 通过、3 失败。失败为官方 AI/花砖测试 `TRUNCATE accounts CASCADE` 与启动中的 AI 恢复查询争锁，以及新工作区缺少拉密 ZIP 测试产物。PostgreSQL 死锁日志确认冲突双方；两个平台集成夹具改为每例先清理再启动应用、结束时完整关闭，官方 AI 同步每例新建 registry，避免重启后重复装配在线包。没有修改生产调度器、业务锁或任何业务断言，也没有增加超时或跳过测试。
+- 按既有脚本准备锁定游戏 ZIP，保留原测试准备、迁移、游戏同步和资源同步步骤，仅复验失败文件：花砖 5/5、拉密 1/1 通过；官方 AI 首次生命周期调整后暴露复用 registry 的重复注册，修正后最终整文件 26/26 通过，包含目录归档、本人完整账单、迟到计费及原请求恢复。最终夹具的 ESLint、测试 TypeScript 检查通过。其余首轮已通过文件未重复执行，不将首轮报告改写为单次全绿。
+- 真实 E2E 使用原 `pnpm test:e2e` 准备链，选择 registration、admin-mail-settings、official-ai、ai-point-bills、puerto-rico、color-match 六个文件，桌面/手机分别启动同一测试服务：`--project desktop --output .data/merge-e2e-desktop` 为 12/12，随后 `--project mobile --output .data/merge-e2e-mobile` 为 12/12，无 skip。覆盖真实注册与好友 ID 恢复、SMTP 配置/私有测试收件箱/未知回复、目录编辑删除、账单重试分页、双人完整对局，以及波多黎各锁定 1.0.0 ZIP 的三账号安装/行动/刷新恢复。分开启动避免两个项目共用本机 IP 的每分钟发码配额，不修改正式限流。
+- `pnpm test:ui mobile-discovery.spec.ts` 为 6 通过、2 个既有桌面项目下的手机专用用例跳过，跳过不计为通过。实际查看 1440/320px 账单、桌面/手机邮件设置与游戏详情、手机暗色目录删除确认截图；已有用例同时检查 1280/390px、键盘与溢出。截图及 trace 保留在该整合工作区的忽略目录，不提交生成产物。未验证物理手机、Safari、真实 SMTP 供应商收件或收费模型调用；测试传输不等于真实发信。
+- 发布边界：合并前匿名公网检查 `https://bg.rst307.cn/health/ready` 为 HTTP 200 / ready，实际浏览器首页页脚仍为 0.18.2。当前环境只有 Docker Desktop WSL，缺少已确认的 SSH/管理员更新连接，尚未操作服务器或核验私有 current.json、systemd active、新版本 SHA 与备份/迁移结果。合并不等于上线；下一步在获得原服务器连接后沿用既有更新器完成服务器同步与独立验收。
+
+## 邮箱验证补齐后台发信设置（2026-10-25，同批 1.0.0）
+
+- 在原邮箱验证 PR #38 补齐「系统维护 → 邮件设置」(`/admin/mail`)：启停、SMTP 公网域名、TLS 465/STARTTLS 587、账号、发件邮箱、授权码、保存与测试邮件。保存立即生效，密码留空保留、显式清除，改变服务器/端口/账号需重新填写；网页及重读 API 不返回授权码。复用既有后台外壳、主题、SPA 导航和 typed SDK，公开协议源码白名单同步。该 PR 尚未合并，本轮是同一邮箱验证功能的后台配置补齐，最高影响仍为此前明确授权的 `0.18.2 → 1.0.0`，不重复升号。
+- 新增 036 单例配置与测试冷却，AES-256-GCM 使用原平台 MODEL_CREDENTIALS_KEY 和独立 AAD；主密钥缺失拒绝存授权码，授权码/密文/nonce/tag 不进入 HTTP 响应或管理回执，写回执仅用 HMAC 指纹。沿用 AdminService 原 Origin/CSRF/session/role 重验、管理员事务锁、revision 和 requestId 保护。SMTP 传输移入独立适配，每次发送读取当前配置；只有从未保存后台配置时兼容旧环境回退，停用/清除不复活旧密码。复用原公网地址策略并固定解析 IP，以原域名校验 TLS，拒绝私网和回环。
+- 测试邮件先在原管理事务提交 sending 回执及一分钟全平台冷却，再在事务外调用 SMTP 并记录 sent/failed。重复同 requestId 只读原结果，不二次发送；错误固定脱敏，sending/响应丢失不冒充失败或自动重发。页面支持确认原保存/测试请求、并发冲突后主动重读，输入中的授权码仅保留页面内存，不持久化到浏览器存储。
+- 本轮 `pnpm typecheck`、`pnpm lint`、`pnpm build` 均通过，包含 20 目录 AST 边界、格式、生产 bundle/隔离 ZIP/API/策略 worker 检查；实际截图发现主题层遮蔽新复选框，局部修正为原生复选框并加 44px 标签点击区后，Web build、lint 与受影响后台 E2E 再通过。没有修改游戏副本、第三方依赖或历史迁移。
+- 通过原 `test:integration --testNamePattern 'administrator mail settings|public account registration'` 准备流程，**20/20**（新增后台 8 + 原注册 12）通过；其余 209 项明确未执行。覆盖权限/CSRF/Origin、加密与脱敏、重启解密、重复保存/异内容请求冲突、旧 revision、密码保留/轮换、即时生效/停用、环境回退不复活、测试单次发送/冷却/失败、主密钥缺失与错误。独立测试库仍为 `boardgame_email_20261025`，未清理开发/生产库。相关单测 `pnpm exec vitest run tests/unit/registration.test.ts tests/unit/developer-publication.test.ts` **7/7** 通过。
+- 通过原 `test:e2e` 准备流程组合运行 admin-mail-settings/registration：首轮 **9 通过、1 失败**，失败为同一个回环 IP 一分钟累计第 6 次真实发码触发限流。保留 5 次保护，单独复验手机真实注册失败项 **1/1** 通过，不宣称首轮 10/10。复选框修正后后台文件整轮 **4/4** 通过，覆盖双端配置/刷新后保留、授权码不回显、私有测试收件箱、后台配置直接支持注册、保存/测试回复丢失原请求恢复、冲突重读与同 document 导航。实际查看 1440×900、390×844 和 320×740 截图，无横向溢出；未测物理手机、真实 SMTP 投递及无关全套验收。
+- 测试服务器现在注入底层 MailTransport，实际运行数据库配置读取/解密与所有正式 API；测试收件箱仍为测试替身，不等同于真实服务商/收件箱。产物位于忽略目录 `.data/admin-mail-final` 与 `.data/admin-mail-registration-recheck`。认证/后台/架构/协议/数据/部署说明已同步，SMTP 不再必须逐项改环境；只需维护者保留既有平台主密钥。当前没有真实发信配置和已确认服务器连接，未部署或验证线上运行 SHA/健康。后续合并并按原流程迁移/发布后，管理员可在网页完成配置与实际投递验收。
+
+## 注册邮箱验证（2026-10-25，1.0.0）
+
+- 新注册必须先发送邮箱验证码，输入 6 位数字码后才创建账号，再按原流程登录。一个规范邮箱限一个账号；旧账户和维护 CLI 不追补邮箱，登录/房间/WS 身份不变，公开 DTO 不暴露邮箱。原三字段公开注册不再接受，因此用户本轮明确授权平台 `0.18.2 → 1.0.0`，README 与根版本同步；未改游戏、SDK workspace 包号或锁定游戏副本。
+- SMTP 发送支持直接 TLS/STARTTLS、证书校验、连接超时与固定脱敏错误；没有 SMTP 配置或发送失败时返回 503，不显示验证码、不绕过验证。注册页沿用现有主题和表单，提供邮箱、发码状态、重发倒计时和验证码输入；异步操作防重复、卸载后不更新页面。
+- 新增迁移 `035_registration_email.sql`：账户私有邮箱/验证时间及唯一索引、临时挑战表。验证码只保存 Argon2id 摘要，10 分钟有效、最多错 5 次；每邮箱 60 秒冷却、每小时最多 5 次请求（失败计入），数据库串行化且成功注册仍保留发送预算。发信不持有事务；注册核销与账户创建在原 social-write 事务提交，失败回滚；错误次数单独持久化。两注册接口分别每 IP 每分钟 5 次，挑战表限制 10,000 个近期邮箱。
+- 本轮最终 `pnpm typecheck`、`pnpm lint` 通过，含 20 目录 AST 边界与格式检查；`pnpm build` 通过，含生产 Web/API、开发 UI 排除、隔离 ZIP 和策略 worker 检查。配额修补后另执行 API build 通过。相关单测 `pnpm exec vitest run tests/unit/registration.test.ts tests/unit/dependency-boundaries.test.ts` **7/7** 通过。
+- 集成沿用原 `test:integration --testNamePattern 'public account registration'` 准备/迁移/游戏同步/资源脚本，最终 **12/12** 注册用例通过；其余 209 项为明确筛选未执行，不算通过。覆盖验证码必填、邮箱绑定、过期/耗尽、重发配额、成功后保留配额、并发重复、唯一邮箱、精确 ID、失败发送、秘密不返回、插入失败回滚及登录恢复。原生产/开发数据库均未清理；忽略目录 wrapper 只在进程内读取现有环境并指定独立新库 `boardgame_email_20261025`，没有修改原 `.env` 或隔离保护。
+- E2E 通过原 `test:e2e registration.spec.ts --output .data/email-e2e-delivery` 准备流程，最终 **6/6** 通过，覆盖 1440×900 桌面和 390×844 手机：真实注册 API/数据库/登录/好友 ID 恢复、重复 ID、密码规则、提交锁、离页晚回复。发信由 E2E 专用服务器注入私有测试收件箱，生产入口仍用实际 SMTP，不将测试收件箱视为真实邮箱投递。实际查看桌面/手机完整截图，表单清晰、无横向溢出；未测物理手机、真实 SMTP/收件箱、全套无关集成/E2E。首轮两个 E2E 失败来自旧登录注册链接定位，修正为当前页面文本后复验通过；未削弱业务断言。
+- 交付从最新 main `a115f02` 隔离到 `codex/registration-email`（本地 `.data/email-verification`），保留主工作区未提交的官方 AI 等改动。配置说明已同步认证、协议、数据模型、架构、部署和 `.env.example`。当前用户要求先完成代码，未配置真实发件邮箱；本机也没有已确认服务器 SSH 连接目标，服务器尚未同步，实际运行 SHA/服务健康与邮件投递未验证。下一步先配置私有 SMTP，审查 PR 后再按原发布/备份/迁移流程配对升级 Web/API，验证实际邮件、运行版本和 `/health/ready`，不能把代码推送当作上线。
+## 波多黎各海港美术交付与通用展示修补（2026-10-25，候选 0.18.3）
+
+- 波多黎各在独立仓库 `PlayBoardgameTogether/playboard-game-puerto-rico` 完成 1.1.0：透明徽章、港湾场景、23 种建筑和殖民所/贸易所、土地/货物/船只图集；直接选船与装载预览、物件详情、手机区域切换和按投影事件呈现的动画。规则/contentVersion 仍为 1.0.0、SDK `^0.1.0`，资源版本 1.1.0。源码、图稿与测试只在游戏仓库维护。
+- 平台本批只修补通用详情展示：图标完整等比显示，移除外层边框/厚阴影；横幅恢复画面色彩，以文字侧局部遮罩保留阅读区，手机保留上方场景。没有游戏 ID 分支、数据库迁移或认证/正式动作改动。平台候选 **0.18.2 → 0.18.3（PATCH）**，README 同步；游戏自身改版不计入平台功能升级。
+- `tests/e2e/puerto-rico.spec.ts` 默认继续验证锁定 1.0.0，可用 `PUERTO_RICO_TEST_VERSION=1.1.0` 验证外部新包；动作回调完成后才记录成功，准备前等待席位与 revision 对应的可见状态，保留全部权限、筹码隐私、仓储、满城结算与恢复断言。增加真实图标加载、等比显示、无厚阴影及横幅不透明检查与截图。
+- 本轮实际 `pnpm build`、`pnpm typecheck`、`pnpm lint` 通过，包括 20 目录 AST 边界、生产 bundle 与 API/QuickJS runtime。版本最终写入后补 `pnpm --filter @boardgame/web build` 和生产 bundle 检查；测试编辑后补局部 ESLint 和 tests/config/tsconfig 类型检查，均通过。已有 model-viewer 大块警告未扩大处理。
+- 通过原 `pnpm test:e2e tests/e2e/puerto-rico.spec.ts --output=.data/puerto-rico-final` 使用独立 `boardgame_pr_harbor_20261025_final`：桌面两项与手机 sandbox 通过（3/4），手机实际联机发现固定确认栏被平台底部导航遮挡。游戏改成内容高度与船旁/岗位确认后，在新的独立 `boardgame_pr_harbor_20261025_release` 经原准备脚本执行 `$env:PUERTO_RICO_TEST_VERSION='1.1.0'; pnpm test:e2e tests/e2e/puerto-rico.spec.ts --project=mobile --output=.data/puerto-rico-release-mobile`，**2/2 通过，无 skip**；真实三账号安装、入房、准备、工人行动与刷新恢复通过。不是宣称一次 4/4。截图分别保留在上述输出目录。
+- 首轮测试还暴露旧 fixture 未等待动作回调、准备同步的问题，已修复等待；一次新库媒体准备失败，保留媒体隔离校验。复用含旧 1.1.0 构建记录的测试目录时，安装器正确拒绝同版本覆盖；改用新隔离库完成最终验收，没有删除开发/生产数据、放宽校验或覆盖历史版本。
+- 独立游戏本地规则 **16/16**，四视口 UI **8/8**，手机确认最终修复后 **4/4**，最终包 QuickJS/解析验证 **1/1**；PNG 自包含三文件 ZIP，压缩 1,359,100 字节、解压 1,828,206 字节，仍在原 2 MiB 预算内。最后仅归一化跨系统文本行尾与 ZIP 日期，再验证 UTC/上海构建一致与解析通过；未重复无行为变化的 UI 流程。
+- 用户随后明确“本次先交付安装包”：**不合并发布、不打标签、不发 Release、不进行生产安装或服务器更新**，也不导入未合并的游戏 SHA。平台 `game-packages/puerto-rico` 与来源锁继续保留 1.0.0；本 PR 不夹带游戏开发副本。未验证物理手机、软键盘、Safari、真实模型供应商及真人完整一局；独立库真实三人片段与固定场景不冒充这些验收。
+## 点数账单按局汇总与 token 明细（2026-10-25，0.19.0）
+
+- 玩家 `/official-ai` 的点数账单按本人对局汇总，显示游戏名称、最近扣点、计费行动数和合计；点击展开输入/输出 token 汇总及逐次用量、价格、扣点，明细可继续分页。点数发放保留独立记录。沿用像素主题、键盘展开及亮暗主题；实际暗色截图发现汇总栏辅助文字对比不足，已改为继承按钮前景色并补验。
+- 新增本人 `/me/ai-points/bills`，在单条 SQL 快照中对完整本人流水分组后每页 20 条；原流水接口兼容旧请求，增加可选 `matchId` 和 `usage`。游标隔离到本人，明细还限定同一局；冻结 tokenBilling 优先于迟到供应商记录，缺失用量明确标注，失败/免费兜底/零扣点调用不计入扣点账单。无迁移、扣费事务或游戏规则变更。无效查询参数明确返回 400。
+- 静态与构建：`pnpm typecheck`、`pnpm lint`、`pnpm build` 通过，包含 20 目录 AST 边界、生产 bundle、API runtime、隔离 ZIP 与 AI worker 检查。查询错误修复后 API typecheck/build/runtime 再通过；版本与暗色样式调整后 Web build/生产 bundle 再通过，根版本、README 与实际构建页脚核对为 `0.19.0`。最终编辑的路由/测试局部 ESLint、Prettier 与 diff 检查通过。
+- 集成使用本轮独立 `boardgame_ai_bills_20261025`，经原 `pnpm test:integration` 准备/迁移/游戏/资源流程执行：30 文件、217 项，首次 **211 通过、6 失败**。新查询参数 500 已修复，随后 `pnpm exec vitest run tests/integration/official-ai.test.ts --testTimeout 20000` **23/23 通过**，覆盖跨页完整汇总、同局不同付款人、同时间 UUID 游标、缺失用量、冻结计费、原扣费/回滚/恢复。其余初次失败中，管理员 CLI 在 20 秒超时下定向 **1/1 通过**（实耗约 5.9 秒），模型配置清理死锁用例独立复验 **1/1 通过**；桌游币首项 `TRUNCATE accounts CASCADE` 死锁在定向复验仍失败，本轮未修改该模块。璀璨宝石 TTS 用例因隔离目录未准备本地图包失败，保留原 SVG 资源，不计为 TTS 验收。没有宣称单次全套通过；后续需独立处理这两项测试环境/清理问题。
+- 浏览器通过原 `pnpm test:e2e tests/e2e/official-ai.spec.ts tests/e2e/ai-point-bills.spec.ts --output=.data/billing-e2e`，原官方 AI 流程双端 **4 passed**。新故障注入最初被开发 StrictMode 的双请求消耗，改为在点击重试前持续注入失败，保留失败/重试断言；新单局账单双端随后 **2 passed**。暗色对比修正后，再通过原脚本只复验 `tests/e2e/ai-point-bills.spec.ts`，最终 **2 passed，12.6 秒**。真实会话/建房/开局后使用持久化账单夹具检查汇总、25 条明细分页、失败重试、键盘展开、收起/刷新和对局链接；真实模型结算由上项集成覆盖。截图覆盖 1440/1280/390/320 CSS 像素、亮暗主题和减少动态效果，无横向溢出；实际查看桌面、手机和暗色展开截图，产物在隔离工作目录 `.data/billing-e2e-verified/`。未测物理手机或真实付费供应商。
+- 版本从远程 main 基线 `0.18.2 → 0.19.0`，属兼容的按局浏览交互增强，MINOR+1；只在隔离分支 `codex/ai-match-billing` 交付，原工作区官方 AI 目录管理等未提交改动保持。API/用量口径同步 [官方 AI](official-ai.md) 和 [协议](protocol.md)。本机仍仅有 Docker Desktop WSL，无已确认的服务器连接配置，未同步服务器、未核验线上运行 SHA/服务或 `/health/ready`；不把提交推送当作上线。
+## 官方 AI 目录编辑与删除（2026-10-25，0.19.0）
+
+- 管理员目录增加编辑、删除及取消/确认入口，编辑复用原发布表单，回填名称、计费方式、基础点价、加价和预留上限；来源默认保留，也可换成本人有效模型。桌面操作同行、手机换行，保留亮暗主题、键盘焦点、错误反馈及原请求重试。
+- 新增共享 PATCH/DELETE schema、typed SDK 与原 OfficialAiService 管理事务。编辑原子归档停用旧档位并创建新 ID 替代项，保留开放状态；玩家需显式重新启用并选择新配置，既有席位不自动换模型或换价。删除仅从目录移除并停用，不删除来源凭证、历史账单、预留或对局。旧 PUT 兼容，归档项不可复活；目录限额排除归档项。035 迁移只新增 deleted_at 及停用约束，旧来源/价格继续供迟到响应与结算使用。
+- 版本 `0.18.2 → 0.19.0`：兼容的目录管理新功能，MINOR+1；README 同步，不改游戏实现、游戏锁定版本、SDK 包版本或第三方依赖。共享工作区出现其他任务的模型配置浮层提交，本轮交付将从 main 单独隔离，不夹带该提交或其他游戏文档。
+- 静态与构建：`pnpm --config.verify-deps-before-run=false typecheck`、`lint`、`build` 通过，含 20 目录 AST 边界、生产 bundle、编译 API 和隔离 ZIP 运行检查。最后将计费勾选框改为现有下拉框、修正危险按钮间距后，Web typecheck、局部 ESLint、受影响 E2E、`pnpm ... --filter @boardgame/web build` 和生产 bundle 检查再通过。
+- 测试隔离：原 `test:integration` 在已有测试库发现 `015_game_presentations.sql` 历史 checksum 不一致，未改写迁移或清库；仅以进程环境覆盖 TEST_DATABASE_URL，创建专用 `boardgame_catalog_20261025_test`，经原准备/迁移/游戏/资源脚本验证独立库隔离。开发库与原测试库保留，未覆盖 .env。
+- 全量 `pnpm ... test:integration` 实际 30 文件、219 项：214 通过、5 失败。官方 AI 25/25 通过，新增回归覆盖管理员/CSRF、外人来源拒绝、revision/请求内容冲突、编辑/删除重试、归档不可开放、旧绑定停止调用，以及删除/编辑后迟到响应仍按旧价原子扣费且恢复不重复扣费。剩余失败为 stage7-assets 清理 TRUNCATE 死锁 1 项与资源处理超时 1 项，Grid Garden 默认 5 秒超时 3 项；这些路径本轮未修改，不把全量记录为通过，也未通过提高超时、跳过或改断言掩盖失败。
+- `pnpm ... test:e2e official-ai.spec.ts`：桌面/手机 6/6 通过，真实登录、发布、发点、启用、房间选择，以及编辑/取消、启停、删除确认/取消和删除响应丢失后的精确重试。最后 UI 微调后以同一原准备流程加 `-g 'administrator edits and deletes'` 重跑受影响双端，2/2 通过。实际截图检查 1440、1280、320 CSS 像素宽度与手机暗色删除状态，无水平溢出；编辑来源获焦、原断网锁表单及取消入口可用。截图保存在忽略的 test-results，不作为产品资源提交。
+- 限制与下一步：未调用真实收费模型供应商；全量集成上述 5 项失败未解决。当前会话没有可用的已确认服务器连接，未核验 /opt/boardgame、boardgame-local.service、运行 SHA 或 /health/ready，不能声称上线；先交付隔离 PR，后续审查并处理集成阻塞、恢复服务器连接后，经原更新器备份/迁移并核验实际运行版本。
 ## 顶栏品牌 Logo 重塑为纯净复古像素黄金骰子（2026-10-25，0.18.3）
 
 - **根因排查与重塑**：

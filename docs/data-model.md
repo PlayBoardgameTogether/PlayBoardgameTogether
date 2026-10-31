@@ -1,5 +1,11 @@
 # 数据模型
 
+## 后台邮件设置（036，1.0.0）
+
+`registration_mail_settings` 为单例配置，按 revision 控制并发编辑，保存启停、SMTP 公网域名、465/587、账号、发件地址、更新者/时间和 AES-256-GCM 密文/nonce/tag；三项加密字段同时存在或同时为空，主密钥复用服务器既有 MODEL_CREDENTIALS_KEY 并使用独立 AAD，不存入数据库。未保存行时兼容环境回退；保存过的停用/空密码不回退。配置每次发送单条查询读取，保存立即生效。`registration_mail_test_limit` 为单例持久化测试冷却，最多每分钟一次。
+
+写配置复用 admin_command_receipts，仅记录基于主密钥的秘密输入 HMAC 指纹和公开结果，不能保存密码或可解密副本。测试用同一回执表保存非秘密收件地址、revision 与 sending/sent/failed 状态；先授权/占用配额/提交 sending，再事务外发送，最后更新结果。重复请求不再次发送；中断后的 sending 保留未知结果，不猜测投递失败或自动补发。数据库备份与原主密钥须配套保留。
+
 ## 官方 AI 优先电脑开局（0.18.0）
 
 无新迁移。电脑创建可填充原 `seats.bot_model_profile_id`、`bot_policy_id='model'`，开局按原逻辑固定 `match_participants.model_owner_account_id`。余额/单局预算不足时预留事务回滚，不创建模型调用和扣费记录；同一 AI task 保存免费脚本提案并走原动作事务，`safe_error_code='AI_FALLBACK_USED'`。不更改控制类型、epoch、付款身份或预算，不重放已完成的脚本行动。
@@ -46,6 +52,8 @@
 
 
 ## 公开注册（2026-10-03）
+
+1.0.0 邮箱验证：新增迁移 `035_registration_email.sql`。accounts 新增私有 `email_canonical`/`email_verified_at`，二者同时为空或同时非空；邮箱有非空唯一索引，旧账号与维护 CLI 保留 null，公开 DTO 不增加邮箱。`registration_email_challenges` 按规范邮箱保留一个 UUID challenge、Argon2id 验证码摘要、10 分钟过期时间、发送/申请时间、最多 5 次错误计数、小时发送窗口和最多 5 封计数。发送预留先提交，再请求 SMTP，成功后标记 sent_at；失败不标成功但保留配额。重发事务替换 challenge 并清零尝试数，邮箱配额不清零；全局短 advisory lock 排序首次申请及配额容量。注册沿用 social-write 锁，锁定本人提交的邮箱/challenge，成功核销与写账户原子提交，唯一冲突和数据库失败回滚；无效码的错误次数单独提交。临时表申请时清理超过一小时未申请的记录，上限 10,000。下段无迁移说明为历史记录。
 
 无新增迁移。注册复用 accounts 与现有唯一约束，在共享 social-write advisory lock 的事务中同时写入规范 username_canonical、显示昵称、Argon2id password_hash、固定 user/active 和相同的显式 friend_id。登录 ID 或好友 ID 冲突整笔回滚，不由默认 ID trigger 添加后缀；不创建 session 或保存明文密码。social_revision、好友 ID 修改时间等继续使用原默认值，注册 ID 是初始值，首次后续自定义遵循现有政策。
 
@@ -128,5 +136,7 @@ rooms.asset_version_id 与 matches.asset_version_id 外键绑定精确版本；m
 等待房间只保存 profile 引用，开局重新校验所有者、active、enabled、未删除和凭证，并在同一开局事务中固定授权。使用既有活跃绑定保护冻结本局配置；未新增 profile 版本快照机制。模型调用失败继续使用已有合法 fallback。
 
 ## 官方 AI 点数（031，2026-10-16）
+
+035（0.19.0）为 official_ai_offers 增加 deleted_at，约束归档项必须停用。目录编辑保留旧行的来源/价格、推进旧 revision 并归档，同事务插入新 ID 替代项；删除仅归档并停用。查询目录和 100 项上限排除归档项，外键、历史配置、预留和账单继续引用旧行。原持久回执在新状态检查前重放，归档项不可重新开放。
 
 031 新增 official_ai_offers（固定来源配置/行动点价、可停用 revision）、ai_point_wallets（整数余额）、ai_point_ledger（发放/行动审计）、ai_point_receipts（账户+请求去重）和 official_ai_reservations（task 唯一、attempt 唯一、预留/ready/charged/released、唯一消费账本引用）。model_profiles 增加 official_offer_id/official_match_budget，官方占位端点不可被普通模型输入选用。余额以钱包行锁串行消费与发放，预留/已消费按 match/seat/payer 累计；正式动作与钱包/账本/回执在原事务提交。model_attempts 保存供应商返回用量或 unknown，不保存 View/State/密钥。独立于桌游币，详见 [官方 AI](official-ai.md)。

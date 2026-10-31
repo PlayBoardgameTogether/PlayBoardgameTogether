@@ -5,6 +5,7 @@ import { officialAiTokenPricingSchema } from './official-ai.js';
 export * from './official-ai.js';
 import { friendIdSchema } from './social.js';
 export * from './auth.js';
+export * from './mail-settings.js';
 export * from './admin.js';
 export * from './game-submissions.js';
 export * from './game-presentation.js';

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createAccount } from '../../apps/api/src/auth.js';
 import { createApp } from '../../apps/api/src/app.js';
@@ -18,7 +18,7 @@ type Session = { cookie: string; csrf: string; id: string };
 describe.skipIf(!url)('official AI points and authoritative actions', () => {
   let db: Database;
   let app: Awaited<ReturnType<typeof createApp>>;
-  const registry = createRegistry(false);
+  let registry: ReturnType<typeof createRegistry>;
   const config = normalizeConfig({
     NODE_ENV: 'test',
     API_HOST: '127.0.0.1',
@@ -220,16 +220,16 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     expect(enrollment.statusCode, enrollment.body).toBe(200);
     profileId = enrollment.json().data.profileId;
   }
-  beforeAll(async () => {
-    db = createDatabase(url!);
-    service = new OfficialAiService(db, true);
-    app = await createApp({ db, registry, config });
-  });
-  afterAll(async () => {
+  afterEach(async () => {
     await app.close();
   });
   beforeEach(async () => {
+    db = createDatabase(url!);
+    registry = createRegistry(false);
+    service = new OfficialAiService(db, true);
+    // Complete destructive fixture cleanup before starting background recovery.
     await db.query('TRUNCATE accounts CASCADE');
+    app = await createApp({ db, registry, config });
     for (const username of ['admin', 'alice', 'bob'])
       await createAccount(db, {
         username,
@@ -262,6 +262,137 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     expect(enrollment.statusCode, enrollment.body).toBe(200);
     profileId = enrollment.json().data.profileId;
   });
+
+  it('edits catalog entries with immutable old bindings, revision checks and durable receipts', async () => {
+    const path = `/admin/official-ai/offers/${offerId}`;
+    const input = {
+      requestId: randomUUID(),
+      expectedRevision: 1,
+      name: '更新陪玩',
+      pointsPerAction: 8,
+      tokenPricing: {
+        inputPointsPerMillion: 2000,
+        outputPointsPerMillion: 4000,
+        markupPercent: 15,
+      },
+    };
+    expect((await write(alice, 'PATCH', path, input)).statusCode).toBe(403);
+    expect(
+      (
+        await app.inject({
+          method: 'PATCH',
+          url: `/api/v1${path}`,
+          headers: { origin, cookie: admin.cookie },
+          payload: input,
+        })
+      ).statusCode,
+    ).toBe(403);
+    expect((await write(admin, 'PATCH', path, { ...input, profileId })).statusCode).toBe(403);
+    const foreign = await write(bob, 'POST', '/me/model-profiles', {
+      name: 'Foreign source',
+      endpointId: 'mock',
+      modelId: 'mock-v1',
+    });
+    expect(
+      (await write(admin, 'PATCH', path, { ...input, profileId: foreign.json().data.id }))
+        .statusCode,
+    ).toBe(403);
+    const nextSource = await write(admin, 'POST', '/me/model-profiles', {
+      name: 'Next source',
+      endpointId: 'mock',
+      modelId: 'mock-v2',
+    });
+    const edit = { ...input, profileId: nextSource.json().data.id as string };
+    const response = await write(admin, 'PATCH', path, edit);
+    expect(response.statusCode, response.body).toBe(200);
+    const replacement = response.json().data;
+    expect(replacement).toMatchObject({
+      name: input.name,
+      pointsPerAction: 8,
+      tokenPricing: input.tokenPricing,
+      enabled: true,
+    });
+    expect(replacement.id).not.toBe(offerId);
+    expect((await write(admin, 'PATCH', path, edit)).json().data).toEqual(replacement);
+    expect((await write(admin, 'PATCH', path, { ...edit, name: '不同请求' })).statusCode).toBe(409);
+    expect(
+      (await write(admin, 'PATCH', path, { ...edit, requestId: randomUUID() })).statusCode,
+    ).toBe(409);
+    expect((await service.offers(true)).map((item) => item.id)).toEqual([replacement.id]);
+    expect(JSON.stringify(await service.offers())).not.toContain(nextSource.json().data.id);
+    expect(await service.runtime(profileId, alice.id)).toBeNull();
+    const old = (
+      await db.query(
+        'SELECT source_profile_id,points_per_action,enabled,deleted_at FROM official_ai_offers WHERE id=$1',
+        [offerId],
+      )
+    ).rows[0];
+    expect(old).toMatchObject({
+      source_profile_id: sourceId,
+      points_per_action: 2,
+      enabled: false,
+    });
+    expect(old.deleted_at).not.toBeNull();
+    expect(
+      (
+        await write(alice, 'POST', '/me/official-ai/enroll', {
+          requestId: randomUUID(),
+          offerId,
+          matchBudget: 10,
+        })
+      ).statusCode,
+    ).toBe(403);
+  });
+
+  it.each(['PATCH', 'DELETE'] as const)(
+    'preserves in-flight token billing after catalog %s and blocks revival',
+    async (method) => {
+      await tokenOffer();
+      await grant(20);
+      const match = await activeMatch();
+      const profile = await claim(match.taskId);
+      await service.reserve(match.taskId, 'official-test', 1, profile, alice.id, match.decisionKey);
+      const path = `/admin/official-ai/offers/${offerId}`;
+      const input = {
+        requestId: randomUUID(),
+        expectedRevision: 1,
+        ...(method === 'PATCH' ? { name: '新价格', pointsPerAction: 10, tokenPricing: null } : {}),
+      };
+      expect((await write(bob, method, path, input)).statusCode).toBe(403);
+      const response = await write(admin, method, path, input);
+      expect(response.statusCode, response.body).toBe(200);
+      expect((await write(admin, method, path, input)).json().data).toEqual(response.json().data);
+      expect(
+        (await write(admin, method, path, { ...input, requestId: randomUUID() })).statusCode,
+      ).toBe(409);
+      expect(
+        (
+          await write(admin, 'PUT', path, {
+            requestId: randomUUID(),
+            expectedRevision: 2,
+            enabled: true,
+          })
+        ).statusCode,
+      ).toBe(409);
+      expect((await service.offers(true)).some((offer) => offer.id === offerId)).toBe(false);
+      expect(await service.runtime(profileId, alice.id)).toBeNull();
+      // Response arriving after removal still freezes the original price, then commits exactly once.
+      await service.recordResponse(match.taskId, { inputTokens: 1000, outputTokens: 1000 }, 10);
+      await propose(match.taskId);
+      const matches = new MatchService(db, registry);
+      expect(await matches.actAutomation(match.taskId, 'official-test', 1)).toMatchObject({
+        revision: 2,
+      });
+      await db.query("UPDATE ai_tasks SET status='proposed' WHERE id=$1", [match.taskId]);
+      await matches.actAutomation(match.taskId, 'official-test', 1);
+      expect(
+        (await service.ledger(alice.id)).items.filter((item) => item.kind === 'action'),
+      ).toMatchObject([
+        { delta: -4, tokenBilling: { offerId, chargedPoints: 4, pricing: profile.token_pricing } },
+      ]);
+      expect(await service.wallet(alice.id)).toEqual({ balance: 16, reserved: 0, available: 16 });
+    },
+  );
 
   it('protects grants, replays receipts before new state, and isolates wallet/ledger/catalog credentials', async () => {
     const input = { requestId: randomUUID(), accountId: alice.id, points: 25, note: '首批体验' };
@@ -399,6 +530,105 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     },
   );
 
+  it('groups complete match bills before paging and isolates payer details and cursors', async () => {
+    await grant(100);
+    const first = await activeMatch();
+    const firstRoom = await get(alice, `/rooms/${first.roomId}`);
+    expect(
+      (
+        await write(alice, 'POST', `/rooms/${first.roomId}/close`, {
+          requestId: randomUUID(),
+          expectedRoomRevision: firstRoom.roomRevision,
+        })
+      ).statusCode,
+    ).toBe(200);
+    const second = await activeMatch();
+    const pricing = {
+      inputPointsPerMillion: 1000,
+      outputPointsPerMillion: 2000,
+      markupPercent: 25,
+    };
+    for (let index = 0; index < 25; index++) {
+      await db.query(
+        `INSERT INTO ai_point_ledger
+        (id,account_id,delta,balance_after,kind,note,match_id,token_billing)
+        VALUES($1,$2,-4,0,'action','官方 AI token 用量',$3,$4)`,
+        [
+          randomUUID(),
+          alice.id,
+          first.matchId,
+          index === 0
+            ? null
+            : { offerId, pricing, inputTokens: 1000, outputTokens: 1000, chargedPoints: 4 },
+        ],
+      );
+    }
+    await db.query(
+      `INSERT INTO ai_point_ledger(id,account_id,delta,balance_after,kind,note,match_id)
+      VALUES($1,$2,-2,0,'action','按次计费',$3),($4,$5,-9,0,'action','他人账单',$6)`,
+      [randomUUID(), alice.id, second.matchId, randomUUID(), bob.id, first.matchId],
+    );
+    for (let index = 0; index < 22; index++) await grant(1);
+    // Exercise the UUID tie breaker as well as grouping across more than one raw page.
+    await db.query("UPDATE ai_point_ledger SET created_at='2026-10-25T00:00:00Z'");
+    const firstPage = await get(alice, '/me/ai-points/bills');
+    expect(firstPage.items).toHaveLength(20);
+    const nextPage = await get(alice, `/me/ai-points/bills?before=${firstPage.nextCursor}`);
+    expect(nextPage.items).toHaveLength(5);
+    expect(nextPage.nextCursor).toBeNull();
+    const all = [...firstPage.items, ...nextPage.items];
+    expect(new Set(all.map((item) => item.id)).size).toBe(25);
+    expect(all.filter((item) => item.kind === 'grant')).toHaveLength(23);
+    const bill = all.find((item) => item.matchId === first.matchId);
+    expect(bill).toMatchObject({
+      delta: -100,
+      actionCount: 25,
+      inputTokens: 24000,
+      outputTokens: 24000,
+      missingUsageCount: 1,
+    });
+    expect(bill.gameName).toBeTruthy();
+    expect(all.filter((item) => item.matchId === first.matchId)).toHaveLength(1);
+    const details = await get(alice, `/me/ai-points/ledger?matchId=${first.matchId}`);
+    expect(details.items).toHaveLength(20);
+    const older = await get(
+      alice,
+      `/me/ai-points/ledger?matchId=${first.matchId}&before=${details.nextCursor}`,
+    );
+    expect(older.items).toHaveLength(5);
+    expect(older.nextCursor).toBeNull();
+    expect([...details.items, ...older.items].every((item) => item.matchId === first.matchId)).toBe(
+      true,
+    );
+    expect((await get(bob, `/me/ai-points/ledger?matchId=${first.matchId}`)).items).toMatchObject([
+      { delta: -9 },
+    ]);
+    expect((await get(bob, `/me/ai-points/bills?before=${firstPage.nextCursor}`)).items).toEqual(
+      [],
+    );
+    expect(
+      (await get(bob, `/me/ai-points/ledger?matchId=${first.matchId}&before=${details.nextCursor}`))
+        .items,
+    ).toEqual([]);
+    expect(
+      (
+        await get(
+          alice,
+          `/me/ai-points/ledger?matchId=${second.matchId}&before=${details.nextCursor}`,
+        )
+      ).items,
+    ).toEqual([]);
+    expect((await app.inject({ url: '/api/v1/me/ai-points/bills' })).statusCode).toBe(401);
+    expect(
+      (
+        await app.inject({
+          url: '/api/v1/me/ai-points/ledger?matchId=invalid',
+          headers: { cookie: alice.cookie },
+        })
+      ).statusCode,
+    ).toBe(400);
+  });
+
   it('settles actual token usage at the locked markup, releases excess and never charges recovery twice', async () => {
     await tokenOffer();
     await grant(20);
@@ -436,6 +666,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     expect(ledger).toHaveLength(1);
     expect(ledger[0]).toMatchObject({
       delta: -4,
+      usage: { inputTokens: 1000, outputTokens: 1000 },
       tokenBilling: {
         offerId,
         inputTokens: 1000,
@@ -443,6 +674,17 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
         chargedPoints: 4,
         pricing: { inputPointsPerMillion: 1000, outputPointsPerMillion: 2000, markupPercent: 25 },
       },
+    });
+    expect(
+      (await get(alice, '/me/ai-points/bills')).items.find(
+        (item) => item.matchId === match.matchId,
+      ),
+    ).toMatchObject({
+      delta: -4,
+      actionCount: 1,
+      inputTokens: 1000,
+      outputTokens: 1000,
+      missingUsageCount: 0,
     });
   });
 

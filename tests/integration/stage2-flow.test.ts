@@ -1,4 +1,4 @@
-import {afterAll,beforeAll,beforeEach,describe,expect,it} from 'vitest';
+import {afterEach,beforeEach,describe,expect,it} from 'vitest';
 import WebSocket from 'ws';
 import {spawnSync} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
@@ -7,7 +7,25 @@ import { RoomService } from '../../apps/api/src/rooms.js';
 import { normalizeConfig } from '../../apps/api/src/config.js';
 process.loadEnvFile('.env');const url=process.env.TEST_DATABASE_URL;
 describe.skipIf(!url)('stage 2 account to initial match flow',()=>{let db:Database;let app:Awaited<ReturnType<typeof createApp>>;let registry:ReturnType<typeof createRegistry>;const origin='http://127.0.0.1:5173';
-  beforeAll(async()=>{db=createDatabase(url!);registry=createRegistry(false);app=await createApp({config:{NODE_ENV:'test',API_HOST:'127.0.0.1',API_PORT:3001,DATABASE_URL:url!,WEB_ORIGIN:origin,ENABLE_DEV_LAB:false,LOG_LEVEL:'silent',PRESENCE_GRACE_MS:100},db,registry});});afterAll(()=>app.close());beforeEach(async()=>{await db.query('TRUNCATE accounts CASCADE');await createAccount(db,{username:'alice',displayName:'Alice',password:'correct horse battery',role:'user'});await createAccount(db,{username:'bob',displayName:'Bob',password:'correct horse battery',role:'user'});await createAccount(db,{username:'carol',displayName:'Carol',password:'correct horse battery',role:'user'});});
+  beforeEach(async () => {
+    db = createDatabase(url!);
+    registry = createRegistry(false);
+    // Recovery queries must not overlap TRUNCATE's locks on dependent tables.
+    await db.query('TRUNCATE accounts CASCADE');
+    app = await createApp({
+      config: {
+        NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001,
+        DATABASE_URL: url!, WEB_ORIGIN: origin, ENABLE_DEV_LAB: false,
+        LOG_LEVEL: 'silent', PRESENCE_GRACE_MS: 100,
+      },
+      db,
+      registry,
+    });
+    for (const [username, displayName] of [['alice', 'Alice'], ['bob', 'Bob'], ['carol', 'Carol']]) {
+      await createAccount(db, { username, displayName, password: 'correct horse battery', role: 'user' });
+    }
+  });
+  afterEach(async () => { await app.close(); });
   async function login(username:string){const r=await app.inject({method:'POST',url:'/api/v1/auth/login',headers:{origin},payload:{username,password:'correct horse battery'}});expect(r.statusCode).toBe(200);const raw=r.headers['set-cookie'];const values=Array.isArray(raw)?raw:[String(raw)];const cookie=values.map(v=>v.split(';')[0]).join('; ');return{cookie,csrf:r.json().data.csrfToken};}
   const write=(method:string,url:string,session:{cookie:string;csrf:string},payload:unknown)=>app.inject({method:method as any,url,headers:{origin,cookie:session.cookie,'x-csrf-token':session.csrf},payload});
   it('keeps a healthy subscribed room alive and reclaims it after disconnect', async () => {

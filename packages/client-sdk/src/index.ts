@@ -1,9 +1,11 @@
 import { createRoomResponseSchema } from '@boardgame/protocol';
+import { mailSettingsSchema, mailSettingsInputSchema, mailTestInputSchema, mailTestResultSchema } from '@boardgame/protocol';
 import type { z } from 'zod';
 import {
   officialAiOffersSchema, officialAiOfferSchema, officialAiPublishSchema, officialAiStatusSchema,
   officialAiEnrollSchema, officialAiEnrollmentSchema, aiPointWalletSchema, aiPointLedgerSchema,
-  aiPointGrantSchema, officialAiStatsSchema,
+  aiPointGrantSchema, officialAiStatsSchema, aiPointBillsSchema, aiPointBillsQuerySchema, aiPointLedgerQuerySchema,
+  officialAiEditSchema, officialAiDeleteSchema, officialAiDeletedSchema,
 } from '@boardgame/protocol';
 import { coinAdjustmentSchema, coinHistoryQuerySchema, coinWalletPageSchema, coinWalletSchema, type CoinAdjustment } from '@boardgame/protocol';
 import {
@@ -123,9 +125,11 @@ import {
 export type { AssetDraft, AssetVersion } from './assets.js';
 
 import {
-  registrationInputSchema,
+  emailRegistrationInputSchema,
+  registrationEmailRequestSchema,
+  registrationEmailSentSchema,
   registrationResultSchema,
-  type RegistrationInput,
+  type EmailRegistrationInput,
 } from '@boardgame/protocol';
 
 export class ApiError extends Error {
@@ -139,6 +143,19 @@ export class ApiError extends Error {
   }
 }
 export class ApiClient {
+  async adminMailSettings(signal?: AbortSignal) {
+    return mailSettingsSchema.parse(await this.request<unknown>('/admin/mail-settings', signal ? { signal } : undefined));
+  }
+  async saveAdminMailSettings(input: z.input<typeof mailSettingsInputSchema>) {
+    return mailSettingsSchema.parse(await this.request<unknown>('/admin/mail-settings', {
+      method: 'PUT', body: JSON.stringify(mailSettingsInputSchema.parse(input)),
+    }));
+  }
+  async testAdminMailSettings(input: z.input<typeof mailTestInputSchema>) {
+    return mailTestResultSchema.parse(await this.request<unknown>('/admin/mail-settings/test', {
+      method: 'POST', body: JSON.stringify(mailTestInputSchema.parse(input)),
+    }));
+  }
   async officialAiOffers(admin = false, signal?: AbortSignal) {
     return officialAiOffersSchema.parse(
       await this.request<unknown>(`${admin ? '/admin' : ''}/official-ai/offers`, signal ? { signal } : undefined),
@@ -164,6 +181,21 @@ export class ApiClient {
       ),
     );
   }
+  async aiPointBills(before?: string, signal?: AbortSignal) {
+    const query = aiPointBillsQuerySchema.parse({ before });
+    return aiPointBillsSchema.parse(await this.request<unknown>(
+      `/me/ai-points/bills${query.before ? `?before=${encodeURIComponent(query.before)}` : ''}`,
+      signal ? { signal } : undefined,
+    ));
+  }
+  async aiPointMatchLedger(matchId: string, before?: string, signal?: AbortSignal) {
+    const query = aiPointLedgerQuerySchema.parse({ matchId, before });
+    const params = new URLSearchParams({ matchId: query.matchId! });
+    if (query.before) params.set('before', query.before);
+    return aiPointLedgerSchema.parse(await this.request<unknown>(
+      `/me/ai-points/ledger?${params}`, signal ? { signal } : undefined,
+    ));
+  }
   async enrollOfficialAi(input: z.input<typeof officialAiEnrollSchema>) {
     return officialAiEnrollmentSchema.parse(await this.request<unknown>('/me/official-ai/enroll', {
       method: 'POST', body: JSON.stringify(officialAiEnrollSchema.parse(input)),
@@ -183,6 +215,22 @@ export class ApiClient {
     return aiPointWalletSchema.parse(await this.request<unknown>('/admin/ai-points/grant', {
       method: 'POST', body: JSON.stringify(aiPointGrantSchema.parse(input)),
     }));
+  }
+  async editOfficialAi(id: string, input: z.input<typeof officialAiEditSchema>) {
+    return officialAiOfferSchema.parse(
+      await this.request<unknown>(`/admin/official-ai/offers/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(officialAiEditSchema.parse(input)),
+      }),
+    );
+  }
+  async deleteOfficialAi(id: string, input: z.input<typeof officialAiDeleteSchema>) {
+    return officialAiDeletedSchema.parse(
+      await this.request<unknown>(`/admin/official-ai/offers/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        body: JSON.stringify(officialAiDeleteSchema.parse(input)),
+      }),
+    );
   }
   async officialAiStats(signal?: AbortSignal) {
     return officialAiStatsSchema.parse(await this.request<unknown>('/admin/official-ai/stats', signal ? { signal } : undefined));
@@ -222,11 +270,19 @@ export class ApiClient {
       }),
     );
   }
-  async register(input: RegistrationInput) {
+  async requestRegistrationEmailCode(email: string) {
+    return registrationEmailSentSchema.parse(
+      await this.request<unknown>('/auth/register/email-code', {
+        method: 'POST',
+        body: JSON.stringify(registrationEmailRequestSchema.parse({ email })),
+      }),
+    );
+  }
+  async register(input: EmailRegistrationInput) {
     return registrationResultSchema.parse(
       await this.request<unknown>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(registrationInputSchema.parse(input)),
+        body: JSON.stringify(emailRegistrationInputSchema.parse(input)),
       }),
     );
   }

@@ -1,5 +1,23 @@
 # 平台官方 AI 与点数
 
+2026-10-25 整合交付：下述目录管理与按局账单原候选版本为 0.19.0，现与邮箱验证等更新一并纳入平台 1.0.0；0.19.0 未单独合并发布。平台实际版本以根 package.json 为准，章节中的候选版本和验证记录保留。
+
+## 按局账单与 token 明细（0.19.0，2026-10-25）
+
+玩家点数账单按付款账户与对局汇总，每局展示游戏名称、最近扣点时间、计费行动数和扣点总额。点击单局可展开输入/输出 token 汇总及逐次行动的用量、结算价格和扣点；明细分页加载，每页 20 条。点数发放保留独立记录。进行中的对局只汇总当前已结算扣点，刷新余额与账单后读取最新汇总。
+
+汇总在服务端对本人完整流水分组后分页，每页 20 条，不以当前已加载的行动页推算整局费用。token 优先使用账本中的冻结快照，旧固定点价行动读取关联调用已记录的用量；缺失时明确显示未记录与不完整行动数，不估算为真实零消耗。失败、免费兜底和零扣点调用没有扣点流水，不计入此账单的 token 汇总；该汇总也不代表供应商货币账单。
+
+新增 GET `/api/v1/me/ai-points/bills?before=UUID`，返回 `aiPointBillsSchema` 的汇总与游标。原 GET `/api/v1/me/ai-points/ledger` 兼容旧请求，新增可选 `matchId=UUID`，仅返回本人该局扣点；每条可带 `usage: { inputTokens: number|null, outputTokens: number|null }`。两种游标均限定本人，明细游标还限定同一对局；不通过传入账户、席位或对局 ID 获取他人账单，不扩展对局 View 的参与权限。无数据库迁移或扣费规则变化。
+
+## 目录编辑与删除（0.19.0，2026-10-25）
+
+先迁移至 `035_official_ai_catalog_management.sql`。管理员可在每个目录项旁选择「编辑」，复用发布表单修改名称、来源模型、基础点价、加价比例和单次预留上限；来源默认保留，也可换成本人有效配置。旧固定点价档位可保留固定计费或改为 token 计费。保存、取消均有明确入口，删除须在目录项内确认。
+
+编辑在同一事务归档并停用旧档位、建立新 ID 的替代档位，保留原开放状态；目录只显示替代项。玩家须显式启用新档位并重新选择席位配置，旧绑定不自动换价或换模型。删除逻辑归档并停用，从管理员和玩家目录移除，不删除来源模型、凭证、原官方配置、预留、账单或对局。停用仍可重新开放，删除及被替代的旧项不可重新开放；已发送的有效决策仍按原来源与价格结算。目录 100 项上限只统计未归档项。
+
+新增 PATCH `/api/v1/admin/official-ai/offers/:id`：`requestId`、`expectedRevision`、`name`、可选 `profileId`（省略保留来源）、`pointsPerAction`、`tokenPricing`（可为 null 表示固定计价），返回替代档位。DELETE 同路径传 `requestId`、`expectedRevision`，返回 `{ id, deleted: true }`。旧 PUT 启停接口保持兼容；写入沿用管理员事务、会话重验、Origin/CSRF、revision 冲突和持久回执，断网使用原请求重试。公共目录继续不暴露来源配置 ID、地址或密钥。
+
 ## token 计费与管理员加价（0.11.0，2026-10-18）
 
 更新 API/Web 前执行迁移至 `033_official_ai_token_pricing.sql`。后台 `/admin/official-ai` 新发布档位按实际输入/输出 token 计费：分别设置基础点价（整数 AI 点数/百万 token，0–10 亿，不能同时为零）、加价比例（整数 0–1000%）和单次预留上限（1–10000 点），实时预览售价。基础点价需管理员自行换算供应商成本，不自动获取价格、汇率或货币账单；AI 点数继续独立于桌游币，没有现金支付或兑换。
@@ -8,7 +26,7 @@
 
 调用前在原 task → wallet 锁内预留 `min(单次预留上限, 可用余额, 剩余单局预算)`，至少 1 点才调用。有效 choiceId 通过后按档位价格冻结用量/价格/加价比例/应扣点，并释放多余预留；正式动作、钱包扣费和账本仍在原事务原子提交。用量缺失或不完整、费用超过预留时，不估算、不截断、不额外扣费，释放预留并使用免费脚本兜底；供应商成本由平台承担。失败、非法输出、兜底、取消和过期继续免费。迟到用量不改变冻结费用。
 
-点价、加价比例、来源模型与地址发布后固定。调价需发布新档位，由玩家显式启用；停用旧档位阻止新调用，已冻结有效结果仍按旧价完成。旧固定点价档位、已启用配置、历史账单不自动转换；旧发布请求和回执继续兼容。下面首版记录中的“固定行动点价”仅适用于无 tokenPricing 的历史档位。
+每个档位 ID 的点价、加价比例、来源模型与地址发布后固定。0.19.0 起可使用目录「编辑」原子替换为新档位，由玩家显式启用；旧档位归档停用阻止新调用，已冻结有效结果仍按旧价完成。旧固定点价档位、已启用配置、历史账单不自动转换；旧发布请求和回执继续兼容。下面首版记录中的“固定行动点价”仅适用于无 tokenPricing 的历史档位。
 
 API 增量：发布请求和目录可选 `tokenPricing: { inputPointsPerMillion, outputPointsPerMillion, markupPercent }`；存在该字段时 `pointsPerAction` 表示单次预留上限，否则仍表示固定行动点价。官方 profile 增加可选 `official_token_pricing`。本人账本增加可选 `tokenBilling`（offerId、pricing、inputTokens、outputTokens、chargedPoints），保存结算时快照。033 增加 `official_ai_offers.token_pricing` 与预留/账本 `token_billing`，允许零点 ready 预留；零费用提交后标记 released，不插入账本。新字段不回填旧费用。
 
@@ -25,7 +43,7 @@ API 增量：发布请求和目录可选 `tokenPricing: { inputPointsPerMillion,
 
 真实服务沿用受 SSRF 防护的公网 HTTPS OpenAI-compatible Chat Completions 适配器。开发和生产禁止将 mock 发布为官方 AI；自动测试可在 NODE_ENV=test 下使用 mock 验证完整链路。没有预置假官方模型、密钥或余额。模型标识、真实价格、地区可用性和上游账户由运营者配置；没有测试真实供应商就不能声称真实调用已验收。
 
-档位的来源模型、地址与价格固定；变更需发布新档位并停用旧档位。被引用的来源配置禁止编辑/删除，凭证仍可轮换和撤销。停用阻止新调用，已经发送的有效结果可能按原价格完成。服务端只解密来源所有者的凭证，玩家目录不返回来源配置 ID、地址或密钥。
+档位的来源模型、地址与价格固定；目录「编辑」会创建替代档位并归档停用旧档位。被引用的来源配置禁止编辑/删除，凭证仍可轮换和撤销；目录删除不等于删除来源配置。停用阻止新调用，已经发送的有效结果可能按原价格完成。服务端只解密来源所有者的凭证，玩家目录不返回来源配置 ID、地址或密钥。
 
 模型耗时仍受 `AI_DECISION_TIMEOUT_MS` 约束。接入慢模型时按实测调整，并保证 `AI_LEASE_MS` 足够覆盖请求、持久化和提交；超时释放玩家预留，不代表供应商没有收费。当前没有自动切换模型档位或超额扣点。
 
@@ -62,9 +80,12 @@ API 增量：发布请求和目录可选 `tokenPricing: { inputPointsPerMillion,
 | GET `/api/v1/me/official-ai/profiles` | 本人官方配置及上限 |
 | POST `/api/v1/me/official-ai/enroll` | 本人；requestId、offerId、matchBudget |
 | GET `/api/v1/me/ai-points` | 本人余额/预留/可用点数 |
-| GET `/api/v1/me/ai-points/ledger?before=UUID` | 本人账单，每页20条，游标限定本人 |
+| GET `/api/v1/me/ai-points/bills?before=UUID` | 本人按局汇总及独立点数发放，每页20条 |
+| GET `/api/v1/me/ai-points/ledger?before=UUID&matchId=UUID` | 本人逐次流水，每页20条；可选按局筛选，游标限定本人及同局 |
 | GET/POST `/api/v1/admin/official-ai/offers` | 管理员目录/发布，来源必须是本人配置 |
 | PUT `/api/v1/admin/official-ai/offers/:id` | 管理员；requestId、expectedRevision、enabled |
+| PATCH `/api/v1/admin/official-ai/offers/:id` | 管理员编辑并返回替代档位；字段见目录管理章节 |
+| DELETE `/api/v1/admin/official-ai/offers/:id` | 管理员逻辑删除；requestId、expectedRevision |
 | POST `/api/v1/admin/ai-points/grant` | 管理员；requestId、accountId、points、note |
 | GET `/api/v1/admin/official-ai/stats` | 管理员非秘密点数及用量汇总 |
 

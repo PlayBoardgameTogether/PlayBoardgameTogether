@@ -1,5 +1,11 @@
 # 协议
 
+## 后台邮件设置（1.0.0）
+
+GET `/api/v1/admin/mail-settings` 返回 `{enabled,host,port,username,from,revision,source,hasPassword,encryptionAvailable,configured}`，source 为 database/environment/none；只返回授权码是否存在，不返回密码、密文、nonce/tag。PUT 同路径严格接受 `{enabled,host,port,username,from,expectedRevision,requestId,password?,clearPassword?}`，password 省略保留，clearPassword 明确清除且不能同时给新密码。端口仅 465/587，host 为不含协议/路径的公网域名；启用需要完整字段与有效加密主密钥。更换 host/port/username 时必须提交新授权码。并发编辑 STATE_CONFLICT，同 requestId 异内容 REQUEST_ID_CONFLICT。
+
+POST `/api/v1/admin/mail-settings/test` 接受 `{email,expectedRevision,requestId}`，使用当前已保存版本，返回 `{requestId,status}`，status 为 sending/sent/failed。sent 只代表 SMTP 接受，需实际收件确认；failed 不含供应商原始错误，sending 为未完成/未知结果。重复同请求优先返回原状态，不再次发送；新的测试全平台每分钟一次，超限 RATE_LIMITED。两写接口 4 KiB 上限，沿用管理员 session/Origin/CSRF、事务内角色/会话重验与原管理回执；读取同样仅限管理员，响应 no-store。配置保存不测试连接、不产生发信副作用，后续发送即时读取。共享契约位于 protocol/mail-settings.ts，typed client-sdk 提供 adminMailSettings/saveAdminMailSettings/testAdminMailSettings，公开源码白名单包含该新协议文件。
+
 ## 官方 AI 优先电脑开局（0.18.0）
 
 `createRoomInputSchema` 增加可选 `computerModelProfileId: UUID`，必须同时提供 `computerOpponents: true`，且为当前创建者自己的有效官方配置。原创建事务验证并填充 bot 的 model 配置，准备/开局、身份、revision 和回执语义不变；省略字段保持免费脚本兼容。Web 先通过原 enroll 请求显式保存档位及每席位预算，再创建房间；整个分步进度保存在会话存储，重试复用各步骤原请求。无新端点或数据库迁移。
@@ -89,6 +95,10 @@ GET `/api/v1/admin/updates` 返回严格 `adminUpdateStatusSchema`：enabled、b
 POST `/api/v1/admin/updates/check` 严格接收 `{requestId: UUID}`，验证 session、管理员、Origin、CSRF 后经本地 IPC 触发既有监督流程，返回 202 和同一状态 DTO；表示受理而非更新成功。拒绝额外执行参数。进程内最近 256 个受理 ID 去重；同时进行的触发合并，重启或淘汰后可再次检查。没有监督进程或配置停用时返回 unavailable/disabled，旧监督进程/IPC 超时返回 SERVICE_UNAVAILABLE。没有数据库、对局或规则协议变更。
 
 ## 账号注册（2026-10-03）
+
+### 邮箱验证扩展（1.0.0，2026-10-25）
+
+当前强制邮箱验证，以下原三字段注册记录为历史。新增 POST `/api/v1/auth/register/email-code`，严格 JSON `{email}`，返回 `{challengeId,expiresInSeconds:600,retryAfterSeconds:60}`；不创建账号或 session，不返回验证码。注册请求扩展为 `{displayName,userId,password,email,challengeId,emailCode}`，由 `emailRegistrationInputSchema` 校验；成功仍为原 201 公开结果。email trim/lowercase，最长 254 字；emailCode 必须 6 位数字，challengeId 为 UUID。验证码必须已发送、匹配邮箱、未过期/用尽/核销。原三字段请求返回 VALIDATION_ERROR；失败验证码也为该错误，不泄露真实验证码或邮箱存在性。用户 ID/邮箱唯一冲突统一 STATE_CONFLICT，邮件未配置/发送失败 SERVICE_UNAVAILABLE，发送冷却/配额 RATE_LIMITED。两接口均要求精确 Origin、JSON、4 KiB 上限、no-store；分别每 IP 每分钟 5 次，同邮箱另有 60 秒冷却与每小时 5 次持久化配额。`ApiClient.requestRegistrationEmailCode` 与 `register` 均用共享 schema 解析。需要配对升级网页与 API，既有登录/session/WS 契约不变；版本升级获用户明确授权。
 
 POST `/api/v1/auth/register`：严格 JSON `{displayName,userId,password}`，由 `protocol/auth.ts` 共享 schema 校验。displayName trim 后 1–32 字，userId 可带单个 @、名字部分 3–32 位 ASCII 字母/数字/下划线，trim/lowercase；password 6–128 位，含 ASCII 字母和数字，不 trim。成功 201 返回 `{username,displayName,friendId}`，username/friendId 是无 @ 的规范 ID。固定普通账户，不创建 session；Origin 必须匹配，4 KiB 上限，每 IP 每分钟 5 次。ID 已被登录名或好友 ID 使用返回 STATE_CONFLICT/409；无效输入 VALIDATION_ERROR/400，频控 RATE_LIMITED/429。响应 no-store，无密码/摘要/令牌。ApiClient.register 使用共享输入/响应 schema，返回类型由 schema 推导。登录 username 最大 33 位，以接受 32 位 ID 加 @，服务端去前缀后沿用既有身份认证。
 
@@ -212,5 +222,8 @@ HTTP envelope 为 `{ok:true,data,traceId}` 或 `{ok:false,error:{code,message,re
 POST `/api/v1/admin/game-packages/review` 接收 application/zip 字节，沿用管理员 session/Origin/CSRF/大小及限流保护，只检查不写库。共享 gamePackageReviewSchema 返回 gameId/version/name/hash/kind/installedVersions/catalogHash；kind 为 new/update/installed，按 manifest.id 识别。安装 query 新增可选 expectedCatalogHash，已有游戏的新版本必须提供审核时 catalogHash。事务内目录哈希冲突返回 STATE_CONFLICT；重复成功回执优先返回。新版本与旧版本下架及安装回执原子提交，旧精确规则不改写。同版本相同包不改变上架状态。
 
 ## 官方 AI 与 AI 点数（2026-10-16）
+
+2026-10-25，0.19.0：新增 GET `/api/v1/me/ai-points/bills?before=UUID`，按本人对局完整流水汇总后每页 20 条，点数发放单列；返回扣点合计、计费行动数、输入/输出 token 已记录合计、缺失用量次数与最近扣点时间。原 `/me/ai-points/ledger` 新增可选 `matchId=UUID` 与可选 `usage`，分别用于本人单局明细及已记录输入/输出用量（未知方向为 null）。游标限定本人，明细筛选还限定同一局。保留原 tokenBilling 冻结快照、扣费事务与对局 View 权限，旧请求兼容。完整口径见 [按局账单](official-ai.md#按局账单与-token-明细01902026-10-25)。
+0.19.0 增加管理员 PATCH/DELETE `/admin/official-ai/offers/:id`，均含 requestId/expectedRevision。PATCH 包含 name、可选 profileId、pointsPerAction、tokenPricing（可为 null），原子归档停用旧项并返回新 ID 的替代档位；DELETE 返回 `{ id, deleted: true }`。玩家需显式启用替代项，历史绑定/账单保持原身份和价格。旧 PUT 启停保持兼容且不可恢复归档项；公共目录不暴露来源 ID。完整语义见 [目录编辑与删除](official-ai.md#目录编辑与删除01902026-10-25)。
 
 新增共享 `official-ai.ts` schema 与 typed SDK：登录读取 `/official-ai/offers`、本人 `/me/official-ai/profiles`、POST `/me/official-ai/enroll`（requestId/offerId/matchBudget）、GET `/me/ai-points` 和 `/me/ai-points/ledger?before=UUID`。管理员 GET/POST `/admin/official-ai/offers`、PUT `/:id`（requestId/expectedRevision/enabled）、POST `/admin/ai-points/grant`（requestId/accountId/points/note）及 GET `/admin/official-ai/stats`。全部 no-store，写入 Origin/CSRF、事务会话与角色重验，持久成功回执优先；错误复用既有代码。modelProfile DTO 增加可选官方档位/上限/行动价格，个人模型列表仍仅个人配置，官方目录不暴露来源 ID/密钥。房间/控制动作继续使用已有 model+本人 profileId，不新增 seat 授权方式。详见 [官方 AI API](official-ai.md#api-与存储)。

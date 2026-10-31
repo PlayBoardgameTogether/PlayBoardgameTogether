@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../../apps/api/src/app.js';
 import { createDatabase, type Database } from '../../apps/api/src/db/index.js';
 import { createRegistry } from '../../apps/api/src/registry/index.js';
@@ -16,15 +16,14 @@ type Session = { cookie: string; csrf: string };
 describe.skipIf(!url)('Azul formal action flow', () => {
   let db: Database;
   let app: Awaited<ReturnType<typeof createApp>>;
-  beforeAll(async () => {
-    db = createDatabase(url!);
-    app = await createApp({ config: { NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: url!, WEB_ORIGIN: origin, ENABLE_DEV_LAB: false, LOG_LEVEL: 'error' }, db, registry: createRegistry(false) });
-  });
-  afterAll(async () => { await app.close(); });
   beforeEach(async () => {
+    db = createDatabase(url!);
+    // Cleanup must finish before the app starts its background recovery queries.
     await db.query('TRUNCATE accounts CASCADE');
+    app = await createApp({ config: { NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001, DATABASE_URL: url!, WEB_ORIGIN: origin, ENABLE_DEV_LAB: false, LOG_LEVEL: 'error' }, db, registry: createRegistry(false) });
     for (const username of ['garden_a', 'garden_b', 'garden_c', 'garden_d']) await createAccount(db, { username, displayName: username, password: 'correct horse battery', role: 'user' });
   });
+  afterEach(async () => { await app.close(); });
   async function login(username: string): Promise<Session> {
     const response = await app.inject({ method: 'POST', url: '/api/v1/auth/login', headers: { origin }, payload: { username, password: 'correct horse battery' } });
     expect(response.statusCode).toBe(200);

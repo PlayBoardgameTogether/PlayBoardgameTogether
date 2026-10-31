@@ -27,7 +27,7 @@ const navigationGroups = [
       ['/admin/assets', '资源管理'],
     ],
   },
-  { label: '系统维护', links: [['/admin/updates', '服务更新']] },
+  { label: '系统维护', links: [['/admin/mail', '邮件设置'], ['/admin/updates', '服务更新']] },
 ] as const;
 
 export function AdminLayout({

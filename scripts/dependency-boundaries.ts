@@ -4,7 +4,7 @@ import { posix } from 'node:path';
 
 export type Layer = 'browser' | 'protocol' | 'sdk' | 'client-sdk' | 'client' | 'server' | 'shared';
 const builtins = new Set(builtinModules.map(name => name.replace(/^node:/, '')));
-const backendPackages = new Set(['pg', 'fastify', 'argon2', 'ws']);
+const backendPackages = new Set(['pg', 'fastify', 'argon2', 'ws', 'nodemailer']);
 const uiPackages = new Set(['react', 'react-dom']);
 
 export function sourceImports(source: string, filename: string): string[] {

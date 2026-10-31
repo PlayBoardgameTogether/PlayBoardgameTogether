@@ -11,6 +11,9 @@ import {
   officialAiOfferSchema,
   officialAiPublishSchema,
   officialAiStatusSchema,
+  officialAiEditSchema,
+  officialAiDeleteSchema,
+  officialAiDeletedSchema,
   officialAiEnrollSchema,
   aiPointGrantSchema,
   officialAiTokenBillingSchema,
@@ -20,6 +23,12 @@ import type { AuthContext } from '../auth.js';
 import type { Database } from '../db/index.js';
 import { AppError } from '../errors.js';
 import { tokenCharge } from './pricing.js';
+import {
+  readPointBills,
+  ledgerUsageJoin,
+  ledgerInputTokens,
+  ledgerOutputTokens,
+} from './billing.js';
 
 type Reservation = {
   task_id: string;
@@ -91,7 +100,7 @@ export class OfficialAiService {
         await this.db.query(
           `SELECT id,name,
       points_per_action AS "pointsPerAction",token_pricing AS "tokenPricing",enabled,revision FROM official_ai_offers
-      WHERE ($1 OR enabled) ORDER BY created_at,id`,
+      WHERE deleted_at IS NULL AND ($1 OR enabled) ORDER BY created_at,id`,
           [admin],
         )
       ).rows,
@@ -113,14 +122,22 @@ export class OfficialAiService {
     return aiPointWalletSchema.parse(row);
   }
 
-  async ledger(accountId: string, before?: string) {
+  async bills(accountId: string, before?: string) {
+    return readPointBills(this.db, accountId, before);
+  }
+
+  async ledger(accountId: string, before?: string, matchId?: string) {
     const rows = (
       await this.db.query(
-        `SELECT id,delta,balance_after AS "balanceAfter",kind,note,
-      match_id AS "matchId",token_billing AS "tokenBilling",created_at FROM ai_point_ledger WHERE account_id=$1 AND
-      ($2::uuid IS NULL OR (created_at,id)<(SELECT created_at,id FROM ai_point_ledger WHERE id=$2 AND account_id=$1))
-      ORDER BY created_at DESC,id DESC LIMIT 21`,
-        [accountId, before ?? null],
+        `SELECT l.id,l.delta,l.balance_after AS "balanceAfter",l.kind,l.note,
+      l.match_id AS "matchId",l.token_billing AS "tokenBilling",l.created_at,
+      jsonb_build_object('inputTokens',${ledgerInputTokens},'outputTokens',${ledgerOutputTokens}) AS usage
+      FROM ai_point_ledger l ${ledgerUsageJoin}
+      WHERE l.account_id=$1 AND ($3::uuid IS NULL OR (l.match_id=$3 AND l.kind='action')) AND
+      ($2::uuid IS NULL OR (l.created_at,l.id)<(SELECT created_at,id FROM ai_point_ledger
+        WHERE id=$2 AND account_id=$1 AND ($3::uuid IS NULL OR (match_id=$3 AND kind='action'))))
+      ORDER BY l.created_at DESC,l.id DESC LIMIT 21`,
+        [accountId, before ?? null, matchId ?? null],
       )
     ).rows;
     const items = rows
@@ -225,7 +242,7 @@ export class OfficialAiService {
             403,
           );
         const count = await client.query<{ count: number }>(
-          'SELECT count(*)::int AS count FROM official_ai_offers',
+          'SELECT count(*)::int AS count FROM official_ai_offers WHERE deleted_at IS NULL',
         );
         if (count.rows[0]!.count >= 100)
           throw new AppError('RATE_LIMITED', '官方模型目录已达上限', 429);
@@ -252,12 +269,81 @@ export class OfficialAiService {
     return officialAiOfferSchema.parse(
       await this.command(current, input, `status:${id}`, true, async (client) => {
         const offer = await client.query(
-          `UPDATE official_ai_offers SET enabled=$3,revision=revision+1 WHERE id=$1 AND revision=$2
+          `UPDATE official_ai_offers SET enabled=$3,revision=revision+1 WHERE id=$1 AND revision=$2 AND deleted_at IS NULL
         RETURNING id,name,points_per_action AS "pointsPerAction",token_pricing AS "tokenPricing",enabled,revision`,
           [id, input.expectedRevision, input.enabled],
         );
         if (!offer.rowCount) throw new AppError('STATE_CONFLICT', '官方模型已更改，请刷新', 409);
         return offer.rows[0];
+      }),
+    );
+  }
+
+  async edit(current: AuthContext, id: string, raw: unknown) {
+    z.string().uuid().parse(id);
+    const input = officialAiEditSchema.parse(raw);
+    return officialAiOfferSchema.parse(
+      await this.command(current, input, `edit:${id}`, true, async (client) => {
+        // Use the publish lock before source locks; archived versions do not consume catalog slots.
+        await client.query('SELECT pg_advisory_xact_lock(73420,1)');
+        const old = await client.query<{ source_profile_id: string; enabled: boolean }>(
+          `SELECT source_profile_id,enabled FROM official_ai_offers
+          WHERE id=$1 AND revision=$2 AND deleted_at IS NULL FOR UPDATE`,
+          [id, input.expectedRevision],
+        );
+        if (!old.rows[0]) throw new AppError('STATE_CONFLICT', '官方模型已更改，请刷新', 409);
+        const sourceId = input.profileId ?? old.rows[0].source_profile_id;
+        const source = await client.query<{ protocol: string; has_credential: boolean }>(
+          `SELECT e.protocol,(c.id IS NOT NULL AND c.revoked_at IS NULL) AS has_credential
+          FROM model_profiles p JOIN provider_endpoints e ON e.id=p.endpoint_id
+          JOIN accounts a ON a.id=p.owner_account_id
+          LEFT JOIN model_credentials c ON c.id=p.credential_id
+          WHERE p.id=$1 AND ($2::uuid IS NULL OR p.owner_account_id=$2)
+          AND p.official_offer_id IS NULL AND p.enabled AND p.deleted_at IS NULL
+          AND e.enabled AND a.status='active' FOR SHARE OF p,a`,
+          [sourceId, input.profileId ? current.account.id : null],
+        );
+        const profile = source.rows[0];
+        if (!profile || (profile.protocol === 'mock' ? !this.testMode : !profile.has_credential))
+          throw new AppError(
+            'FORBIDDEN',
+            '请选择本人已配置有效密钥的真实模型，或保留有效的原来源',
+            403,
+          );
+        await client.query(
+          `UPDATE official_ai_offers SET enabled=false,deleted_at=clock_timestamp(),revision=revision+1 WHERE id=$1`,
+          [id],
+        );
+        const replacement = await client.query(
+          `INSERT INTO official_ai_offers(id,name,source_profile_id,points_per_action,token_pricing,enabled)
+          VALUES($1,$2,$3,$4,$5,$6)
+          RETURNING id,name,points_per_action AS "pointsPerAction",token_pricing AS "tokenPricing",enabled,revision`,
+          [
+            randomUUID(),
+            input.name,
+            sourceId,
+            input.pointsPerAction,
+            input.tokenPricing,
+            old.rows[0].enabled,
+          ],
+        );
+        return replacement.rows[0];
+      }),
+    );
+  }
+
+  async delete(current: AuthContext, id: string, raw: unknown) {
+    z.string().uuid().parse(id);
+    const input = officialAiDeleteSchema.parse(raw);
+    return officialAiDeletedSchema.parse(
+      await this.command(current, input, `delete:${id}`, true, async (client) => {
+        const result = await client.query(
+          `UPDATE official_ai_offers SET enabled=false,deleted_at=clock_timestamp(),revision=revision+1
+          WHERE id=$1 AND revision=$2 AND deleted_at IS NULL`,
+          [id, input.expectedRevision],
+        );
+        if (!result.rowCount) throw new AppError('STATE_CONFLICT', '官方模型已更改，请刷新', 409);
+        return { id, deleted: true };
       }),
     );
   }
