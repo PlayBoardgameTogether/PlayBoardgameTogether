@@ -1,5 +1,5 @@
 import { MatchService } from '../../apps/api/src/matches.js';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { installUpdateDrain } from '../../apps/api/src/update-drain.js';
 import WebSocket from 'ws';
@@ -23,22 +23,21 @@ describe.skipIf(!url)('Color Match formal action flow', () => {
   let app: Awaited<ReturnType<typeof createApp>>;
   const send = vi.fn();
   const updateIpc = Object.assign(new EventEmitter(), { send });
-  beforeAll(async () => {
+  beforeEach(async () => {
     db = createDatabase(url!);
+    // Finish destructive fixture cleanup before background recovery starts.
+    await db.query('TRUNCATE accounts CASCADE');
     app = await createApp({ config: {
       NODE_ENV: 'test', API_HOST: '127.0.0.1', API_PORT: 3001,
       DATABASE_URL: url!, WEB_ORIGIN: origin, ENABLE_DEV_LAB: false,
       LOG_LEVEL: 'error', PRESENCE_GRACE_MS: 100,
     }, db, registry: createRegistry(false) });
     installUpdateDrain(app, updateIpc);
-  });
-  afterAll(async () => { await app.close(); });
-  beforeEach(async () => {
-    await db.query('TRUNCATE accounts CASCADE');
     for (const username of ['alice', 'bob', 'carol', 'dave']) await createAccount(db, {
       username, displayName: username, password: 'correct horse battery', role: 'user',
     });
   });
+  afterEach(async () => { await app.close(); });
 it('reads the match and all controller metadata from one snapshot during a control change', async () => {
     const { matchId } = await start();
     const accountId = (

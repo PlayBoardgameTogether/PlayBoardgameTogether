@@ -1,5 +1,15 @@
 # 开发进度
 
+## 1.0.0 合并前复验（2026-10-31）
+
+- 按用户本轮“合并代码更新版本、先不同步服务器”的指令，继续交付已整合六个原 PR 的 [PR #40](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/40)。重新获取 main 后确认基线仍为 `13a24bd`，六个原 head 均为整合分支祖先，无遗漏或额外游戏变更；主工作区未提交的 AGENTS.md 改动及其他聊天工作区保持原样。
+- 平台仍按本批最高影响统一为 `0.18.3 → 1.0.0`，根 package.json 与 README 一致；注册邮箱验证改变公开注册必填契约，其余目录管理、按局账单、后台邮件和展示修补一并交付。本轮新增的夹具修复与验收记录不再次递增版本，不调整游戏或 SDK 包版本。
+- 本轮重新执行 `pnpm --config.verify-deps-before-run=false typecheck`、`lint`、`build`，全部通过，包含 20 目录 AST 边界、格式、生产 bundle、编译 API、隔离 ZIP 和策略 worker 检查；`pnpm --config.verify-deps-before-run=false test tests/unit` 为 49 文件、288/288 通过。差异、版本、新增相对文档链接及交付路径/凭据模式扫描通过，无生成产物或秘密配置入库。
+- 本机 Docker 原先未启动；恢复既有服务并等 PostgreSQL 就绪后，通过忽略目录 runner 仅在进程中设置全新 `TEST_DATABASE_URL=boardgame_merge_20261031_test`，保留原测试准备、迁移、游戏和资源同步链，不覆盖 .env 或开发库。完整 `test:integration` 首轮为 31 文件、231/233；两项失败由 PostgreSQL 日志确认为 Color Match 与 stage2-flow 的 `TRUNCATE accounts CASCADE` 和已启动后台恢复查询争锁。两文件改为每例先清理再启动、结束时完整关闭，保留生产调度器和全部业务断言，没有提高超时或跳过失败项。
+- 通过原 `test:integration --testNamePattern 'Color Match formal action flow|stage 2 account to initial match flow'` 准备链复验，两个完整文件为 20/20 与 27/27，共 47/47；其余 186 项仅在该定向命令中筛选未执行，已有本轮首测通过记录，不计作该轮通过或宣称全套单次全绿。修复后的两文件 ESLint 与 `tsc --project tests/config/tsconfig.json` 通过；运行代码未改变，不重复已通过的 build/单元测试。
+- 经原 `test:e2e` 顺序执行 registration、admin-mail-settings、official-ai、ai-point-bills、puerto-rico、color-match 六文件，桌面 12/12、手机 12/12，无 skip。覆盖真实注册、后台 SMTP 配置与原请求恢复、目录编辑删除、按局账单、完整双人对局与三账号在线包恢复。实际查看 1440px 邮件设置和账单、320px 手机邮件设置截图，产物分别保留在整合工作区 `.data/merge-20261031-e2e-desktop`、`.data/merge-20261031-e2e-mobile`。未重复无关 E2E，未验证物理手机、Safari、真实 SMTP 供应商收件或收费模型。
+- 本轮交付仅为代码合并和版本更新，明确不操作服务器、不作上线或真实邮件投递声明。真实发信仍需管理员配置 SMTP 并实际收件验收；下一步按本轮 GitHub 最新检查与已审查 head 完成 merge commit，合并结果以 PR #40 的合并记录为准。
+
 ## 全部待交付 PR 整合与 1.0.0 验收（2026-10-25）
 
 - 按用户“都合并”的授权，从已包含 Logo 修复 #37 的 main `13a24bd` 建立独立整合分支 `codex/merge-all-1-0-0`，通过 merge commit 保留 #33、#34、#35、#36、#38、#39 的全部原始提交。整合入口为 [PR #40](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/40)，原工作区及其他聊天 worktree 的未提交内容保持原样。
