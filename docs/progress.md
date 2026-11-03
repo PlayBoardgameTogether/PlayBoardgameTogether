@@ -19,7 +19,7 @@
 - 实际检查 1440×900、1280×844、390×844、320×844，无整页横向溢出；实际查看玩家资料入口、安全表单、手机暗色后台和找回页截图。检查键盘 Enter 发送、验证码自动焦点、错误反馈和减少动态效果。证据在本 worktree `.data/security-validation/`，不提交产物。模拟 Chromium 视口不等于物理设备或屏幕阅读器认证。
 - 全 `pnpm ... build` 通过，包含生产 Web bundle、编译 API runtime、隔离 ZIP 恢复与 AI worker；后续变更只重构建受影响 API/Web，最终资料入口后 Web build/production bundle 再通过。保留既有 model-viewer 大 chunk 提示。
 
-限制：未做真实 SMTP 收件、物理设备/WebKit/屏幕阅读器验收或无关游戏全套回归。未绑定邮箱或无法收信的账号仍需维护者核验后使用 CLI；不提供免验证找回或管理员读取密码。生产同步前已确认 `/opt/boardgame`、`boardgame-local.service` active，私有 current.json 实际运行 55323fe / 1.1.2、公网 ready；历史拉取失败的本次只读 fetch 检查已成功。PR、合并与服务器实际更新结果将在完成后补入，当前记录不计作已上线。
+限制：未做真实 SMTP 收件、物理设备/WebKit/屏幕阅读器验收或无关游戏全套回归。未绑定邮箱或无法收信的账号仍需维护者核验后使用 CLI；不提供免验证找回或管理员读取密码。生产同步前已确认 `/opt/boardgame`、`boardgame-local.service` active，私有 current.json 实际运行 55323fe / 1.1.2、公网 ready；历史拉取失败的本次只读 fetch 检查已成功。代码已提交为 `9b04d325d523316450753f6991141b88a0fbd2ab`。CLI 推送失败：`could not read Username for https://github.com`。已连接 GitHub 应用只安装于 Rst307 个人账号，组织仓库写 blob 返回 403 Resource not accessible by integration；旧地址的创建分支工具虽返回受理，`git ls-remote origin refs/heads/codex/account-security` 实际无分支，不能计作推送成功。需要为 PlayBoardgameTogether 组织中的目标仓库授权现有 GitHub 应用，或配置本环境 Git HTTPS/SSH 推送凭据；不用向聊天提供秘密。尚未创建 PR、合并或同步服务器，线上仍为上述 1.1.2；没有修改生产配置或运行数据。必要本地工作和检查已完成，保留隔离工作区及提交供恢复推送。本轮测试容器与匿名测试卷已按精确 ID 清理，没有清理其他数据库。
 
 
 ## 像素头像批次合并与公网跟进（2026-11-01，平台仍为 1.1.2）
