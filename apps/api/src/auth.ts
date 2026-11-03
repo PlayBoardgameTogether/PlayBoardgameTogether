@@ -121,7 +121,22 @@ export class AuthService {
     this.ipLimiter.clear(ip); this.userLimiter.clear(canonical);
     const token = randomBytes(32).toString('base64url'); const csrf = randomBytes(32).toString('base64url'); const sessionId = randomUUID();
     const expiresAt = new Date(Date.now() + (this.config.SESSION_TTL_MS ?? 7 * 24 * 60 * 60_000));
-    await this.db.query('INSERT INTO sessions(id,account_id,token_hash,csrf_token_hash,expires_at) VALUES($1,$2,$3,$4,$5)', [sessionId, row.id, digest(token), digest(csrf), expiresAt]);
+    // Serialize session issuance with password changes and account disablement.
+    // Password verification above may have raced a committed security change.
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
+      const current = await client.query(
+        "SELECT id FROM accounts WHERE id=$1 AND password_hash=$2 AND status='active' FOR UPDATE",
+        [row.id, row.password_hash],
+      );
+      if (!current.rowCount) throw new AppError('AUTH_INVALID_CREDENTIALS', 'Invalid username or password', 401);
+      await client.query('INSERT INTO sessions(id,account_id,token_hash,csrf_token_hash,expires_at) VALUES($1,$2,$3,$4,$5)', [sessionId, row.id, digest(token), digest(csrf), expiresAt]);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally { client.release(); }
     return { account: publicAccount(row), token, csrfToken: csrf, expiresAt };
   }
   setCookie(reply: FastifyReply, token: string, csrfToken?:string) { const age=Math.floor((this.config.SESSION_TTL_MS ?? 7 * 24 * 60 * 60_000) / 1000);reply.header('set-cookie',[cookie(token,this.config,age),csrfCookie(csrfToken??'',this.config,age)]); }

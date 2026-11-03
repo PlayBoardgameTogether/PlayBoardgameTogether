@@ -1,5 +1,12 @@
 # HTTP API
 
+## 账户安全（1.2.0）
+
+本人认证读取 `GET /api/v1/account/security` 返回私密邮箱、验证时间和有效会话数；公开账户 DTO 不含邮箱。带 session、Origin、CSRF 的写入：POST `/account/security/email-code`（currentPassword/email）、PUT `/account/security/email`（另加 challengeId/emailCode）、PUT `/account/security/password`（currentPassword/newPassword）和 POST `/account/security/revoke-others`（currentPassword）。这里写路径均以 `/api/v1` 开头。换绑/改密成功返回 loggedOut:true，全部会话失效；退出其他设备返回 revoked 数量，保留当前会话。
+
+未登录找回：POST `/api/v1/auth/recovery/email-code` 输入 username/email，返回条件式 challengeId/600 秒有效期/60 秒重发间隔；账号不匹配、发送失败或邮箱冷却不返回存在标识，不代表邮件已送达。POST `/api/v1/auth/recovery` 输入相同 username/email、challengeId、emailCode、newPassword，验证成功撤销全部会话。验证码 6 位数字；新密码 12–128 字符、包含字母和数字。新写接口严格字段、4 KiB 限制、Origin 校验和频控；密码及验证码不能存入 URL、日志或浏览器持久存储。SDK 提供对应类型方法，不自动重试安全写请求；回复丢失请重新登录确认。
+
+
 认证 GET `/api/v1/social/updates?version=<64位小写十六进制摘要>` 支持概要条件同步，首次省略 version。变化返回 `{changed:true,version,overview}`，未变返回 `{changed:false,version}`；均通过标准 envelope 包装且 no-store。每次重新核验会话并计算当前账户概要，version 不授予权限。旧 GET `/api/v1/social` 始终完整返回。
 
 ## 对局回放（2026-10-04）

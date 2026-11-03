@@ -59,6 +59,8 @@ export function LoginPage() {
         {error && <p id="login-error" className="error-notice" role="alert">{error}</p>}
         <button type="submit" disabled={busy}>{busy ? '登录中…' : '登录'}</button>
       </form>
+      <a className="auth-back" href="/forgot-password">忘记密码？</a>
+      <br />
       <a className="auth-back" href="/register">还没有账号？立即注册</a>
       <br />
       <a className="auth-back" href="/">暂不登录，回大厅逛逛</a>

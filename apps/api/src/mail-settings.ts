@@ -203,11 +203,11 @@ export class MailSettingsService {
   }
 
   registrationMailer(): RegistrationMailer {
-    return async (email, code) =>
+    return async (email, code, purpose) =>
       this.transport(await this.credentials(), {
         to: email,
-        subject: 'PlayBoard 注册邮箱验证码',
-        text: `你的 PlayBoard 注册验证码是：${code}\n\n10 分钟内有效，最多尝试 5 次。请勿向他人透露验证码。\n如果你没有申请注册，请忽略本邮件。`,
+        subject: `PlayBoard ${purpose === 'bind-email' ? '绑定邮箱' : purpose === 'reset-password' ? '重置密码' : '注册邮箱'}验证码`,
+        text: `你的 PlayBoard ${purpose === 'bind-email' ? '绑定邮箱' : purpose === 'reset-password' ? '重置密码' : '注册'}验证码是：${code}\n\n10 分钟内有效，最多尝试 5 次。请勿向他人透露验证码。\n如果你没有申请此操作，请忽略本邮件。`,
       });
   }
 }

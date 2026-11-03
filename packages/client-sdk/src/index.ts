@@ -1,3 +1,14 @@
+import {
+  accountSecuritySchema,
+  bindEmailInputSchema,
+  bindEmailRequestSchema,
+  changePasswordInputSchema,
+  currentPasswordInputSchema,
+  passwordRecoveryInputSchema,
+  passwordRecoveryRequestSchema,
+  securityChangedSchema,
+  sessionsRevokedSchema,
+} from '@boardgame/protocol';
 import { createRoomResponseSchema } from '@boardgame/protocol';
 import { mailSettingsSchema, mailSettingsInputSchema, mailTestInputSchema, mailTestResultSchema } from '@boardgame/protocol';
 import type { z } from 'zod';
@@ -600,6 +611,61 @@ export class ApiClient {
       await this.request<unknown>(
         `/profile/matches${params.size ? `?${params}` : ''}`,
       ),
+    );
+  }
+  async accountSecurity() {
+    return accountSecuritySchema.parse(await this.request<unknown>('/account/security'));
+  }
+  async requestBindingCode(input: z.input<typeof bindEmailRequestSchema>) {
+    return registrationEmailSentSchema.parse(
+      await this.request<unknown>('/account/security/email-code', {
+        method: 'POST',
+        body: JSON.stringify(bindEmailRequestSchema.parse(input)),
+      }),
+    );
+  }
+  async bindEmail(input: z.input<typeof bindEmailInputSchema>) {
+    const result = securityChangedSchema.parse(
+      await this.request<unknown>('/account/security/email', {
+        method: 'PUT',
+        body: JSON.stringify(bindEmailInputSchema.parse(input)),
+      }),
+    );
+    this.csrfToken = null;
+    return result;
+  }
+  async changePassword(input: z.input<typeof changePasswordInputSchema>) {
+    const result = securityChangedSchema.parse(
+      await this.request<unknown>('/account/security/password', {
+        method: 'PUT',
+        body: JSON.stringify(changePasswordInputSchema.parse(input)),
+      }),
+    );
+    this.csrfToken = null;
+    return result;
+  }
+  async revokeOtherSessions(input: z.input<typeof currentPasswordInputSchema>) {
+    return sessionsRevokedSchema.parse(
+      await this.request<unknown>('/account/security/revoke-others', {
+        method: 'POST',
+        body: JSON.stringify(currentPasswordInputSchema.parse(input)),
+      }),
+    );
+  }
+  async requestRecoveryCode(input: z.input<typeof passwordRecoveryRequestSchema>) {
+    return registrationEmailSentSchema.parse(
+      await this.request<unknown>('/auth/recovery/email-code', {
+        method: 'POST',
+        body: JSON.stringify(passwordRecoveryRequestSchema.parse(input)),
+      }),
+    );
+  }
+  async recoverPassword(input: z.input<typeof passwordRecoveryInputSchema>) {
+    return securityChangedSchema.parse(
+      await this.request<unknown>('/auth/recovery', {
+        method: 'POST',
+        body: JSON.stringify(passwordRecoveryInputSchema.parse(input)),
+      }),
     );
   }
   readonly assets = new AssetClient((path, init) => this.request<unknown>(path, init));

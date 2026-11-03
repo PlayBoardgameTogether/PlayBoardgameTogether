@@ -1,5 +1,7 @@
 import { registerMatchRoutes } from './routes/MatchRoutes.js';
 import { registerRoomRoutes } from './routes/RoomRoutes.js';
+import { AccountSecurityService } from './account-security.js';
+import { registerAccountSecurityRoutes } from './account-security-routes.js';
 import { registerAccountRoutes } from './routes/AccountRoutes.js';
 import { registerRealtime } from './realtime/index.js';
 import { randomUUID } from 'node:crypto';
@@ -113,12 +115,10 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     config,
     config.NODE_ENV !== 'production' ? deps.mailTransport : undefined,
   );
-  const auth = new AuthService(
-    deps.db,
-    config,
+  const accountMailer =
     (config.NODE_ENV !== 'production' ? deps.registrationMailer : undefined) ??
-      mail.registrationMailer(),
-  );
+    mail.registrationMailer();
+  const auth = new AuthService(deps.db, config, accountMailer);
   const models = new ModelProfileService(deps.db, config.MODEL_CREDENTIALS_KEY);
   registerOfficialAiRoutes(app, auth, new OfficialAiService(deps.db, config.NODE_ENV === 'test'));
   const rooms = new RoomService(deps.db, deps.registry, config);
@@ -172,6 +172,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
       request.url.startsWith('/api/v1/admin/') ||
       request.url.startsWith('/api/v1/social') ||
       request.url.startsWith('/api/v1/profile') ||
+      request.url.startsWith('/api/v1/account/security') ||
       request.url.startsWith('/api/v1/me/ai-points') ||
       request.url.startsWith('/api/v1/me/official-ai') ||
       request.url.startsWith('/api/v1/official-ai')
@@ -303,6 +304,7 @@ export async function createApp(deps: AppDeps): Promise<FastifyInstance> {
     );
   });
   registerAccountRoutes(app, { auth, models, db: deps.db });
+  registerAccountSecurityRoutes(app, auth, new AccountSecurityService(deps.db, accountMailer));
   registerRoomRoutes(app, { auth, rooms, scheduler });
   registerMatchRoutes(app, { auth, rooms, matches, scheduler });
   const closeRealtime = registerRealtime(app, auth, rooms, matches, scheduler, config);

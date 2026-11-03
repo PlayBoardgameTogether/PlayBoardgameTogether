@@ -5,7 +5,11 @@ import type { Database } from './db/index.js';
 import { AppError } from './errors.js';
 import { registrationEmailRequestSchema, type EmailRegistrationInput } from '@boardgame/protocol';
 
-export type RegistrationMailer = (email: string, code: string) => Promise<void>;
+export type RegistrationMailer = (
+  email: string,
+  code: string,
+  purpose?: 'bind-email' | 'reset-password',
+) => Promise<void>;
 
 export class RegistrationEmailService {
   constructor(
