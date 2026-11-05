@@ -1,6 +1,8 @@
 import { lazy, type ReactNode } from 'react';
 import { guides } from './developer-guides.js';
 
+const AccountSecurityPage = lazy(() => import('../pages/AccountSecurityPage.js').then(module => ({ default: module.AccountSecurityPage })));
+const PasswordRecoveryPage = lazy(() => import('../pages/PasswordRecoveryPage.js').then(module => ({ default: module.PasswordRecoveryPage })));
 const RootPage = lazy(() => import('./RootPage.js'));
 const AdminMailSettingsPage = lazy(() => import('../pages/admin/AdminMailSettingsPage.js').then(module => ({ default: module.AdminMailSettingsPage })));
 const OfficialAiPage = lazy(() => import('../pages/OfficialAiPage.js').then(module => ({ default: module.OfficialAiPage })));
@@ -84,6 +86,9 @@ export function resolvePage(path: string): PageRoute {
   switch (path) {
     case '/': return { title: '游戏大厅', page: <RootPage /> };
     case '/login': return { title: '账户登录', page: <LoginPage /> };
+    case '/forgot-password': return { title: '找回密码', page: <PasswordRecoveryPage /> };
+    case '/profile/security': return { title: '账户安全', page: <AccountSecurityPage /> };
+    case '/admin/security': return { title: '我的账户安全', page: <AccountSecurityPage administrator /> };
     case '/register': return { title: '账号注册', page: <RegisterPage /> };
     case '/profile/coins': return { title: '我的桌游币', page: <CoinWalletPage /> };
     case '/profile': return { title: '我的资料', page: <ProfilePage /> };

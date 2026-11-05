@@ -67,3 +67,41 @@ export const emailRegistrationInputSchema = registrationInputSchema.extend({
   emailCode: z.string().regex(/^\d{6}$/),
 });
 export type EmailRegistrationInput = z.input<typeof emailRegistrationInputSchema>;
+
+// Private, authenticated security settings. Never add email to AccountPublic.
+export const accountSecuritySchema = z
+  .object({
+    email: registrationEmailSchema.nullable(),
+    emailVerifiedAt: z.string().datetime().nullable(),
+    activeSessions: z.number().int().nonnegative(),
+  })
+  .strict();
+export const currentPasswordInputSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(128),
+  })
+  .strict();
+export const changePasswordInputSchema = currentPasswordInputSchema.extend({
+  newPassword: registrationPasswordSchema.min(12),
+});
+export const bindEmailRequestSchema = currentPasswordInputSchema.extend({
+  email: registrationEmailSchema,
+});
+export const bindEmailInputSchema = bindEmailRequestSchema.extend({
+  challengeId: z.string().uuid(),
+  emailCode: z.string().regex(/^\d{6}$/),
+});
+export const passwordRecoveryRequestSchema = z
+  .object({
+    username: registrationIdSchema,
+    email: registrationEmailSchema,
+  })
+  .strict();
+export const passwordRecoveryInputSchema = passwordRecoveryRequestSchema.extend({
+  challengeId: z.string().uuid(),
+  emailCode: z.string().regex(/^\d{6}$/),
+  newPassword: registrationPasswordSchema.min(12),
+});
+export const securityChangedSchema = z.object({ loggedOut: z.literal(true) }).strict();
+export const sessionsRevokedSchema = z.object({ revoked: z.number().int().nonnegative() }).strict();
+export type AccountSecurity = z.infer<typeof accountSecuritySchema>;

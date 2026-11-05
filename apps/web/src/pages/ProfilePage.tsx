@@ -459,6 +459,13 @@ export function ProfilePage({
           </section>
 
           <nav className="profile-links" aria-label="资料功能">
+            <a href="/profile/security" className="profile-feature-card">
+              <div className="profile-feature-text">
+                <span className="profile-feature-title">账户安全</span>
+                <span className="profile-feature-desc">绑定邮箱、修改密码与退出其他设备</span>
+              </div>
+              <span aria-hidden="true">→</span>
+            </a>
             <a href="/profile/coins" className="profile-feature-card">
               <div className="profile-feature-text">
                 <span className="profile-feature-title">我的桌游币</span>

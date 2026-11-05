@@ -1,5 +1,12 @@
 # 数据模型
 
+## 账户安全（038，1.2.0）
+
+复用 accounts 私有 email_canonical/email_verified_at 与 password_hash，sessions 保存原有撤销时间。新增 `account_security_challenges`，以 `(account_id,purpose)` 为主键、随机 UUID id 唯一；purpose 仅 bind-email/reset-password，保存规范目标邮箱、签发时密码哈希、验证码 Argon2id 哈希、过期/申请/成功发送时间和 0–5 次错误计数。账户外键级联；不保存验证码或密码明文。用途、账户、邮箱、密码版本及有效时间均匹配才可核销。改密/换绑/找回成功在同事务删除该账户挑战并撤销全部会话，失败回滚；错误验证码次数提交保留。
+
+`account_security_mail_limits` 按规范邮箱保存最近申请、小时窗口和 1–5 次申请计数，绑定与找回共享；申请时短 advisory lock 串行化额度及首次行，失败发送不退额度，最多 10,000 个近期邮箱。签发沿用账户 → 挑战锁序，与核销同序，避免旧签发在改密后重建可用码。两临时表申请时清理一小时前记录，不增加定时器。注册挑战/额度保持原表独立，旧迁移不改写。没有额外身份、公开邮箱投影或秘密请求回执；有效会话数用同一 SQL 快照计算。
+
+
 ## 官方游戏订阅（037，1.1.0）
 
 `game_subscription` 单例保存独立添加/更新开关、策略 revision、授权管理员审计 UUID、下次检查/手动请求/开始/完成时间、状态、非秘密消息及最多 100 条最近同步结果。管理员授权 UUID 不级联删除，账户失效后不能安装，保留历史审计。设置和手动同步复用 `admin_command_receipts`；后台逐包复用 `game_packages`、`game_installations` 和 `game_package_receipts`，不保存 session 或访问凭据。会话 advisory lock 串行批次，安装事务共享锁定策略行并重新核对管理员及目录，不改变旧局绑定。参见 [官方游戏订阅](game-subscription.md)。

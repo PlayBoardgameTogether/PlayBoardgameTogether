@@ -1,0 +1,46 @@
+@layer components {
+  .security-page {
+    width: min(100%, 760px);
+    margin-inline: auto;
+  }
+  .security-settings {
+    display: grid;
+    gap: 1.2rem;
+    max-width: 760px;
+  }
+  .security-settings > button {
+    justify-self: start;
+  }
+  .security-section {
+    padding: clamp(1rem, 3vw, 1.8rem);
+    min-width: 0;
+  }
+  .security-section h2 {
+    margin-top: 0;
+  }
+  .security-section p {
+    overflow-wrap: anywhere;
+  }
+  .security-email {
+    font-weight: 700;
+  }
+  .security-fields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .security-fields input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .security-settings .error-notice,
+  .security-settings .success-notice {
+    padding: 1rem;
+    border-radius: var(--radius, 12px);
+    margin: 0;
+  }
+}
