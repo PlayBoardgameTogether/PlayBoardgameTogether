@@ -1,5 +1,22 @@
 # 协议
 
+## 账户安全（1.2.0）
+
+新接口为兼容新增，不修改既有注册/登录格式；共享 schema 位于 `protocol/auth.ts`，client-sdk 提供 accountSecurity、requestBindingCode、bindEmail、changePassword、revokeOtherSessions、requestRecoveryCode、recoverPassword，响应作为 unknown 校验。所有响应 no-store，写入 4 KiB 上限并检查精确 Origin；`/account/security` 写入另需 session/CSRF，身份仅来自 session，不接受 accountId 或角色字段。
+
+| 方法与路径（前缀 `/api/v1`） | 严格输入/输出 |
+| --- | --- |
+| GET `/account/security` | 本人 `{email:null或规范邮箱,emailVerifiedAt:null或ISO时间,activeSessions:非负整数}` |
+| POST `/account/security/email-code` | `{currentPassword,email}` → 原 registrationEmailSent 格式 `{challengeId,expiresInSeconds:600,retryAfterSeconds:60}` |
+| PUT `/account/security/email` | `{currentPassword,email,challengeId,emailCode}` → `{loggedOut:true}`，清除当前 cookie |
+| PUT `/account/security/password` | `{currentPassword,newPassword}` → `{loggedOut:true}`，清除当前 cookie |
+| POST `/account/security/revoke-others` | `{currentPassword}` → `{revoked:非负整数}`，保留当前会话 |
+| POST `/auth/recovery/email-code` | `{username,email}` → 同上条件式申请格式；不返回是否存在/是否投递成功 |
+| POST `/auth/recovery` | `{username,email,challengeId,emailCode,newPassword}` → `{loggedOut:true}`，撤销目标账户全部会话 |
+
+email trim/lowercase，最长 254；username 复用用户 ID 规范化（带/不带 @、大小写不敏感）；emailCode 精确 6 位 ASCII 数字。newPassword 12–128 字符单位、含字母数字，不 trim。确认密码不传输。错误沿用 UNAUTHENTICATED、AUTH_INVALID_CREDENTIALS、VALIDATION_ERROR、STATE_CONFLICT、FORBIDDEN、RATE_LIMITED 和 SERVICE_UNAVAILABLE；验证码无效/过期/耗尽不区分原因。申请找回的邮箱冷却/发送失败/账号不匹配保持条件式统一响应，不代表实际投递。安全写接口不是 requestId 命令，SDK 不自动重试；改密/换绑回复丢失后用新凭据重新登录确认，已撤销会话不能用来再次执行。详见 [认证](auth.md)。
+
+
 ## 官方游戏订阅（1.1.0）
 
 管理员 `GET/PUT /api/v1/admin/game-subscription` 读取/保存单例官方来源订阅，PUT 严格接受 `{requestId,expectedRevision,autoAdd,autoUpdate}`；POST `/api/v1/admin/game-subscription/check` 接受 `{requestId,expectedRevision}`，安排后台同步，每分钟最多一次。写入复用 AdminService 的有效 session/角色复验、Origin/CSRF、事务、旧回执优先和请求内容冲突语义；返回共享 `gameSubscriptionSchema`，无来源 URL、凭据或秘密状态。相同请求重试返回原回执，不重复排队；前端随后 GET 获取实际最新状态。保存递增策略 revision；批次状态变化不递增策略版本，自动安装提交时重新检查策略版本及管理员授权。协议及 SDK 见 `packages/protocol/src/game-subscription.ts`，完整语义见 [官方游戏订阅](game-subscription.md)。

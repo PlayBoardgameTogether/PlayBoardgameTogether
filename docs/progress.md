@@ -1,5 +1,38 @@
 # 开发进度
 
+## 账户安全发布与服务器验收（2026-11-05，1.2.0）
+
+- 用户本人完成 GitHub CLI 官方设备授权后，已恢复本仓库正常 Git 推送；认证配置在仓库外私有目录，未进入提交。功能 [PR #49](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/49) 固定 head `db2c08ea59cb6bc3390011696a01327c4df80bed`，完整 28 文件及三个本轮提交核对无夹带，main 无未包含新提交，CI `pins` 成功，无冲突或阻塞审查。已通过 merge commit 合并为 `1fc73fe8a04bfb205740b2d12b577901206e9a1b`。
+- 沿用已确认 `/opt/boardgame`、`boardgame-local.service` 和原在线更新器，无人工维护并发、无生产配置/运维补丁覆盖。更新器实际记录 preparing → backup started → backup verified → updated。私有 current.json 确认运行目录及 SHA 为上述合并提交、根 package.json 为 1.2.0；systemd active、监督进程 NRestarts=0，公网 `/health/ready` 返回数据库 ready。
+- 本次备份 `update-wfrCyy` 的 COMPLETE.json 共 76 个常规文件，逐一核验长度和 SHA-256 全通过，release 元数据 previous=55323fe、candidate=1fc73fe；未执行数据库恢复。只读数据库查询确认迁移 `038_account_security.sql` 已应用，记录 checksum 与运行源码一致，两张安全挑战/限额表均存在。未读取用户私密账户数据或输出秘密配置。
+- `node .data/security-validation/live-account-security.mjs` 匿名 Chromium 在公网 1440×900、390×900 实际访问找回页（200）和登录入口，均确认页脚 1.2.0、新表单/忘记密码入口、无横向溢出或 pageerror；本人安全页未登录会跳转登录，`/api/v1/account/security` 返回 401 和 no-store。已实际查看双端截图，证据保留本轮 worktree 忽略目录；没有为验收创建生产账户、改密、换绑或发送真实邮件。
+- 本次恢复交付没有修改运行代码，保留 2026-11-03 已完成的 typecheck/lint/build、13 项单测、21 项集成及 6 项双端 E2E 事实，不将历史检查说成本日重跑。平台版本仍为本批 1.1.2 → 1.2.0（兼容新增功能）；本记录属于内部文档，不再升号、不为文档强制重启应用。真实 SMTP 收件、生产登录后的实际改密/换绑、物理设备/WebKit 仍未验收。此前章节中的推送/上线阻塞已解除，保留为当时历史事实。
+
+
+## 账户安全与管理员本人安全设置（2026-11-03，1.2.0）
+
+2026-11-05 恢复交付：用户本人完成 GitHub CLI 官方设备登录后，已为本仓库接通凭据助手，功能分支 `codex/account-security` 与提交 `9b04d32` / `69674cd` 成功推送；[PR #49](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/49) 已创建。认证配置已迁至仓库外私有目录，权限限制为目录 0700/文件 0600，未进入 Git。本次只恢复认证、上传和补充交付事实，没有修改运行代码或重复宣称新的业务测试；下方原始检查均保留 2026-11-03 的执行事实。合并前再次 fetch 确认 main 仍为 55323fe，28 个变更文件、两个原提交均仅属本轮账户安全任务，原工作区用户改动保持。合并及服务器实际版本以随后验收记录为准；此前推送阻塞段落为历史状态。
+
+- 新增玩家 `/profile/security` 和后台 `/admin/security`，统一本人绑定/换绑邮箱、改密与退出其他设备；登录页补充 `/forgot-password`，通过已验证邮箱恢复密码。复用既有 SMTP 配置与 TLS/公网地址隔离，未新增凭据或依赖。公开 AccountPublic、社交和管理员列表不暴露邮箱，后台不开放代改他人密码/邮箱。
+- 新密码 12–128 位并包含 ASCII 字母和数字；注册原最低长度、旧密码登录和维护 CLI 策略不变。改密、换绑和找回在同一事务变更账户、清理安全挑战、撤销全部会话，提交后原 PostgreSQL 通知驱动 WS 撤销；退出其他设备保留当前会话。Origin/CSRF/session 及事务内身份重验保留。登录签发增加账户锁及密码版本重验，修复旧密码验证与改密交错后创建新 session 的窗口，保留对应确定性交错回归。
+- 新增迁移 038：按账户/用途隔离的哈希验证码及持久化邮箱发送限额。验证码 10 分钟、最多错 5 次，绑定与找回共享每邮箱 60 秒/每小时 5 封额度；发送失败占额度且不能验证。申请/核销采用一致账户锁序，邮件不在数据库事务内发送。找回申请保持条件式统一响应，不能从状态码/内容判断账户匹配或投递；不宣称时间侧信道已完全消除。安全写接口 4 KiB、有界每分钟限流，响应 no-store，未知结果不自动重放。
+- 个人资料入口沿用现有功能卡片并移除重复菜单入口；表单共用错误反馈、密码显示、确认密码及验证码自动焦点，离页清理计时器并忽略迟到回复。保留亮暗主题、原导航和双端结构。同步认证、管理员、协议、数据模型、架构和公开 API 指南。
+
+平台 `1.1.2 → 1.2.0`，兼容新增基础安全功能，按 MINOR 递增一次；README 同步，workspace/游戏版本和锁文件不变。原工作区有大量旧游戏/回放改动且远落后 main，已完整保留；本轮从最新 `origin/main`（55323fe）创建隔离 worktree `/tmp/playboard-account-security`、分支 `codex/account-security`，没有混入原工作区改动。开始与交付前均成功 fetch，未发现本轮基线以外的新 main 提交。
+
+本轮实际验证：
+
+- 全工作区 `pnpm --config.verify-deps-before-run=false typecheck` 通过；后续 UI 修改只重查受影响 API/Web，最终资料入口后 Web typecheck 通过。完整 `lint`（ESLint、20 目录 AST 边界、Prettier）通过，最终修改文件定向 ESLint 与 `git diff --check` 通过。tsx IPC/Chromium/Docker 在获准环境运行；未关闭隔离或生产检查。
+- `test tests/unit/registration.test.ts tests/unit/client-room-contract.test.ts tests/unit/client-network.test.ts`：3 文件 13/13，通过。
+- 原 `test:integration --config .data/security-validation/vitest.config.mjs`：账户安全 9 项、既有邮箱注册 12 项，共 21/21，无 skip。首轮安全接口 no-store 断言失败，已补入原响应头 hook 并通过；并发签发锁序补强后仅 `security-only.config.mjs` 重跑安全文件，9/9 通过，不重复累加。覆盖普通/管理员本人改密、会话撤销、当前会话保留、Origin/CSRF/严格字段、密码策略、私密 DTO、绑定/换绑、错误次数持久化、过期/用途隔离、唯一冲突、数据库故障导致邮箱/密码/挑战/会话共同回滚、验证码恢复、旧凭据失效及并发改密/登录。
+- 原 `test:e2e tests/e2e/account-security.spec.ts --output=.data/security-validation/e2e-final`：桌面/手机 6/6，无 mock HTTP/skip，真实登录、SMTP 配置读取及测试传输交付到私有测试信箱、绑定/换绑、验证码、管理员改密/错误/确认密码、找回、跨浏览器撤销及普通用户后台拒绝。最终仅资料入口样式整理后，原链路 `--grep 'binds, replaces'` 定向两端 2/2 通过；先前通过的其他流程未重复运行。使用项目现有测试 SMTP 传输，未冒充真实供应商投递。
+- 集成与 E2E 串行使用本轮专用 PostgreSQL 17 容器 `boardgame-security-test-20261103`、127.0.0.1:15440、独立 `boardgame_security_test_20261103`；经原准备/迁移/游戏同步/资源脚本，未清理开发或生产库、未覆盖原 .env。本机缺失 TTS 素材时按原流程使用原创 SVG 回退。
+- 实际检查 1440×900、1280×844、390×844、320×844，无整页横向溢出；实际查看玩家资料入口、安全表单、手机暗色后台和找回页截图。检查键盘 Enter 发送、验证码自动焦点、错误反馈和减少动态效果。证据在本 worktree `.data/security-validation/`，不提交产物。模拟 Chromium 视口不等于物理设备或屏幕阅读器认证。
+- 全 `pnpm ... build` 通过，包含生产 Web bundle、编译 API runtime、隔离 ZIP 恢复与 AI worker；后续变更只重构建受影响 API/Web，最终资料入口后 Web build/production bundle 再通过。保留既有 model-viewer 大 chunk 提示。
+
+限制：未做真实 SMTP 收件、物理设备/WebKit/屏幕阅读器验收或无关游戏全套回归。未绑定邮箱或无法收信的账号仍需维护者核验后使用 CLI；不提供免验证找回或管理员读取密码。生产同步前已确认 `/opt/boardgame`、`boardgame-local.service` active，私有 current.json 实际运行 55323fe / 1.1.2、公网 ready；历史拉取失败的本次只读 fetch 检查已成功。代码已提交为 `9b04d325d523316450753f6991141b88a0fbd2ab`。CLI 推送失败：`could not read Username for https://github.com`。已连接 GitHub 应用只安装于 Rst307 个人账号，组织仓库写 blob 返回 403 Resource not accessible by integration；旧地址的创建分支工具虽返回受理，`git ls-remote origin refs/heads/codex/account-security` 实际无分支，不能计作推送成功。需要为 PlayBoardgameTogether 组织中的目标仓库授权现有 GitHub 应用，或配置本环境 Git HTTPS/SSH 推送凭据；不用向聊天提供秘密。尚未创建 PR、合并或同步服务器，线上仍为上述 1.1.2；没有修改生产配置或运行数据。必要本地工作和检查已完成，保留隔离工作区及提交供恢复推送。本轮测试容器与匿名测试卷已按精确 ID 清理，没有清理其他数据库。
+
+
 ## 像素头像批次合并与公网跟进（2026-11-01，平台仍为 1.1.2）
 
 - 用户授权后，以精确审查 head 约束，先合并四个内置游戏依赖，再合并平台 [PR #47](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/47) 为 `459a863d5e416a92c2e63b32624fc509b67f16bd`，随后完成六个在线游戏 PR。完整十个游戏 merge SHA 见 [交付记录](game-avatar-art-2026-11-01.md)。本次没有新增运行代码，不以重复全套测试代替已锁定 head 的合并审查。

@@ -1,5 +1,10 @@
 # 架构
 
+## 账户安全（2026-11-03，1.2.0）
+
+`account-security.ts` 拥有本人安全信息、验证码签发/核销、邮箱绑定/换绑、改密/找回及会话撤销事务；`account-security-routes.ts` 只处理原 session/Origin/CSRF、输入体积和有界限流。注册、绑定和找回复用 `MailSettingsService` 的动态 SMTP 与传输隔离，验证码按独立用途表隔离，不新增运行服务或替代认证。`AuthService.login` 在签发 session 前按同一账户锁重验密码版本，撤销通知在事务提交后投递。Web 个人/管理员安全页共用本人表单与 typed client-sdk，后台外壳继续负责角色准入，不新增代改他人账户链路。
+
+
 ## 官方游戏订阅（2026-11-01，1.1.0）
 
 catalog 的 `official-source.ts` 固定官方目录和同组织 Release 来源，负责有界下载、清单解析及 SHA-256；`subscriptions.ts` 拥有订阅策略、定时调度、跨进程串行锁和最近结果。管理员保存/触发复用 AdminService 原授权、事务及回执；后台安装进入 GamePackageService 同一校验及安装事务，以持久订阅授权取代交互会话，并在提交时复验活跃管理员、策略 revision、上下架和目录摘要。没有新运行单元、任意来源执行或第二套游戏规则/对局写链路。Web 在原游戏管理页提供折叠面板，关闭后清理轮询。内置游戏和独立仓库所有权不变，详见 [官方游戏订阅](game-subscription.md)。
