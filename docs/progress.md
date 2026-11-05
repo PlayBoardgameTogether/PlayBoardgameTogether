@@ -6,7 +6,7 @@
 
 本轮实际 fetch 并核对 main@2578211；`check-game-repositories.mjs --remote` 通过（10 仓库、154 文件）；systemd active、NRestarts=0，私有 current.json、API 子进程 cwd 与运行目录 package.json 确认同一 SHA / 1.2.0；Chromium 只读检查 ready、公开目录、找回页与匿名安全接口，分别为 200/200/200/401，数据库 ready。没有发信、调用付费模型、生产写入或主动触发更新。原工作区保留。专用 PostgreSQL 容器 15441 上经原准备脚本创建独立测试库，两库连接与名称隔离确认；尚未迁移、同步或运行业务集成/E2E，私有配置仅在独立 worktree 忽略目录保留。
 
-本批仅内部文档与环境准备，不升平台版本、不重启生产应用、不重复历史业务测试；附件摘要、SMTP 收件、私有订阅同步、备份恢复、真机/Safari 及真实模型仍按原计划待验收。提交、推送、PR 和最终文档校验结果在本批交付时补记。
+本批仅内部文档与环境准备，不升平台版本、不重启生产应用、不重复历史业务测试；附件摘要、SMTP 收件、私有订阅同步、备份恢复、真机/Safari 及真实模型仍按原计划待验收。30 日状态/编号、表格列数、本地链接、版本一致性及 `git diff --check` 通过；主提交 `bbed016` 已推送 `codex/30-day-update-plan`，创建 [PR #51](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/51)，尚未合并。旧 origin 迁移/传输错误通过规范组织 URL 与 HTTP/1.1 推送解决，原远程配置保持。
 
 ## 账户安全发布与服务器验收（2026-11-05，1.2.0）
 
