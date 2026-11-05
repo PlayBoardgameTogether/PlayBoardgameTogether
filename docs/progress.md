@@ -1,5 +1,14 @@
 # 开发进度
 
+## 账户安全发布与服务器验收（2026-11-05，1.2.0）
+
+- 用户本人完成 GitHub CLI 官方设备授权后，已恢复本仓库正常 Git 推送；认证配置在仓库外私有目录，未进入提交。功能 [PR #49](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/49) 固定 head `db2c08ea59cb6bc3390011696a01327c4df80bed`，完整 28 文件及三个本轮提交核对无夹带，main 无未包含新提交，CI `pins` 成功，无冲突或阻塞审查。已通过 merge commit 合并为 `1fc73fe8a04bfb205740b2d12b577901206e9a1b`。
+- 沿用已确认 `/opt/boardgame`、`boardgame-local.service` 和原在线更新器，无人工维护并发、无生产配置/运维补丁覆盖。更新器实际记录 preparing → backup started → backup verified → updated。私有 current.json 确认运行目录及 SHA 为上述合并提交、根 package.json 为 1.2.0；systemd active、监督进程 NRestarts=0，公网 `/health/ready` 返回数据库 ready。
+- 本次备份 `update-wfrCyy` 的 COMPLETE.json 共 76 个常规文件，逐一核验长度和 SHA-256 全通过，release 元数据 previous=55323fe、candidate=1fc73fe；未执行数据库恢复。只读数据库查询确认迁移 `038_account_security.sql` 已应用，记录 checksum 与运行源码一致，两张安全挑战/限额表均存在。未读取用户私密账户数据或输出秘密配置。
+- `node .data/security-validation/live-account-security.mjs` 匿名 Chromium 在公网 1440×900、390×900 实际访问找回页（200）和登录入口，均确认页脚 1.2.0、新表单/忘记密码入口、无横向溢出或 pageerror；本人安全页未登录会跳转登录，`/api/v1/account/security` 返回 401 和 no-store。已实际查看双端截图，证据保留本轮 worktree 忽略目录；没有为验收创建生产账户、改密、换绑或发送真实邮件。
+- 本次恢复交付没有修改运行代码，保留 2026-11-03 已完成的 typecheck/lint/build、13 项单测、21 项集成及 6 项双端 E2E 事实，不将历史检查说成本日重跑。平台版本仍为本批 1.1.2 → 1.2.0（兼容新增功能）；本记录属于内部文档，不再升号、不为文档强制重启应用。真实 SMTP 收件、生产登录后的实际改密/换绑、物理设备/WebKit 仍未验收。此前章节中的推送/上线阻塞已解除，保留为当时历史事实。
+
+
 ## 账户安全与管理员本人安全设置（2026-11-03，1.2.0）
 
 2026-11-05 恢复交付：用户本人完成 GitHub CLI 官方设备登录后，已为本仓库接通凭据助手，功能分支 `codex/account-security` 与提交 `9b04d32` / `69674cd` 成功推送；[PR #49](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/49) 已创建。认证配置已迁至仓库外私有目录，权限限制为目录 0700/文件 0600，未进入 Git。本次只恢复认证、上传和补充交付事实，没有修改运行代码或重复宣称新的业务测试；下方原始检查均保留 2026-11-03 的执行事实。合并前再次 fetch 确认 main 仍为 55323fe，28 个变更文件、两个原提交均仅属本轮账户安全任务，原工作区用户改动保持。合并及服务器实际版本以随后验收记录为准；此前推送阻塞段落为历史状态。
