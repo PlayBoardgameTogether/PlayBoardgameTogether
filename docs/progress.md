@@ -1,5 +1,13 @@
 # 开发进度
 
+## 每日计划 D1：执行基线与缺口清单（2026-11-06，平台仍为 1.2.0）
+
+用户于 11 月 5 日确认提前执行原排 11 月 6 日的 D1。已将[每日计划](30-day-update-plan-2026-11-06.md)中 D1 标为完成，D2–D30 保持未开始；[执行基线](daily-baseline-2026-11-06.md)列出平台已合并/未合并 PR、十个游戏仓库及七个在线版本、实际安装版本、责任人与后续依赖。账户安全已上线，波多黎各已安装 1.1.1，不再沿用编制时的旧缺口。
+
+本轮实际 fetch 并核对 main@2578211；`check-game-repositories.mjs --remote` 通过（10 仓库、154 文件）；systemd active、NRestarts=0，私有 current.json、API 子进程 cwd 与运行目录 package.json 确认同一 SHA / 1.2.0；Chromium 只读检查 ready、公开目录、找回页与匿名安全接口，分别为 200/200/200/401，数据库 ready。没有发信、调用付费模型、生产写入或主动触发更新。原工作区保留。专用 PostgreSQL 容器 15441 上经原准备脚本创建独立测试库，两库连接与名称隔离确认；尚未迁移、同步或运行业务集成/E2E，私有配置仅在独立 worktree 忽略目录保留。
+
+本批仅内部文档与环境准备，不升平台版本、不重启生产应用、不重复历史业务测试；附件摘要、SMTP 收件、私有订阅同步、备份恢复、真机/Safari 及真实模型仍按原计划待验收。30 日状态/编号、表格列数、本地链接、版本一致性及 `git diff --check` 通过；主提交 `bbed016` 已推送 `codex/30-day-update-plan`，创建 [PR #51](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/51)，尚未合并。旧 origin 迁移/传输错误通过规范组织 URL 与 HTTP/1.1 推送解决，原远程配置保持。
+
 ## 账户安全发布与服务器验收（2026-11-05，1.2.0）
 
 - 用户本人完成 GitHub CLI 官方设备授权后，已恢复本仓库正常 Git 推送；认证配置在仓库外私有目录，未进入提交。功能 [PR #49](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/49) 固定 head `db2c08ea59cb6bc3390011696a01327c4df80bed`，完整 28 文件及三个本轮提交核对无夹带，main 无未包含新提交，CI `pins` 成功，无冲突或阻塞审查。已通过 merge commit 合并为 `1fc73fe8a04bfb205740b2d12b577901206e9a1b`。
