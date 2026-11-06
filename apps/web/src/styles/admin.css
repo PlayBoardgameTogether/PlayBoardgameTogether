@@ -1160,3 +1160,174 @@
     overflow-wrap: anywhere;
   }
 }
+/* Subscription markup shares the existing admin theme and native details controls. */
+@layer components.admin {
+  .game-subscription-panel svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+  .game-subscription-panel summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .game-subscription-panel summary::-webkit-details-marker {
+    display: none;
+  }
+  .game-subscription-summary,
+  .game-subscription-header-left,
+  .game-subscription-toggle-pill,
+  .game-sub-detail-summary-right,
+  .game-sub-detail-summary,
+  .game-sub-metric-header,
+  .game-sub-item-header,
+  .game-sub-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .game-subscription-summary,
+  .game-sub-detail-summary {
+    justify-content: space-between;
+    min-height: 44px;
+  }
+  .game-subscription-title-wrap,
+  .game-sub-option-body {
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+  }
+  .game-subscription-subtitle,
+  .game-sub-option-desc,
+  .game-sub-metric-sub,
+  .game-sub-metric-header,
+  .game-sub-item-desc {
+    color: var(--muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+  .game-subscription-header-right,
+  .game-subscription-icon-box {
+    flex-shrink: 0;
+  }
+  .game-subscription-panel[open] > summary .game-subscription-chevron,
+  .game-sub-detail-panel[open] > summary .game-subscription-chevron {
+    transform: rotate(180deg);
+  }
+  .game-subscription-panel .game-subscription-body {
+    display: grid;
+    gap: 16px;
+    margin: 16px 0 0;
+    min-width: 0;
+  }
+  .game-sub-intro-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--muted);
+  }
+  .game-sub-intro-banner p,
+  .game-subscription-panel .game-sub-option-desc {
+    margin: 0;
+  }
+  .game-subscription-panel .game-sub-scope-section {
+    display: block;
+  }
+  .game-sub-cards-grid,
+  .game-subscription-panel .game-subscription-status {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .game-sub-option-card,
+  .game-sub-metric-tile {
+    padding: 14px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 8px;
+    min-width: 0;
+  }
+  .game-sub-option-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .game-sub-option-card input {
+    flex-shrink: 0;
+    margin-top: 12px;
+  }
+  .game-sub-option-card.is-active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+  }
+  .game-sub-scope-footnote {
+    font-size: 0.85rem;
+  }
+  .game-subscription-panel .game-subscription-status {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .game-sub-metric-tile {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    overflow-wrap: anywhere;
+  }
+  .game-sub-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .game-sub-status-dot--ok {
+    background: var(--success);
+  }
+  .game-sub-status-dot--running {
+    background: var(--accent);
+  }
+  .game-sub-status-dot--error {
+    background: var(--danger);
+  }
+  .game-sub-status-dot--warn {
+    background: var(--warning);
+  }
+  .game-sub-detail-summary,
+  .game-sub-item-meta {
+    flex-wrap: wrap;
+  }
+  .game-sub-detail-summary strong,
+  .game-sub-item-header strong {
+    overflow-wrap: anywhere;
+  }
+  .game-sub-item-meta {
+    margin-top: 4px;
+  }
+  .game-sub-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--bg);
+  }
+  .game-sub-badge--added,
+  .game-sub-badge--updated,
+  .game-sub-badge--current {
+    color: var(--success);
+    background: var(--success-soft);
+  }
+  .game-sub-badge--failed {
+    color: var(--danger);
+    background: var(--danger-soft);
+  }
+  @media (max-width: 760px) {
+    .game-subscription-summary {
+      flex-wrap: wrap;
+    }
+    .game-sub-cards-grid,
+    .game-subscription-panel .game-subscription-status {
+      grid-template-columns: 1fr;
+    }
+  }
+}
