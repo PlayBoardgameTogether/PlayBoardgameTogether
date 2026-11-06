@@ -2,7 +2,7 @@
 
 原排期 2026-11-07；用户于 11 月 6 日要求当日已完成则继续推进，故在 D1 完成后提前执行。
 
-**状态：修复与本地验证完成，待合并及监督进程上线验收。** D2 尚未标记全部完成，D3–D30 保留原排期。
+**状态：已完成，平台 1.2.1 已上线，监督脚本维护与公网双端验收通过。** 用户随后明确允许合并和服务器同步，结果见末尾新增记录；以下初次候选记录保留当时事实。
 
 ## 问题与修复
 
@@ -36,3 +36,31 @@
 - 自动审批拒绝了合并 D1 PR #51，理由是当前“继续每日任务”的授权未明确包含可能触发在线更新的合并。没有通过其他方式绕过；继续完成不受影响的实现、验证及功能分支/PR 交付，合并和生产维护保留待批准。
 - 修复在长驻监督脚本中，单靠代码自动切换不会替换监督进程。批准后先处理 D1/D2 PR 顺序并重新 fetch/审查 head 和 main，再按[在线更新说明](online-update.md#游戏详情直链修复121)核对空闲状态、备份旧脚本/服务配置、加载已合并版本并重启。以实际运行版本、服务、ready 和公网详情/静态错误验证验收，不删除活动锁文件，不覆盖环境或数据库，不与自动更新并发。
 - 实现提交 **d9106a4** 已推送 `codex/d2-game-detail-routes`，已创建面向 main 的 [PR #52](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/52)。随后仅补充本交付记录，不重复业务检查。**未合并、未部署，线上 404 未解决**。D2 保持进行中，完成线上验收后再标记完成并推进 D3。D3 仍缺明确测试收件人及发信/收件条件，不擅自发送真实邮件。
+
+## 获准合并与生产验收（2026-11-06）
+
+用户回复“允许”后恢复合并与服务器同步，不再沿用上面的授权阻塞结论。每次合并前重新 fetch，核对完整差异、head、提交和 `pins` 成功，无冲突或阻塞审查；依次使用 merge commit 合入：
+
+| PR | 固定审查 head | 实际合并提交 |
+| --- | --- | --- |
+| [D1 #51](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/51) | `9e8c8ce42299788be9bcbd01e0cd538417a01a6c` | `33ee1184a55063ae5672e31a295e59964c3564f7` |
+| [D2 #52](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/52) | `4c540030d55e137345c877ab4c4e2762d180beda` | `98e2c3d6a5f416d36f95d4223c83d480c384b523` |
+| [D3 文档 #53](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/53) | `86ccdcba2ceee7f2247448064bc2d92129478127` | `e8efa97015a412d67160255d71b0f190ea596f39` |
+
+最终合并树与已验证的 D3 head 完全相同，新增的 D3 仅内部文档；未夹带昵称或包体积 PR，没有新增运行代码或重复业务测试。平台沿用本批 **1.2.0 → 1.2.1**，README 一致。
+
+### 服务器维护与备份
+
+- 再次通过 systemd、current.json、API 子进程 cwd 核实真实目标 `/opt/boardgame`，启动目录旧 HEAD 不是运行版本。原更新器正常完成 `preparing → backup started → backup verified → updated`，从 `2578211` 切到 **e8efa97015a412d67160255d71b0f190ea596f39 / 1.2.1**。
+- 维护前私有 `maintenance-d2-20261106T144011Z` 保存四个启动脚本、原 current.json、服务主配置和网络 drop-in，共七个文件，摘要均核对。比对发现服务器 `update-backup.mjs` 有拆分 libpq 连接字段的运维补丁，原样保留；其他支持脚本不替换，未修改 `.env`、服务配置或数据库连接。
+- 确认版本切换完成且没有在途构建后，用原 systemd 入口优雅停止；监督进程正常退出并自行释放锁，未删除活动锁或强杀。仅原子替换来自合并 SHA 的 `scripts/online-update.mjs`，语法检查通过，再启动 `boardgame-local.service`。新版脚本 SHA-256 为 `627f5a718c945c68a191481c91ba86a3fa7ea6418f047753a1b7fa1c82446c15`，支持文件与服务配置仍与维护备份相同。
+- 本次更新的 `update-XRPeBs` 数据备份共 **76 个文件、6,045,048 字节**，逐文件长度/SHA-256 全通过，数据库归档签名为 PGDMP；release 元数据 previous=`2578211`、candidate=`e8efa97`。保留私有恢复配置与全部旧版本；没有恢复数据库、重写迁移或资源种子。
+
+### 实际上线检查
+
+- current.json、运行目录 package.json 与 API 子进程 cwd 一致：**e8efa97 / 1.2.1**。服务 active/running、MainPID 1442481、NRestarts=0；新监督进程日志确认 serving，API 是它的自有子进程。
+- 匿名公网 Chromium：`/health/ready` 200 且 `database.ready=true`；`/api/v1/games` 200；`/api/v1/account/security` 401 且 no-store。缺失 JS、图片和版本路径下的缺失图片均 404。
+- **1440×900、390×844** 分别验证 UNO 休闲版和璀璨宝石详情：直达、刷新均 **200**，页脚为 1.2.1；大厅站内跳转同样可用。无 pageerror 或整页横向溢出，实际查看桌面和手机截图。只读验收，未创建生产账号/房间、改密码、发邮件或调用模型，不计为真人联机对局验收；真机/Safari 仍未覆盖。
+- 脚本、JSON 和截图保留在 `/tmp/playboard-d3-mail-validation/.data/production-20261106/`，不提交生成物或秘密配置。D2 已标记完成；D3 真实收件继续待明确测试邮箱和范围。
+
+三个 PR 的源 head 均未新增提交，main 包含全部交付，无其他 open PR 使用这些分支。远程 `codex/30-day-update-plan`、`codex/d2-game-detail-routes`、`codex/d3-mail-validation` 已按期望 SHA 约束删除；本地 D2/D3 分支已用 `-d` 删除。D1 本地删除被 Git 上游合并保护拒绝，保留而不强制删除；D1/D2 worktree 已脱离源分支并保留测试证据/私有配置，原工作区与其他分支未动。
