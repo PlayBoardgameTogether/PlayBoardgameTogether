@@ -206,7 +206,16 @@ async function main() {
             }
           }
           if (!bytes) {
-            if (extname(path)) { res.writeHead(404); res.end(); return; }
+            // A game's numeric version is a route segment, not a static suffix.
+            // Only these page routes may bypass the missing-file check.
+            const gamePage = /^\/games\/[a-z0-9._-]+\/\d+\.\d+\.\d+(?:\/(?:new|tutorial|computer))?$/.test(
+              new URL(req.url || '/', 'http://localhost').pathname,
+            );
+            if (extname(path) && !gamePage) {
+              res.writeHead(404);
+              res.end();
+              return;
+            }
             path = resolve(webRoot, 'index.html'); bytes = await readFile(path);
           }
         }

@@ -58,6 +58,9 @@ test('catalog opens details, preserves selected game and supports history and re
   await expect(page.getByLabel('游戏与版本')).toHaveValue('splendor.base@1.0.0');
   await page.goBack();
   await expect(page.getByRole('heading', { name: '璀璨宝石', exact: true })).toBeVisible();
+  const detailReload = await page.reload();
+  expect(detailReload?.status()).toBe(200);
+  await expect(page.getByRole('heading', { name: '璀璨宝石', exact: true })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
   await page.goForward();
@@ -65,6 +68,9 @@ test('catalog opens details, preserves selected game and supports history and re
   await page.goto('/games/splendor.base/9.9.9/new');
   await expect(page.getByRole('alert')).toContainText('所选游戏或版本已不可用');
   await expect(page.getByRole('button', { name: '创建并生成邀请码' })).toBeDisabled();
+  const detailDirect = await page.goto('/games/splendor.base/1.0.0');
+  expect(detailDirect?.status()).toBe(200);
+  await expect(page.getByRole('heading', { name: '璀璨宝石', exact: true })).toBeVisible();
 });
 
 test('guest can filter games and catalog failures offer retry', async ({ page }, info) => {
