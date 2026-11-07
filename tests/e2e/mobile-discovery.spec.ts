@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { GamePresentation } from '../../packages/protocol/src/index.js';
 
 const games = [
   { id: 'azul.base', name: '花砖物语', description: '花砖拼图', players: { min: 2, max: 4 } },
@@ -74,12 +75,80 @@ test('catalog avatars, legacy covers and detail backgrounds keep their separate 
   await page.goto('/');
   const avatar = page.getByRole('link', { name: '查看 聚会桌游', exact: true });
   await expect(avatar.locator('.game-avatar img')).toHaveAttribute('src', '/game-art/counter-icon.svg');
-  await expect(page.getByRole('link', { name: '查看 双人棋', exact: true }).locator('.game-avatar img')).toHaveAttribute('src', '/game-art/counter.svg');
+  const legacyCover = page.getByRole('link', { name: '查看 双人棋', exact: true }).locator('.game-avatar img');
+  await expect(legacyCover).toHaveAttribute('src', '/game-art/counter.svg');
+  await expect(legacyCover).toHaveCSS('object-fit', 'cover');
   await avatar.click();
   await expect(page.locator('.game-detail-icon img')).toHaveAttribute('src', '/game-art/counter-icon.svg');
   await expect(page.locator('.game-banner-background img')).toHaveAttribute('src', '/game-art/grid-garden.svg');
   await expect(page.locator('.game-detail-icon img')).toHaveCSS('object-fit', 'contain');
   await page.screenshot({ path: info.outputPath('separate-avatar-and-background.png'), fullPage: true });
+});
+
+test('the gallery upgrades old official package artwork and preserves newer and custom artwork', async ({ page, isMobile }, info) => {
+  const icons = '/game-art/catalog-20261107';
+  const packageBase = '/api/v1/game-packages';
+  const onlineGames = [
+    ['online.awari', '1.0.0', '阿瓦里', 'awari'],
+    ['online.catan', '1.0.1', '卡坦岛', 'catan'],
+    ['online.gomoku', '1.0.3', '五子棋', 'gomoku'],
+    ['online.rummikub', '1.0.3', '拉密', 'rummikub'],
+    ['online.uno', '1.2.0', 'UNO · 休闲版', 'uno'],
+    ['online.uno-no-mercy', '1.0.0', 'UNO · 毫不留情', 'uno-no-mercy'],
+  ] as const;
+  const newerIcon = `${packageBase}/online.uno/versions/1.2.1/art/icon.png`;
+  const customIcon = '/game-art/counter-icon.svg';
+  const customScene = '/game-art/counter.svg';
+  const catalog = [
+    ...games.slice(0, 4),
+    ...onlineGames.map(([id, version, name]) => ({
+      id, version, name, description: '和桌友一起玩。', players: { min: 2, max: 4 }, developmentOnly: false,
+    })),
+    { ...games[4]!, id: 'online.uno', version: '1.2.1', name: 'UNO · 新版' },
+  ];
+  const presentations: GamePresentation[] = onlineGames.map(([gameId, version]) => {
+    const base = `${packageBase}/${gameId}/versions/${version}/art`;
+    return { gameId, version, revision: 0, iconUrl: `${base}/icon.png`, coverUrl: null, backgroundUrl: `${base}/background.png` };
+  });
+  presentations.push({ gameId: 'online.uno', version: '1.2.1', revision: 0, iconUrl: newerIcon, coverUrl: null, backgroundUrl: null });
+  await page.route('**/api/v1/games', route => route.fulfill({ json: { ok: true, traceId: 'gallery', data: catalog } }));
+  await page.route('**/api/v1/games/presentations', route => route.fulfill({ json: { ok: true, traceId: 'gallery', data: presentations } }));
+  await page.route(`**${newerIcon}`, route => route.fulfill({
+    contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="#174"/></svg>',
+  }));
+  await page.goto('/');
+  for (const [, , name, key] of onlineGames) {
+    const avatar = page.getByRole('link', { name: `查看 ${name}`, exact: true }).locator('.game-avatar img');
+    await avatar.scrollIntoViewIfNeeded();
+    await expect(avatar).toHaveAttribute('src', `${icons}/${key}-avatar.webp`);
+    await expect.poll(() => avatar.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight])).toEqual([512, 512]);
+  }
+  const newerCard = page.getByRole('link', { name: '查看 UNO · 新版', exact: true });
+  await expect(newerCard.locator('.game-avatar img')).toHaveAttribute('src', newerIcon);
+  await page.locator('.game-catalog-grid').screenshot({ path: info.outputPath('gallery-lobby.png') });
+  await page.getByRole('link', { name: '查看 UNO · 休闲版', exact: true }).click();
+  const scene = page.locator('.game-banner-background img');
+  const copy = page.locator('.game-banner-content');
+  await expect(scene).toHaveAttribute('src', `${icons}/uno-scene.webp`);
+  await expect.poll(() => scene.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(960);
+  const sceneBox = (await scene.boundingBox())!;
+  const copyBox = (await copy.boundingBox())!;
+  if (isMobile) {
+    expect(sceneBox.y + sceneBox.height).toBeLessThanOrEqual(copyBox.y + 1);
+  } else {
+    expect(copyBox.x + copyBox.width).toBeLessThanOrEqual(sceneBox.x + 1);
+  }
+  await page.locator('.game-detail-banner').screenshot({ path: info.outputPath('gallery-uno.png') });
+  const uno = presentations.find(item => item.gameId === 'online.uno' && item.version === '1.2.0')!;
+  Object.assign(uno, { revision: 1, iconUrl: customIcon, backgroundUrl: customScene });
+  await page.reload();
+  await expect(page.locator('.game-detail-icon img')).toHaveAttribute('src', customIcon);
+  await expect(scene).toHaveAttribute('src', customScene);
+  await page.route(`**${customScene}`, route => route.abort());
+  await page.reload();
+  await expect(page.locator('.game-banner-background')).toBeHidden();
+  await expect(page.getByRole('link', { name: '创建房间' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('mobile navigation stays reachable and content clears the bar at narrow widths', async ({ page, isMobile }, info) => {

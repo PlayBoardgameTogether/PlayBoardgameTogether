@@ -855,6 +855,10 @@
     object-fit: contain;
   }
 
+  .desktop-shell--pixel-lobby .game-avatar--cover img {
+    object-fit: cover;
+  }
+
   .desktop-shell--pixel-lobby .game-card-info {
     padding: 16px;
   }

@@ -12,7 +12,7 @@ export function GameAvatar({ game }: { game: AvailableGame }) {
   return (
     <GameArtwork
       src={art.iconUrl ?? art.coverUrl}
-      className="game-cover game-avatar"
+      className={art.iconUrl ? 'game-cover game-avatar' : 'game-cover game-avatar game-avatar--cover'}
       name={game.name}
     />
   );
