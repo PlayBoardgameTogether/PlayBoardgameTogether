@@ -1,5 +1,14 @@
 # 开发进度
 
+## 修复后台游戏管理官方游戏订阅面板样式与图标尺寸异常（2026-11-07，1.2.2）
+
+- 复现并定位后台游戏管理页面（`/admin/catalog`）异常：
+  1. `GameSubscriptionPanel.tsx` 中展开管理 chevron 的 `<svg>` 标签缺少显式 `width` / `height` 属性，且样式表中缺失 `.game-subscription-chevron` 样式规则，导致浏览器将该 SVG 默认按 100% 容器宽度且 1:1 纵横比渲染为超大图标（形成占满屏幕底部的巨大暗褐色“V”形），并将下方的游戏刷新、筛选与游戏列表挤出首屏。
+  2. 补齐 `GameSubscriptionPanel` 所需的整套卡片与面板样式（包括 `.game-subscription-panel`、`.game-subscription-summary`、`.game-sub-cards-grid`、`.game-sub-option-card`、`.game-sub-metric-tile`、状态点、明细列表与徽章等），chevron 增加显式 `width="14" height="14"` 与 CSS 约束，折叠时为 56px 紧凑精致卡片，展开时指标和明细卡片整齐排布。
+  3. 修复此前 PR #49 新增“我的账户安全”后管理后台导航项增至 11 项导致的测试断言及短屏（768px）侧边栏样式微调。
+- 验证：`pnpm typecheck` 通过，`pnpm lint`（eslint、check-boundaries、prettier）通过，Playwright 自动化测试 `game-subscription-ui.spec.ts`、`admin-games-ui.spec.ts`、`admin-console-ui.spec.ts`、`admin-updates-ui.spec.ts`（共 20 个桌面与移动端用例）全部通过。实际导出并核对桌面端截图，巨大 V 形彻底消除，订阅卡片与下方游戏列表正常显示。
+- 平台版本 `1.2.1 → 1.2.2`（PATCH+1，缺陷修复与样式补齐），README 同步。
+
 ## 每日任务 D1–D3 获准合并与 D2 上线（2026-11-06，1.2.1）
 
 - 用户明确回复“允许”后，重新 fetch 并逐项核对差异/head/提交、pins 成功及无阻塞审查，按 merge commit 依次合并 #51=`33ee118`、#52=`98e2c3d`、#53=`e8efa97`；最终合并树与已验证候选完全相同，未夹带其他 open PR。D2 平台 **1.2.0 → 1.2.1**，其余内部文档不再升版，没有重复宣称本轮运行历史业务测试。

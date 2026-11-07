@@ -371,7 +371,7 @@ function SubscriptionSettings({ onChanged }: { onChanged: () => void }) {
                 <div className="game-sub-detail-summary-right">
                   <span className="game-sub-detail-count">共 {data.items.length} 款游戏</span>
                   <svg
-                    className="game-subscription-chevron"
+                    className="game-subscription-chevron" width="14" height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -485,7 +485,7 @@ export function GameSubscriptionPanel({ onChanged }: { onChanged: () => void }) 
           <span className="game-subscription-toggle-pill">
             {open ? '收起设置' : '展开管理'}
             <svg
-              className="game-subscription-chevron"
+              className="game-subscription-chevron" width="14" height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

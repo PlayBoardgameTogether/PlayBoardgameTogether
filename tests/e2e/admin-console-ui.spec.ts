@@ -50,7 +50,7 @@ test('console overview preserves confirmed data on refresh failure and recovers'
   await expect(metrics).toContainText('128');
   await expect(page.getByRole('heading', { name: '3 份申请等待处理' })).toBeVisible();
   const navigation = page.getByRole('navigation', { name: '后台导航' });
-  await expect(navigation.getByRole('link')).toHaveCount(10);
+  await expect(navigation.getByRole('link')).toHaveCount(11);
   await expect(navigation.getByRole('link', { name: '管理总览' })).toHaveAttribute(
     'aria-current',
     'page',
