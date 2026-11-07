@@ -11,7 +11,7 @@ import { AdminLayout } from './admin/AdminLayout.js';
 const fields = [
   { key: 'iconUrl', label: '游戏图标地址', hint: '方形游戏头像，用于大厅主图与详情标题图标；保留完整构图。' },
   { key: 'coverUrl', label: '大厅封面地址', hint: '未设置头像时使用的兼容封面；不会替代详情背景。' },
-  { key: 'backgroundUrl', label: '详情背景地址', hint: '建议宽幅横图，标题区会自动压暗以保证文字清晰。' },
+  { key: 'backgroundUrl', label: '详情背景地址', hint: '建议使用宽幅横图，图片会在标题旁或上方独立展示。' },
 ] as const;
 type ImageDraft = { iconUrl: string; coverUrl: string; backgroundUrl: string };
 const emptyDraft: ImageDraft = { iconUrl: '', coverUrl: '', backgroundUrl: '' };
@@ -97,7 +97,7 @@ function GamePresentationEditor() {
 
   if (loadError) return <PageFeedback title="展示配置不可用" retry={() => setAttempt(value => value + 1)}>{loadError}</PageFeedback>;
   if (!games) return <PageFeedback title="正在加载展示配置…" loading />;
-  const defaults = defaultGameArt(game?.id ?? '');
+  const defaults = defaultGameArt(game?.id ?? '', game?.version ?? '');
   return <>
     <div className="presentation-editor">
       <form className="panel form-stack" onSubmit={save}>

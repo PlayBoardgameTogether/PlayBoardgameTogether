@@ -26,24 +26,32 @@ export function GameDetailPage({ id, version }: { id: string; version: string })
     );
   const discovery = gameDiscovery(game);
   const tutorial = clientTutorial(id, version);
+  const art = gameArt(game);
   return (
     <div className="game-room-page discovery-detail">
       <p>
         <a href="/">← 返回游戏大厅</a>
       </p>
       <section className="game-detail-banner">
-        <GameArtwork
-          src={gameArt(game).backgroundUrl}
-          className="game-banner-background"
-          name={game.name}
-        />
+        {art.backgroundUrl && (
+          <GameArtwork
+            src={art.backgroundUrl}
+            className="game-banner-background"
+            name={game.name}
+            eager
+          />
+        )}
         <div className="game-banner-content">
-          <GameArtwork src={gameArt(game).iconUrl} className="game-detail-icon" name={game.name} />
-          <div>
-            <p className="eyebrow">
-              {game.players.min}–{game.players.max} 人 · 在线桌游
-            </p>
-            <h1>{game.name}</h1>
+          <div className="game-banner-heading">
+            <GameArtwork src={art.iconUrl} className="game-detail-icon" name={game.name} />
+            <div>
+              <p className="eyebrow">
+                {game.players.min}–{game.players.max} 人 · 在线桌游
+              </p>
+              <h1>{game.name}</h1>
+            </div>
+          </div>
+          <div className="game-banner-description">
             <p>{discovery?.hook ?? game.description}</p>
             <div className="discovery-detail-actions">
               <a className="button-link" href={`${gamePath(game)}/new`}>

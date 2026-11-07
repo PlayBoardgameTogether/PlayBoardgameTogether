@@ -18,20 +18,62 @@ const pixelAvatars: Partial<Record<string, string>> = {
   'azul.base': new URL('../../../../games/azul/art/icon.png', import.meta.url).href,
 };
 
-export function defaultGameArt(id: string) {
+const catalogArtRoot = '/game-art/catalog-20261107';
+
+// Reviewed gallery art for the exact versions that predate the new artwork.
+// Later online versions can ship their own icon and background with the package.
+const galleryScenes: Record<string, string> = {
+  'azul.base@1.0.0': 'azul',
+  'color-match@1.0.0': 'color-match',
+  'grid-garden@1.0.0': 'grid-garden',
+  'splendor.base@1.0.0': 'splendor',
+  'demo.counter-room@1.0.0': 'counter',
+  'online.awari@1.0.0': 'awari',
+  'online.catan@1.0.1': 'catan',
+  'online.gomoku@1.0.3': 'gomoku',
+  'online.puerto-rico@1.1.1': 'puerto-rico',
+  'online.rummikub@1.0.3': 'rummikub',
+  'online.uno@1.2.0': 'uno',
+  'online.uno-no-mercy@1.0.0': 'uno-no-mercy',
+};
+
+const galleryAvatars = new Set([
+  'counter',
+  'awari',
+  'catan',
+  'gomoku',
+  'rummikub',
+  'uno',
+  'uno-no-mercy',
+]);
+
+export function defaultGameArt(id: string, version: string) {
   const art = builtInArt[id];
+  const gallery = galleryScenes[`${id}@${version}`];
   return {
-    iconUrl: pixelAvatars[id] ?? (art ? `/game-art/${art}-icon.svg` : null),
+    iconUrl:
+      gallery && galleryAvatars.has(gallery)
+        ? `${catalogArtRoot}/${gallery}-avatar.webp`
+        : (pixelAvatars[id] ?? (art ? `/game-art/${art}-icon.svg` : null)),
     coverUrl: art ? `/game-art/${art}.svg` : null,
-    backgroundUrl: art ? `/game-art/${art}.svg` : null,
+    backgroundUrl: gallery ? `${catalogArtRoot}/${gallery}-scene.webp` : art ? `/game-art/${art}.svg` : null,
   };
 }
 
 export function gameArt(game: AvailableGame) {
-  const defaults = defaultGameArt(game.id);
+  const defaults = defaultGameArt(game.id, game.version);
+  const { presentation } = game;
+  // Revision zero is the package default. A saved presentation takes priority.
+  if (!presentation?.revision && galleryScenes[`${game.id}@${game.version}`]) {
+    return {
+      iconUrl: defaults.iconUrl ?? presentation?.iconUrl ?? null,
+      coverUrl: presentation?.coverUrl ?? defaults.coverUrl,
+      backgroundUrl: defaults.backgroundUrl,
+    };
+  }
   return {
-    iconUrl: game.presentation?.iconUrl ?? defaults.iconUrl,
-    coverUrl: game.presentation?.coverUrl ?? defaults.coverUrl,
-    backgroundUrl: game.presentation?.backgroundUrl ?? defaults.backgroundUrl,
+    iconUrl: presentation?.iconUrl ?? defaults.iconUrl,
+    coverUrl: presentation?.coverUrl ?? defaults.coverUrl,
+    backgroundUrl: presentation?.backgroundUrl ?? defaults.backgroundUrl,
   };
 }
