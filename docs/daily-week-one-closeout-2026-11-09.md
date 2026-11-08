@@ -42,3 +42,13 @@
 ## Git 与服务器交付
 
 开始及提交前成功 fetch main，基线未变化。生产只读复核：current.json 与运行 package.json 为 **832f2e8 / 1.2.3**，systemd active/running、NRestarts=0；这是本轮合并前状态，不将候选说成上线。最终 PR、运行 SHA、健康、受影响资源及备份校验结果在操作成功后补记。
+
+
+## 已合并与生产实测（2026-11-09）
+
+- D7 [PR #62](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/62) 的精确 head **15380af6588598ca74e83e61ea682e6dbc200362**，完整 13 文件、6 个提交、无阻塞审查及 `pins` success 核对通过；按持续授权以 merge commit 合并为 **316d1d395196dc751a4386490a1d81017209e91f**。合并树与已验证候选完全相同，D4/D5 原 head 均为 main 祖先。
+- 原监督进程北京时间 **07:07:16 preparing → 07:07:28 backup verified → 07:07:30 updated**，无人工维护或主动重启。新备份 `update-zxlZBd` 的 **76 文件 / 6,045,032 字节**，大小、SHA-256、数据库归档签名及 previous=`832f2e8` / candidate=`316d1d3` 全通过；未恢复数据库。
+- **07:09:03**，私有 current.json、实际 API cwd、运行 package.json 一致为 **316d1d3 / 1.2.4**；systemd active/running、NRestarts=0。匿名 Chromium 在 **1440×900 / 390×844** 公网首页和 UNO 详情直达/刷新均 200、页脚 1.2.4、ready 200 / database.ready=true；无 pageerror 或整页横向溢出，实际查看两端截图。匿名订阅管理接口 401/no-store。生产全局与按需加载的 `AdminLayout-Cv_sCuGc.css` 均为 200，逐字节摘要与运行目录文件一致，包含面板修复；没有生产管理员登录，因此不宣称实测生产后台交互。
+- 最初公网辅助探针错误要求每份 CSS 都包含后台选择器，随后仍遗漏按需加载的 AdminLayout；按真实构建依赖补齐选择器所在 chunk 后，两端完整核验通过。没有修改产品代码、降低产品断言或重跑已通过的业务检查。GitHub 连接器创建 PR 返回 403，改用既有已授权 CLI 成功创建、审查和合并；秘密配置不进入记录。
+- D7 已完成首周修复整合与上线核验，D3 生产账号闭环、D5 新包正式发布/生产主动安装继续保留条件。D4 #55 被 GitHub 自动标记 merged；D5 #56 仍 open，但其全部提交已经 #62 进入 main。自动审批拒绝将 #56 改为 main 基线，理由为缺少对独立旧 PR 的明确授权；未绕过，已向用户请求该收尾授权，暂保留原基线。
+- 已确认 #62 merged、源分支无新增、工作区干净后，删除本地及远程 `codex/d7-week-one-closeout`，远程删除带期望 SHA 保护，fetch/prune 完成。D4/D5 分支因仍有 #56 关系/待授权收尾而保留，相关证据目录和原工作区全部保留。当前 `codex/d7-delivery-record` 仅补充三份内部交付文档，不重复升版、业务验证或强制重启；其最终 Git 状态见交付链接。
