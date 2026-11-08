@@ -2,6 +2,7 @@ import { createReadStream } from 'node:fs';
 import { mkdir, mkdtemp, writeFile, readdir, lstat, copyFile, chmod, rename, realpath } from 'node:fs/promises';
 import { resolve, join, sep } from 'node:path';
 import { createHash } from 'node:crypto';
+import { URL } from 'node:url';
 import { runUpdateCommand } from './update-command.mjs';
 
 async function digest(path) {
@@ -40,6 +41,45 @@ async function inventory(directory, prefix = '') {
   return entries;
 }
 
+export function postgresClientEnvironment(databaseUrl) {
+  let uri;
+  try {
+    uri = new URL(databaseUrl);
+  } catch {
+    throw new Error('Invalid database connection URL');
+  }
+  if (!['postgres:', 'postgresql:'].includes(uri.protocol)) {
+    throw new Error('Unsupported database connection URL');
+  }
+  const database = decodeURIComponent(uri.pathname.slice(1));
+  if (!database) throw new Error('Database name missing from connection URL');
+  const result = {
+    PGDATABASE: database,
+    PGHOST: uri.searchParams.get('host') || uri.hostname.replace(/^\[|\]$/g, ''),
+    PGPORT: uri.searchParams.get('port') || uri.port || '5432',
+    PGUSER: decodeURIComponent(uri.username),
+  };
+  if (uri.password) result.PGPASSWORD = decodeURIComponent(uri.password);
+  const parameters = {
+    sslmode: 'PGSSLMODE',
+    sslcert: 'PGSSLCERT',
+    sslkey: 'PGSSLKEY',
+    sslrootcert: 'PGSSLROOTCERT',
+    sslcrl: 'PGSSLCRL',
+    connect_timeout: 'PGCONNECT_TIMEOUT',
+    application_name: 'PGAPPNAME',
+    options: 'PGOPTIONS',
+    target_session_attrs: 'PGTARGETSESSIONATTRS',
+    gssencmode: 'PGGSSENCMODE',
+    channel_binding: 'PGCHANNELBINDING',
+  };
+  for (const [parameter, variable] of Object.entries(parameters)) {
+    const value = uri.searchParams.get(parameter);
+    if (value !== null) result[variable] = value;
+  }
+  return result;
+}
+
 export function migrationPolicy(changes, allow = undefined) {
   // Existing migration history is immutable, even when automatic migrations
   // are enabled. Git --no-renames gives additions, removals and modifications.
@@ -62,9 +102,13 @@ export async function backupUpdate({ stateRoot, env, previous, candidate, comman
   }
   const directory = await mkdtemp(join(backups, '.partial-'));
   await chmod(directory, 0o700);
-  // libpq accepts a connection URI in PGDATABASE. Keep credentials out of argv,
-  // public logs and the supervisor's bounded command output.
-  const options = { cwd: previous.path, env: { ...env, PGDATABASE: env.DATABASE_URL }, timeout: 600000 };
+  // PGDATABASE is a name. Expand the URI into libpq environment fields so
+  // pg_dump uses the intended host/port without putting credentials in argv.
+  const options = {
+    cwd: previous.path,
+    env: { ...env, ...postgresClientEnvironment(env.DATABASE_URL) },
+    timeout: 600000,
+  };
   const dump = join(directory, 'database.dump');
   await command('pg_dump', ['--format=custom', '--file', dump, '--no-password'], options);
   await chmod(dump, 0o600);

@@ -5,7 +5,7 @@ import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, stat, symlink } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { backupUpdate, migrationPolicy } from '../../scripts/update-backup.mjs';
+import { backupUpdate, migrationPolicy, postgresClientEnvironment } from '../../scripts/update-backup.mjs';
 import { applyPrepared } from '../../scripts/online-update.mjs';
 
 async function fixture(t) {
@@ -48,8 +48,50 @@ test('completed backup has verified copies, manifest and private recovery settin
   assert.equal((await stat(directory)).mode & 0o777, 0o700);
   assert.equal((await stat(join(directory, 'recovery-config.json'))).mode & 0o777, 0o600);
   assert.deepEqual(calls.map(call => call.executable), ['pg_dump', 'pg_restore']);
-  assert.equal(calls[0].options.env.PGDATABASE, args.env.DATABASE_URL);
+  assert.equal(calls[0].options.env.PGDATABASE, 'db');
+  assert.equal(calls[0].options.env.PGHOST, 'localhost');
+  assert.equal(calls[0].options.env.PGPASSWORD, 'secret');
   assert.ok(!JSON.stringify(calls.map(call => call.argv)).includes('secret'));
+});
+
+test('PostgreSQL client environment preserves escaped credentials and TLS settings', () => {
+  const result = postgresClientEnvironment(
+    'postgresql://backup%40user:s%3Ae%40cr%25et@db.example:15441/board%20game?sslmode=verify-full&sslrootcert=%2Fprivate%2Fca.pem&connect_timeout=10&channel_binding=require',
+  );
+  assert.deepEqual(result, {
+    PGDATABASE: 'board game',
+    PGHOST: 'db.example',
+    PGPORT: '15441',
+    PGUSER: 'backup@user',
+    PGPASSWORD: 's:e@cr%et',
+    PGSSLMODE: 'verify-full',
+    PGSSLROOTCERT: '/private/ca.pem',
+    PGCONNECT_TIMEOUT: '10',
+    PGCHANNELBINDING: 'require',
+  });
+});
+
+test('PostgreSQL client environment supports IPv6 and explicit socket parameters', () => {
+  assert.equal(postgresClientEnvironment('postgres://user@[::1]/test').PGHOST, '::1');
+  const socket = postgresClientEnvironment(
+    'postgres://user@localhost/test?host=%2Fvar%2Frun%2Fpostgresql&port=5433',
+  );
+  assert.equal(socket.PGHOST, '/var/run/postgresql');
+  assert.equal(socket.PGPORT, '5433');
+  assert.ok(!('PGPASSWORD' in socket));
+});
+
+test('invalid PostgreSQL URLs fail without reflecting connection secrets', () => {
+  for (const url of [
+    'private-password',
+    'https://user:private-password@example/db',
+    'postgres://user:private-password@localhost',
+  ]) {
+    assert.throws(
+      () => postgresClientEnvironment(url),
+      (error) => error instanceof Error && !error.message.includes('private-password'),
+    );
+  }
 });
 
 for (const failure of ['dump', 'invalid archive', 'archive listing', 'assets', 'link']) {
