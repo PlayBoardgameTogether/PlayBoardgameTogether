@@ -1,5 +1,12 @@
 # 开发进度
 
+## D6 合并、监督脚本维护与生产验收（2026-11-08，1.2.3）
+
+- 按用户本轮持续同步授权，重新 fetch 与核对固定 head/完整 12 文件/pins 成功后，将 [PR #60](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/60) 以 merge commit 合并为 **a472787eb8a11e7fee897f935b66bed69ba9fe38**，树与已验证候选相同；未合入 D4/D5。
+- 原更新器自动切换至 **1.2.3**，新 `update-1Nrrqr` 备份 76 文件/6,045,031 字节及 previous/candidate 校验通过。维护前私密备份五个脚本/服务文件，切换完成且无在途构建后优雅停止，仅加载已合并备份支持脚本，再启动原服务；正常释放锁，其他补丁/服务/环境/数据库保持。
+- 北京时间 23:07:50，current.json、API cwd、运行 package.json 一致为 **a472787 / 1.2.3**，systemd active/running、NRestarts=0，匿名 Chromium ready 200 / database.ready=true、页脚 1.2.3。真实恢复副本与测试源库已删除，随机恢复库残留 0；原生产备份和原工作区保持。维护脚本摘要、限制与实际命令见 [D6 交付](daily-recovery-drill-2026-11-08.md#合并与服务器实际交付2026-11-08)。
+- 本次后续只有内部交付记录，不重复升版/业务验证，不为文档强制重启应用；D3 注册登录闭环、D4/D5 待合并及发布/安装边界继续保留。
+
 ## 每日任务 D6：备份恢复演练与连接补丁归档（2026-11-08，候选 1.2.3）
 
 - 从最新 main `96d57fe` / 1.2.2 建立独立 D6 分支，原工作区 36 项已有改动保留。只读确认服务器 active/running、current.json 为该 SHA/版本；D4 #55 与 D5 #56 均 open，未混入本轮。D3 已确认收件，生产注册/登录闭环仍待；计划按实际证据更新。
