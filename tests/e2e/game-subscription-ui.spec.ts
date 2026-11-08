@@ -71,9 +71,7 @@ test('subscription retains an unknown save request and shows independent control
   expect(writes).toBe(2);
 });
 
-test('displays official game sync status metrics and items breakdown', async ({
-  page,
-}, info) => {
+test('displays official game sync status metrics and items breakdown', async ({ page }, info) => {
   const value: GameSubscription = {
     source: 'playboard-official',
     autoAdd: true,
@@ -144,12 +142,46 @@ test('displays official game sync status metrics and items breakdown', async ({
   });
 
   await page.goto('/admin/catalog');
-  await page.getByText('官方游戏订阅', { exact: true }).click();
+  await page.locator('.game-subscription-summary').focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByText('同步完成', { exact: true })).toBeVisible();
   await expect(page.getByText('官方游戏目录同步完成', { exact: true })).toBeVisible();
   await page.getByText('同步明细（7）', { exact: true }).click();
   await expect(page.getByText('online.uno · 1.2.0', { exact: true })).toBeVisible();
   await expect(page.getByText('新版已上架，旧对局保留原版本', { exact: true })).toBeVisible();
-  await page.screenshot({ path: info.outputPath('subscription-items-breakdown.png'), fullPage: true });
+  // Missing component CSS used to stretch both chevrons across the page.
+  const chevrons = page.locator('.game-subscription-chevron, .game-sub-results-chevron');
+  await expect(chevrons).toHaveCount(2);
+  for (const chevron of await chevrons.all()) {
+    const bounds = await chevron.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.width).toBeGreaterThan(0);
+    expect(bounds!.width).toBeLessThanOrEqual(24);
+    expect(bounds!.height).toBeLessThanOrEqual(24);
+  }
+  const metrics = await page.locator('.game-sub-metric-tile').all();
+  const boxes = await Promise.all(metrics.map((metric) => metric.boundingBox()));
+  expect(boxes).toHaveLength(3);
+  for (const box of boxes) expect(box).not.toBeNull();
+  const wide = page.viewportSize()!.width > 760;
+  if (wide) {
+    expect(Math.abs(boxes[0]!.y - boxes[2]!.y)).toBeLessThan(2);
+  } else {
+    expect(boxes[1]!.y).toBeGreaterThanOrEqual(boxes[0]!.y + boxes[0]!.height);
+    expect(boxes[2]!.y).toBeGreaterThanOrEqual(boxes[1]!.y + boxes[1]!.height);
+  }
+  await page.screenshot({
+    path: info.outputPath('subscription-items-breakdown.png'),
+    fullPage: true,
+  });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.getByLabel('自动添加新游戏', { exact: true })).toBeChecked();
+  await page.screenshot({
+    path: info.outputPath('subscription-items-dark.png'),
+    fullPage: true,
+    animations: 'disabled',
+  });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
