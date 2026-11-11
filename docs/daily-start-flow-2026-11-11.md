@@ -59,3 +59,16 @@ D8 PR #64 仍待合并。本轮尝试收尾 D8 时，自动审批拒绝修改 ma
 ## 获准交付与 main 整合（2026-11-11）
 
 用户已明确同意 D8/D9 合并及服务器同步。重新核对两个 PR 的完整文件/提交、精确 head、pins success 及无阻塞审查后，D8 #64 已合并为 `05dd7de400b90b2d79262ccc9fb1d5417e15b587`。D9 先整合该最新 main，只处理计划/进度文档冲突并保留双方记录；运行代码、测试和锁文件与 `5e7009f` 的已验证树相同，因此不重复无变化业务检查。最终 D9 head/合并提交、运行 SHA/版本、备份与双端公网验收在实际完成后另记。此前授权阻塞已解除。
+
+
+## 已合并、上线与分支清理（2026-11-11）
+
+- 用户明确同意合并与服务器同步后，D8 #64 固定 head `3ff3e61` 合并为 **05dd7de400b90b2d79262ccc9fb1d5417e15b587**。D9 功能分支整合 main，仅合并计划/进度文档并补记授权事实；运行代码/测试/依赖与前述已验证候选相同。重新核对完整 **21 文件、3 个提交**、新 head **5b5f62a33a1ec2c90433f9ea41502b09db0debcf**、pins success 和无阻塞审查，以 merge commit 将 [PR #65](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/65) 合并为 **8e6092a4a12293b3fb35d8e24f5c6748224285ba**；合并树与候选完全一致。没有重复无变化的 typecheck/lint/业务测试或人为增加版本号。
+- 已确认真实目标仍为 `/opt/boardgame`、`boardgame-local.service`，原监督进程跟踪 main、五分钟自动检测、服务账户和启动方式未改。沿用原更新器，日志依次记录 preparing、backup started、backup verified、updated **8e6092a4a122**；没有人工维护、并行更新、手工重启或覆盖服务器未提交运维补丁/环境/资源。
+- 新备份 **update-uJshzx**，UTC 创建时间 **2026-11-11 15:27:45**，共 **76 文件 / 6,045,030 字节**。通过原 `verifyUpdateBackup` 逐一核对文件集合、长度、SHA-256、PGDMP 归档签名及 previous=`6bcb95c` / candidate=`8e6092a`，全部通过；没有恢复或降级生产数据库。
+- 北京时间 **23:34:09**，私有 current.json、实际 API 进程 cwd、运行目录 package.json 一致为 **8e6092a / 1.2.5**；systemd **active/running、NRestarts=0**。匿名 Chromium 在 **1440×900、1280×800、390×844、320×740** 公网首页/Color Match 详情/详情刷新均 200，ready 200、database.ready=true、页脚 1.2.5、pageerror 0、无检查到的整页横向溢出。桌面收起聊天位于左导航范围；创建进入登录后保留精确版本目标，刷新及注册往返继续，取消后普通登录不保留旧意图。没有输入生产身份、发码、注册、登录或建房。
+- 四视口均读取实际生产 CSS 与 LoginPage JS，响应 200，逐字节 SHA-256 与运行目录构建文件相同。命令为 `node .data/d9-delivery/live-verify.mjs`；已实际打开桌面 1440px 与手机 390px 截图，证据及非秘密概要保留 `.data/d9-delivery/`，不将匿名导航说成生产登录后的真实建房验收，后者仍以本批隔离 E2E 为证。
+- 首轮多视口公网探针没有显式超时，采集部分画面后未及时返回；仅精确终止该自建浏览器探针，加入 15 秒控件/30 秒导航超时及逐步日志后，完整四视口验收通过。生产服务没有因此重启或修改。另一次只读日志审批超时，缩小为 current SHA/最近拉取及五分钟阶段日志后成功；不是生产更新失败。
+- 确认两个 PR 均 merged、源 head 未新增、main 包含交付、无其他开放 PR/未推送或未提交改动后，保留 D8/D9 worktree 及全部证据，移离旧分支并用 `git branch -d` 删除本地 **codex/d8-new-player-audit、codex/d9-start-flow**；远程删除使用对应期望 SHA 保护，fetch/prune 及再次查询确认完成。原主工作区、其他游戏任务分支及 D4/D5 引用未动。
+
+本次仅补充内部交付文档，版本保持 **1.2.5**，不再跑无变化代码检查、不为文档强制重启应用。D8 与 D9 已分别合并，D9 产品已上线；D3 生产注册闭环、D5 新包发布/生产主动安装、真机/WebKit/完整无障碍及其他前述未验证项继续保留。D10 为下一独立主题。
