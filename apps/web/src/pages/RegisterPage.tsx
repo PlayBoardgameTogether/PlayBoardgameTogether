@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import { registrationInputSchema, registrationEmailSchema } from '@boardgame/protocol';
 import { api, navigate } from '../platform.js';
+import { roomCreationContinuation } from '../auth/room-creation.js';
 
 type RegistrationField =
   | 'displayName'
@@ -12,6 +13,7 @@ type RegistrationField =
   | 'emailCode';
 
 export function RegisterPage() {
+  const [continuation] = useState(() => roomCreationContinuation(history.state));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -135,7 +137,7 @@ export function RegisterPage() {
         challengeId: challenge.id,
         emailCode,
       });
-      if (mounted.current) navigate('/login', { registeredUserId: result.username });
+      if (mounted.current) navigate('/login', { ...continuation, registeredUserId: result.username });
     } catch (cause) {
       if (!mounted.current) return;
       if (cause instanceof ApiError && cause.code === 'STATE_CONFLICT') setErrorField('userId');
@@ -159,7 +161,7 @@ export function RegisterPage() {
       <div className="panel auth-card">
         <p className="eyebrow">账号注册</p>
         <h1>加入游戏桌</h1>
-        <p className="muted">验证邮箱后注册，开启桌游之旅。</p>
+        <p className="muted">{continuation ? '注册并登录后，继续创建所选游戏的房间。' : '验证邮箱后注册，开启桌游之旅。'}</p>
         <form
           ref={form}
           className="form-stack"
