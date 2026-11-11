@@ -105,3 +105,8 @@
 **未验证范围**：真实 SMTP 的注册闭环仍属 D3 待办；邀请码加入、密码房、收费模型、完整终局、320/1280px、暗色、软键盘、物理手机、Safari/WebKit、屏幕阅读器及完整键盘焦点路径均未在 D8 验收，不从本轮截图推断通过。D5 游戏候选发布/生产主动安装与旧 PR 收尾继续保留原条件。
 
 本轮仅交付 D8 检查，D9 实现尚未开始。主提交 **d851799706a3ee4db13988a2bef7d5ad161aacf2** 已推送 `codex/d8-new-player-audit`，创建 [PR #64](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/64)，面向 main，**尚未合并**；该分支仍承担待审查报告，继续保留。GitHub 连接器创建 PR 返回集成权限 403，改用现有授权 CLI 成功创建；没有获取新凭据或修改权限。后续仅补交付事实，不重复业务验证或升版，也不把报告完成说成问题已修复。
+
+
+## 合并记录（2026-11-11）
+
+用户明确批准后，重新 fetch main 并核对完整 13 文件、精确 head `3ff3e6186e88ba1ca842bb3381b7376237fcd078`、pins success 及无阻塞审查，以 merge commit **05dd7de400b90b2d79262ccc9fb1d5417e15b587** 合并 PR #64。D8 本身仅文档与脱敏截图，不升平台版本、不为报告强制重启应用；D9 修复的后续合并/生产验收见 [D9 记录](daily-start-flow-2026-11-11.md)。此前待合并状态保留为历史事实。

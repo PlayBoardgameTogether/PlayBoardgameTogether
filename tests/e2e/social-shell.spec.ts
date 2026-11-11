@@ -82,7 +82,7 @@ test('unchanged social polls retain the overview and changed polls update it', a
   expect(state.updates.at(-1)?.changed).toBe(true);
 });
 
-test('desktop chat stays at bottom right with two channels and retained drafts', async ({ page }, info) => {
+test('desktop chat rests in the navigation rail and expands with retained drafts', async ({ page }, info) => {
   const state = await fixture(page);
   await page.goto('/profile');
   const dock = page.getByRole('region', { name: '聊天浮窗' });
@@ -95,8 +95,11 @@ test('desktop chat stays at bottom right with two channels and retained drafts',
   await expect(page.getByRole('button', { name: '通知', exact: true })).toBeVisible();
   expect(state.publicReadCount()).toBe(0);
   const collapsed = await dock.boundingBox();
-  expect(collapsed!.x + collapsed!.width).toBe(page.viewportSize()!.width - 16);
-  expect(collapsed!.y + collapsed!.height).toBe(page.viewportSize()!.height - 16);
+  const rail = await page.locator('.site-header').boundingBox();
+  expect(collapsed!.x).toBeGreaterThanOrEqual(rail!.x);
+  expect(collapsed!.x + collapsed!.width).toBeLessThanOrEqual(rail!.x + rail!.width);
+  const help = await page.locator('.shell-help').boundingBox();
+  expect(collapsed!.y + collapsed!.height).toBeLessThan(help!.y);
   await dock.getByRole('button', { name: '展开聊天', exact: true }).first().click();
   await expect(dock.getByText('公共频道你好', { exact: true })).toBeVisible();
   await dock.getByLabel('公共消息', { exact: true }).fill('公共草稿');

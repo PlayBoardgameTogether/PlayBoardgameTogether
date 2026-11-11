@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError } from '@boardgame/client-sdk';
 import { api, navigate } from '../platform.js';
+import { roomCreationContinuation } from '../auth/room-creation.js';
 
 export function LoginPage() {
+  const [continuation] = useState(() => roomCreationContinuation(history.state));
   const [registeredUserId] = useState(() => {
     const state: unknown = history.state;
     return state && typeof state === 'object' && 'registeredUserId' in state && typeof state.registeredUserId === 'string'
@@ -28,7 +30,7 @@ export function LoginPage() {
     setError('');
     try {
       await api.login(String(data.get('username')), String(data.get('password')));
-      if (mounted.current) navigate('/');
+      if (mounted.current) navigate(continuation?.roomCreationPath ?? '/');
     } catch (cause) {
       if (!mounted.current) return;
       setError(cause instanceof ApiError && cause.code === 'AUTH_INVALID_CREDENTIALS'
@@ -46,7 +48,7 @@ export function LoginPage() {
     <div className="panel auth-card">
       <p className="eyebrow">账户登录</p>
       <h1>回到游戏桌</h1>
-      <p className="muted">输入你的用户 ID 或账号登录。</p>
+      <p className="muted">{continuation ? '登录后继续创建所选游戏的房间。' : '输入你的用户 ID 或账号登录。'}</p>
       {registeredUserId && <p className="success-notice" role="status">注册成功，请输入密码登录。</p>}
       <form className="form-stack" onSubmit={submit} aria-busy={busy} aria-describedby={error ? 'login-error' : undefined}>
         <fieldset className="login-fields" disabled={busy}>

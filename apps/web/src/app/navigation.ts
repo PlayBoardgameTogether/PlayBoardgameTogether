@@ -1,6 +1,7 @@
 import { useEffect, useState, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { navigate } from '../platform.js';
+import { roomCreationContinuation } from '../auth/room-creation.js';
 
 interface PageTransition {
   skipTransition(): void;
@@ -18,7 +19,12 @@ export function followPageLink(event: MouseEvent<HTMLElement>) {
   if (url.origin !== location.origin || url.hash || url.search ||
       !/^(?:\/|\/chat|\/login|\/register|\/forgot-password|\/profile(?:\/(?:edit|history|identity|badges|coins|security))?|\/friends(?:\/(?:add|requests|invitations|chat\/[0-9a-f-]{36}))?|\/games\/[a-z0-9._-]+\/[a-z0-9._-]+(?:\/(?:new|tutorial|computer))?|\/rooms\/new|\/rooms\/[0-9a-f-]+|\/matches\/[0-9a-f-]+(?:\/replay)?|\/official-ai|\/settings\/models|\/admin(?:\/(?:accounts(?:\/[0-9a-f-]{36}\/(?:badges|coins))?|badges|catalog|submissions|assets|games|updates|security|mail|official-ai))?|\/status|\/developers(?:\/[a-z-]+)?|\/dev\/(?:ui|lab))$/i.test(url.pathname)) return;
   event.preventDefault();
-  if (url.pathname !== location.pathname) navigate(url.pathname);
+  if (url.pathname !== location.pathname) {
+    const state = /^\/(login|register)$/.test(location.pathname) &&
+      /^\/(login|register)$/.test(url.pathname)
+      ? roomCreationContinuation(history.state) : undefined;
+    navigate(url.pathname, state);
+  }
 }
 
 export function usePageNavigation() {
