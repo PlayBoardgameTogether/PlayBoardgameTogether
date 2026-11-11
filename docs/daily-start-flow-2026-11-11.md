@@ -52,3 +52,5 @@ D8 PR #64 仍待合并。本轮尝试收尾 D8 时，自动审批拒绝修改 ma
 生产只读复核 **2026-11-11 23:03:40（北京时间）**：current.json、实际 API cwd 与运行 package.json 一致为 **6bcb95c / 1.2.4**；systemd active/running，NRestarts=0。23:04:53 匿名 Chromium 双端复核首页/详情及 `/health/ready` 均 200、database.ready=true、无 pageerror；创建仍进入旧版登录页。候选 1.2.5 尚未合并、发布或部署；原生产数据库、配置、资源、监督脚本与用户工作区保持。提交/PR 的最终结果在成功后另记。
 
 未验证真机、Safari/WebKit、屏幕阅读器、完整键盘路径、软键盘、多个房间数量、邀请码/密码房、收费模型及完整终局；本轮未改后端行为，不重复无影响的全量集成或游戏回归。D3 生产注册闭环、D5 新包发布/生产主动安装继续保留原条件。D10 电脑陪玩说明为下一独立主题，尚未实施。
+
+主提交 **d5dde131e79d22121d561ac52788abbd4c5460c7** 已推送 `codex/d9-start-flow`，创建 [PR #65](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/65)，面向 main、状态 open。Git 推送经旧 origin 正常重定向到已确认组织仓库，未改远程配置；首次提交因无作者配置中止，随后仅本次命令使用既有代理身份 Codex 成功提交，不改全局身份。D8 #64 与 D9 #65 均待明确合并授权，两个分支及证据目录保留；没有执行已合并分支清理或服务器更新。此后仅补充内部交付事实，不重复升版或代码验证。
