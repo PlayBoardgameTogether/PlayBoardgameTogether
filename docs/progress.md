@@ -1,5 +1,13 @@
 # 开发进度
 
+## D8/D9 合并与生产验收（2026-11-11，1.2.5）
+
+- 用户明确批准后，D8 [PR #64](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/64) 固定 head `3ff3e61` 合并为 `05dd7de`；D9 整合仅文档冲突，21 文件/3 提交、head `5b5f62a`、pins success 及无阻塞审查核对后，[PR #65](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/65) 合并为 **8e6092a4a12293b3fb35d8e24f5c6748224285ba**。运行代码与本批已通过 typecheck/lint/build、3 单测、12 个独立业务 E2E、22 项 UI 的候选相同，没有重复无变化检查。
+- 原更新器按既有 main 自动流程完成构建、排空、备份校验、迁移/游戏同步及切换；未人工重启或覆盖服务器补丁/配置。新备份 **update-uJshzx / 76 文件 / 6,045,030 字节**，文件集合、大小、SHA-256、归档签名和 previous/candidate 全部核验通过，没有生产库恢复或降级。
+- **23:34:09（北京时间）**，current.json/实际 API cwd/运行 package.json 一致为 **8e6092a / 1.2.5**；systemd active/running、NRestarts=0。公网匿名 Chromium 四视口 **1440×900、1280×800、390×844、320×740** 首页/详情/刷新 200、ready/数据库就绪、页脚 1.2.5、无 pageerror/整页溢出。验证原建房目标经登录刷新/注册往返保持、取消清除，桌面收起聊天位于左导航；实际 CSS/LoginPage JS 响应与运行文件摘要一致。没有生产账号或发信/建房操作。
+- 实际查看生产桌面/手机截图；首轮公网探针未显式限制等待，仅停止本轮探针并补超时/步骤日志后完整通过，未改产品。日志/截图/非秘密概要留在 `.data/d9-delivery/`。详情见 [D9 交付](daily-start-flow-2026-11-11.md#已合并上线与分支清理2026-11-11)。
+- D8/D9 源分支已核对 merged、精确 head 与祖先关系、无新增/其他开放 PR，使用安全本地删除及期望 SHA 远程删除完成清理，worktree/证据保留；原工作区及其他任务分支不动。平台本批 **1.2.4 → 1.2.5（PATCH）**；本记录仅内部文档，不重复升号、不强制重启。D3/D5 原条件与真机/WebKit 等未验证范围保留，D10 尚未开始。
+
 ## D8 已合并与 D9 交付准备（2026-11-11）
 
 用户明确批准合并 D8/D9 并同步服务器后，重新获取 main、审查两个 PR 的完整差异与精确 head、确认 pins success 和无阻塞审查。D8 [PR #64](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/64) 固定 head `3ff3e61`，以 merge commit **05dd7de400b90b2d79262ccc9fb1d5417e15b587** 合并。D9 功能分支整合最新 main，仅计划/进度文档冲突，保留两批历史验收内容；运行代码、测试、依赖与已验证候选一致，不重复无变化的业务检查。D9 最终合并与生产实际验收随后补记，前述自动审批授权阻塞已由用户本轮明确同意解除。
