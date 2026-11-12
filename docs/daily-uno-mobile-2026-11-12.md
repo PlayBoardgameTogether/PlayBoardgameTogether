@@ -41,4 +41,8 @@
 
 平台首提交 **67fd0c5** 已推送并创建 [PR #69](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/69)，仅四文件、pins 远程检查通过。后续只补本段交付与游戏 CI 事实，不重复无变化业务验证；合并和服务器同步以实际完成后的最终交付为准。
 
+交付复核：UNO 固定 head **7155114fef6b70afdf8be12414572a838a4688c7** 的远程 `check` **success**，包括冻结安装、浏览器依赖、规则、四视口手机检查、构建、verify 与 artifact；PR 事件的 release job 按原条件 skipped，未发布。平台固定 head `1c7e674` 的 pins success，四文件/两提交、main 未变化、无阻塞审查。
+
+平台 main 合并尝试被自动审批拒绝，理由为本轮未明确授权默认分支合并；未通过其他工具绕过，已请求批准。两 PR 均保持 open，功能分支保留；服务器仅完成上述只读核对，文档尚未同步，也未重启应用。后续获准后须重新核对 head/main/必要检查，再合并并同步适用文档，不将本地完成、推送或 CI 通过说成已合并/已上线。
+
 未验收物理手机、Safari/WebKit、完整屏幕阅读器或真实模型；未跑无变化全库集成/E2E、平台生产 build，不以本轮专项外推。D3 生产注册闭环、D5 新候选发布/生产主动安装继续保留原条件；D12 波多黎各帮助尚未推进。
