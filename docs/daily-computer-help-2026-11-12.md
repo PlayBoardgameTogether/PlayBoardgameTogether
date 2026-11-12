@@ -52,3 +52,15 @@
 ## 提交与 PR（2026-11-12）
 
 主提交 **688fcc87b47f78aeb12b15033563c1f6767e398e** 已推送至 `codex/d10-computer-help`，创建 [PR #67](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/67)，面向 main、状态 open。GitHub 应用创建接口返回 403，命令行无独立登录；使用既有 Git HTTPS 认证在内存中传给 gh 后成功创建，没有输出或保存凭据。PR 可合并、当前无阻塞审查，pins 检查仍在运行；本记录不代表已合并或服务器已更新，功能分支保留。
+
+
+## 已合并、上线与清理（2026-11-12）
+
+- 交付前重新 fetch main，固定 PR head **934a7c849dcf734667cbec57225b5fbf60b2011c**，核对完整 13 文件/2 提交、pins success、无开放审查及 clean 合并状态；按持续服务器同步授权以 merge commit 合并 [PR #67](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/67)，结果为 **deee8bdcb1cb5368be932637c96328c3b930ff0b**。合并树与候选一致，后续仅补文档，不重复无变化代码验证。gh GraphQL 汇总读取失败后改为 REST 核对与固定 SHA 合并，没有绕过保护或检查。
+- 原服务器更新器跟踪 main、每五分钟检查，依次记录 preparing、backup started、backup verified、updated。新完整备份 **update-C5pRNx**，UTC 创建时间 **2026-11-12 03:07:35.991**，共 **76 文件 / 6,045,031 字节**；使用原 `verifyUpdateBackup` 核对文件集合、长度、SHA-256、PGDMP 签名及 previous=`120976e` / candidate=`deee8bd` 全部通过。未手动重启、并行维护或恢复生产库，既有运维补丁/配置/资源保持。
+- 北京时间 **11:11:50**，私有 current.json、实际 API 进程 cwd、运行目录 package.json 一致为 **deee8bd / 1.2.6**；服务 active/running、NRestarts=0。匿名 Chromium 四视口 **1440×900、1280×800、390×844、320×740** 公网首页、详情及电脑页刷新均 200，ready 200/database.ready=true、页脚 1.2.6、pageerror 0、未发现整页横向溢出。匿名电脑入口保留登录限制，无生产账号、发信或建房操作；付费选择和预算联机证据仍来自前述隔离 E2E。
+- 四视口实际 CSS 和 `ComputerGamePage` JS 均响应 200，逐字节 SHA-256 与运行目录构建文件相同，包含新摘要选择器/文案。实际查看 1440px 和 390px 公网截图；非秘密概要、完整日志与截图留于 `.data/d10/`，不提交生成物或私密配置。
+- 首轮浏览器等待 networkidle 超时，HTTP 探测首页/ready 均 200；改用 DOM 就绪与页面要素后，第二轮因探针将含登录链接的提示段落作精确字符串匹配而中止。修正探针定位后最终四视口全部通过；导航取消引起的图片/统计请求 ERR_ABORTED 不计为 pageerror。生产代码未改、不隐藏失败、不用初轮结果冒充通过。
+- 核实 PR 已 merged、main 包含交付且树相同、源 head 无新增、无其他开放 PR 使用、工作区干净后，用 `git branch -d` 清理本地 **codex/d10-computer-help**，远程用已合并 head 的期望 SHA 约束删除，完成 fetch/prune。独立工作区和证据保留，原主工作区的 36 项已有改动、其他任务分支保持。
+
+D10 产品已上线，下一独立主题为 D11；D3/D5、真机/WebKit、完整屏幕阅读器与真实付费调用等前述限制保留。此后仅交付内部记录，版本保持 **1.2.6**，不为文档强制重启应用。文档分支的 PR/同步结果在本轮最终交付中说明。
