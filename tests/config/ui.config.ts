@@ -8,6 +8,7 @@ export default webConfig(
     'platform-shell.spec.ts',
     'theme.spec.ts',
     'mobile-discovery.spec.ts',
+    'computer-help-ui.spec.ts',
     'social-shell.spec.ts',
     'public-chat.spec.ts',
     'admin-console-ui.spec.ts',

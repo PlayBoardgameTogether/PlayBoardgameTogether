@@ -43,6 +43,11 @@ test('defaults to official AI, recovers a lost enrollment and continues with fre
   await expect(page.getByLabel('陪玩 AI')).toHaveValue((await offer.json()).data.id);
   await expect(page.getByLabel('每席位单局 AI 点数上限')).toHaveValue('100');
   await expect(page.getByText(/可用 0 点/)).toBeVisible();
+  const summary = page.getByRole('region', { name: '本局陪玩与预算' });
+  await expect(summary).toContainText('当前可用点数不足 2 点，将先用免费脚本陪玩');
+  await page.getByLabel('每席位单局 AI 点数上限').fill('12');
+  await page.getByLabel('总人数（含你）').selectOption('3');
+  await expect(summary).toContainText('每席位上限 12 点，2 位电脑合计上限 24 点');
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -67,10 +72,14 @@ test('defaults to official AI, recovers a lost enrollment and continues with fre
   await page.getByRole('button', { name: '开始电脑对局', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await page.reload();
+  await expect(page.getByRole('region', { name: '已保存的开局设置' })).toContainText('2 位电脑');
   await page.getByRole('button', { name: '继续本次开局' }).click();
   await expect(page).toHaveURL(/\/matches\/[0-9a-f-]+$/);
   expect(enrollments).toHaveLength(2);
   expect(new Set(enrollments).size).toBe(1);
+  expect(JSON.parse(enrollments[0]!).matchBudget).toBe(12);
+  const profiles = (await (await page.request.get('/api/v1/me/official-ai/profiles')).json()).data;
+  expect(profiles[0].official_match_budget).toBe(12);
   const matchId = page.url().split('/').at(-1)!;
   const me = (await (await page.request.get('/api/v1/auth/me')).json()).data;
   const draw = await page.request.post(`/api/v1/matches/${matchId}/actions`, {
@@ -104,6 +113,13 @@ test('recovers lost create and start replies across refresh without duplicate ro
   await expect(page.getByText('登录后即可和电脑开一局。')).toBeVisible();
   await login(page);
   await page.goto('/games/color-match/1.0.0/computer');
+  await expect(page.getByRole('region', { name: '本局陪玩与预算' })).toContainText(
+    '官方 AI 尚未开放。本局不使用官方模型，不扣 AI 点数',
+  );
+  const enrollments: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/me/official-ai/enroll')) enrollments.push(request.url());
+  });
   const creates: string[] = [];
   const starts: string[] = [];
   let dropCreate = true;
@@ -134,6 +150,7 @@ test('recovers lost create and start replies across refresh without duplicate ro
   await page.getByRole('button', { name: '继续本次开局' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
   await page.reload();
+  await expect(page.getByRole('region', { name: '已保存的开局设置' })).toContainText('2 位电脑');
   await page.getByRole('button', { name: '继续本次开局' }).click();
   await expect(page).toHaveURL(/\/matches\/[0-9a-f-]+$/);
   const matchId = page.url().split('/').at(-1)!;
@@ -141,6 +158,8 @@ test('recovers lost create and start replies across refresh without duplicate ro
     (await (await page.request.get(`/api/v1/matches/${matchId}/view`)).json()).data,
   );
   expect(snapshot.players?.map((player) => player.occupantKind)).toEqual(['human', 'bot', 'bot']);
+  expect(enrollments).toEqual([]);
+  expect(JSON.parse(creates[0]!).computerModelProfileId).toBeUndefined();
   expect(new Set(creates).size).toBe(1);
   expect(new Set(starts).size).toBe(1);
   expect(creates).toHaveLength(3);
