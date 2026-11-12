@@ -1,4 +1,5 @@
 import { test, expect, type Page } from './fixtures.js';
+import { reachable } from './ui-reachability.js';
 import { readRegistrationCode } from './registration-mailbox.js';
 
 const creation = '/games/color-match/1.0.0/new';
@@ -74,17 +75,45 @@ test('new registration continues exact creation and two players can join and sta
     await expect(host.getByRole('status')).toContainText('验证码已发送');
     await host.getByLabel('邮箱验证码', { exact: true }).fill(await readRegistrationCode(email));
     await host.getByLabel('玩家昵称', { exact: true }).fill('新玩家甲');
-    await host.getByLabel('用户 ID', { exact: true }).fill(`d9_${info.project.name}`);
+    const userId = `d9_${info.project.name.replaceAll('-', '_')}`;
+    await host.getByLabel('用户 ID', { exact: true }).fill(userId);
     await host.getByLabel('密码', { exact: true }).fill('D9Player2026');
     await host.getByLabel('确认密码', { exact: true }).fill('D9Player2026');
     await host.getByRole('button', { name: '注册账号', exact: true }).click();
     await expect(host.getByRole('status')).toHaveText('注册成功，请输入密码登录。');
     await expect(host.getByLabel('密码', { exact: true })).toHaveValue('');
     await host.reload();
-    await login(host, `d9_${info.project.name}`, 'D9Player2026');
+    await login(host, userId, 'D9Player2026');
     await expect(host).toHaveURL(creation);
     await expect(host.getByLabel('游戏与版本')).toHaveValue('color-match@1.0.0');
     expect(creates).toBe(0);
+    await host.emulateMedia({ reducedMotion: 'reduce' });
+    for (const theme of ['light', 'dark']) {
+      await host.evaluate((value) => {
+        document.documentElement.dataset.theme = value;
+        document.documentElement.style.fontSize = '200%';
+      }, theme);
+      for (const control of [
+        host.getByLabel('房间名'),
+        host.getByLabel('人数', { exact: true }),
+        host.getByRole('button', { name: '创建并生成邀请码', exact: true }),
+      ]) {
+        await control.focus();
+        await expect(control).toBeFocused();
+        await reachable(control);
+      }
+      expect(await host.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+        true,
+      );
+      await host.screenshot({
+        path: info.outputPath(`creation-enlarged-${theme}.png`),
+        fullPage: true,
+      });
+    }
+    await host.evaluate(() => {
+      document.documentElement.dataset.theme = 'light';
+      document.documentElement.style.removeProperty('font-size');
+    });
     await host.screenshot({ path: info.outputPath('continued-creation.png'), fullPage: true });
     await host.getByLabel('房间名').fill('D9 新玩家桌');
     await host.getByLabel('人数', { exact: true }).fill('2');
@@ -127,13 +156,22 @@ test('new registration continues exact creation and two players can join and sta
     await guest.screenshot({ path: info.outputPath('unobstructed-join.png'), fullPage: true });
     await join.click();
     await expect(guest).toHaveURL(roomPath);
-    await guest.getByRole('button', { name: '坐这里', exact: true }).click();
+    const seat = guest.getByRole('button', { name: '坐这里', exact: true });
+    await seat.focus();
+    await expect(seat).toBeFocused();
+    await reachable(seat);
+    await seat.click();
     await guest.getByRole('button', { name: '准备', exact: true }).click();
     await host.getByRole('button', { name: '准备', exact: true }).click();
     await expect(host.getByRole('button', { name: '开始游戏', exact: true })).toBeEnabled();
+    await reachable(host.getByRole('button', { name: '开始游戏', exact: true }));
     await host.getByRole('button', { name: '开始游戏', exact: true }).click();
     await expect(host.locator('.match-page[data-match-revision="0"]')).toBeVisible();
     await expect(guest.locator('.match-page[data-match-revision="0"]')).toBeVisible();
+    // The match shell can render before its lazy-loaded game board. Wait for
+    // both identity-specific boards before deciding which player should act.
+    await expect(host.locator('.color-board')).toBeVisible();
+    await expect(guest.locator('.color-board')).toBeVisible();
     const actor = (await host.getByText('轮到你行动', { exact: true }).count()) ? host : guest;
     const card = actor.locator('.color-hand-cards button:not([disabled])').first();
     if (await card.count()) {
