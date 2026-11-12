@@ -10,6 +10,8 @@
 - 平台旧 UNO E2E 将隐藏头像端点写死为 PNG；11 月 7 日平台展示已使用 WebP 覆盖。首轮 390px 在该断言失败，桌面/320px 均完成真实整局。测试现按实际来源严格核对 MIME，并确认隐藏头像与已经成功解码的可见头像同源，保留 HTTP、尺寸及隐藏状态检查，不修改产品去迎合旧假设。
 - 游戏改动主提交 **e631edaa7a52369455adcef7c69832490e167c76** 已推送，创建 [UNO PR #4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4)，当前 open、待审查；仅三文件测试/内部文档，未合并。GitHub 应用创建连接中断，GraphQL 读取超时后改 REST，确认无重复再创建。
 
+远程游戏 CI 首轮在安装 Chromium 前失败：`ubuntu-latest` 已切 Ubuntu 26.04，锁定 Playwright 1.55 明确不支持。补交 **7155114**，只将 check job 固定为 ubuntu-24.04 并纳入 `pnpm test:ui`，保留原安装、规则、构建与 verify；本地锁定工具源码已核对支持该 runner，不升级依赖、不改产品版本。新 CI 结果以 PR 为准；首轮失败不算远程通过。游戏 PR 因此合计四个文件，无游戏实现变化，平台无需导入。
+
 ## 实际验证
 
 以下运行脚本的 pnpm 命令带 `--config.verify-deps-before-run=false`；两仓库均按各自冻结锁文件安装依赖，未升级依赖。
@@ -36,5 +38,7 @@
 **登记已核对，无需改动**：平台 catalog 与 UNO release.config.json 的仓库、两个 ID、包名前缀和玩法一致。GitHub 实时正式 Release 仍是 `uno-v1.2.0`、`uno-no-mercy-v1.0.0`，各有精确 ZIP、release.json、SHA256SUMS；main 已有的 1.2.1/1.0.1 头像候选未发布。本轮没有标签、Release、生产主动订阅或安装，不能把本地 ZIP 当已上架。
 
 北京时间 **11:43:33** 只读核对，生产 current.json、实际 API cwd、运行 package.json 一致为 **1c70c2d / 1.2.6**，服务 active/running、NRestarts=0；未重启或修改生产数据。平台 PR、文档同步及最终状态另据实补入。
+
+平台首提交 **67fd0c5** 已推送并创建 [PR #69](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/69)，仅四文件、pins 远程检查通过。后续只补本段交付与游戏 CI 事实，不重复无变化业务验证；合并和服务器同步以实际完成后的最终交付为准。
 
 未验收物理手机、Safari/WebKit、完整屏幕阅读器或真实模型；未跑无变化全库集成/E2E、平台生产 build，不以本轮专项外推。D3 生产注册闭环、D5 新候选发布/生产主动安装继续保留原条件；D12 波多黎各帮助尚未推进。
