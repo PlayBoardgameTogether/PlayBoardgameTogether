@@ -47,3 +47,8 @@
 生产只读核对 current.json 与运行目录 package.json 为 `120976e / 1.2.5`，`boardgame-local.service` active/running、NRestarts=0。服务器启动仓库仍有既有运维补丁与文档改动，本轮未覆盖、重启或手工触发更新。
 
 未验证真实收费模型、物理手机、Safari/WebKit、完整屏幕阅读器、生产登录后开局或全库集成/E2E；本轮没有计费/权限/后端变化，不重复无影响全库回归。D3 生产注册闭环与 D5 新包发布/主动安装继续保留原条件。D11 UNO 手机行动属于下一独立主题，未推进。
+
+
+## 提交与 PR（2026-11-12）
+
+主提交 **688fcc87b47f78aeb12b15033563c1f6767e398e** 已推送至 `codex/d10-computer-help`，创建 [PR #67](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/67)，面向 main、状态 open。GitHub 应用创建接口返回 403，命令行无独立登录；使用既有 Git HTTPS 认证在内存中传给 gh 后成功创建，没有输出或保存凭据。PR 可合并、当前无阻塞审查，pins 检查仍在运行；本记录不代表已合并或服务器已更新，功能分支保留。
