@@ -12,6 +12,7 @@ const webRoot = fileURLToPath(new URL('../../apps/web/', import.meta.url));
 const webRequire = createRequire(new URL('../../apps/web/package.json', import.meta.url));
 const { buildSync } = createRequire(webRequire.resolve('vite'))('esbuild');
 const gameVersion = process.env.PUERTO_RICO_TEST_VERSION ?? '1.0.0';
+const workerHelp = process.env.PUERTO_RICO_TEST_WORKER_HELP === 'true';
 if (!/^\d+\.\d+\.\d+$/.test(gameVersion)) throw new Error('Invalid Puerto Rico test version');
 const gameZip = `dist/game-packages/puerto-rico-${gameVersion}.zip`;
 type Snapshot = {
@@ -278,8 +279,8 @@ test('three signed-in players install, join, act and recover through the live pl
   const dialog = page.getByRole('dialog', { name: '上传并审核游戏 ZIP' });
   await dialog.getByLabel('游戏 ZIP 文件').setInputFiles(gameZip);
   await dialog.getByRole('button', { name: '检查游戏包' }).click();
-  await expect(dialog.getByText(/^(新游戏|此版本已安装)$/)).toBeVisible();
-  await dialog.getByRole('button', { name: /^(审核通过并上架|确认已安装版本)$/ }).click();
+  await expect(dialog.getByText(/^(新游戏|已有游戏更新|此版本已安装)$/)).toBeVisible();
+  await dialog.getByRole('button', { name: /^(审核通过并上架|审核通过并更新|确认已安装版本)$/ }).click();
   await expect(dialog).not.toBeVisible();
   const contexts = await Promise.all([
     browser.newContext({ viewport: page.viewportSize()! }),
@@ -290,11 +291,21 @@ test('three signed-in players install, join, act and recover through the live pl
     await login(peers[0]!, 'stage2_a');
     await login(peers[1]!, 'stage2_b');
     await page.goto(`/games/online.puerto-rico/${gameVersion}`);
+    const icon = readGamePackage(await readFile(gameZip)).presentation?.icon;
+    if (!icon) throw new Error('Puerto Rico package must include its icon');
+    const png = Buffer.from(icon.slice('data:image/png;base64,'.length), 'base64');
+    const iconSize = { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
     await expect
       .poll(() =>
         page
           .locator('.game-detail-icon img')
-          .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth === 256),
+          .evaluate(
+            (image: HTMLImageElement, size) =>
+              image.complete &&
+              image.naturalWidth === size.width &&
+              image.naturalHeight === size.height,
+            iconSize,
+          ),
       )
       .toBe(true);
     await expect(page.locator('.game-detail-icon img')).toHaveCSS('object-fit', 'contain');
@@ -356,8 +367,20 @@ test('three signed-in players install, join, act and recover through the live pl
     await board.getByRole('button', { name: '确认行动', exact: true }).click();
     for (const p of pages)
       await expect(p.frameLocator('iframe').getByRole('status')).toContainText('安排全部工人');
-    await board.getByRole('button', { name: '推荐分配', exact: true }).click();
-    await board.getByRole('button', { name: '确认行动', exact: true }).click();
+    await board.getByRole('button', { name: '清空岗位', exact: true }).click();
+    if (workerHelp) await expect(board.locator('#draft-hint')).toContainText('还需安排 1 人');
+    await expect(board.getByRole('button', { name: '确认行动', exact: true })).toBeDisabled();
+    const worker = board.getByRole('spinbutton', { name: /地块 1工人数/ });
+    if (info.project.name.includes('mobile')) await worker.tap();
+    else await worker.focus();
+    await worker.fill('1');
+    await expect(board.locator('#draft-hint')).toContainText('确认后待业 1 人');
+    if (workerHelp) {
+      await expect(board.locator('#allocation-preview')).toContainText('未提交');
+      await expect(board.locator('#allocation-preview')).toContainText('供给');
+    }
+    if (info.project.name.includes('mobile')) await board.locator('#confirm').tap();
+    else await board.locator('#confirm').press('Enter');
     const next = pages[(current + 1) % 3]!;
     await expect(next.frameLocator('iframe').getByRole('status')).toContainText(
       '你 · 安排全部工人',
@@ -385,6 +408,24 @@ test('three signed-in players install, join, act and recover through the live pl
     await expect(
       pages[(current + 2) % 3]!.frameLocator('iframe').getByRole('status'),
     ).toContainText('你 · 安排全部工人');
+    const last = pages[(current + 2) % 3]!.frameLocator('iframe');
+    await last.getByRole('button', { name: '推荐分配', exact: true }).click();
+    await last.getByRole('button', { name: '确认行动', exact: true }).click();
+    await expect(last.getByRole('status')).toContainText('选择本轮角色');
+    const final = (
+      await (
+        await acting.request.get(
+          new URL(matchUrl).pathname.replace('/matches/', '/api/v1/matches/') + '/view',
+        )
+      ).json()
+    ).data;
+    expect(final.revision).toBe(4);
+    expect(final.view.players[current].idle).toBe(1);
+    expect(
+      final.view.players
+        .filter((_: unknown, i: number) => i !== final.view.you)
+        .every((p: { vp: unknown; result: unknown }) => p.vp === null && p.result === null),
+    ).toBe(true);
     await acting.screenshot({ path: info.outputPath('real-three-player.png'), fullPage: true });
     expect(await acting.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
