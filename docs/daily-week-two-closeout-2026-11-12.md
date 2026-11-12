@@ -1,5 +1,7 @@
 # D14：第二周整合与交付核验（2026-11-12）
 
+交付更新：用户已明确批准，三个 PR 均已合并，三种游戏正式版本已由生产订阅安装并核验。平台保持 1.2.6；最新事实见[交付结果](#已批准合并正式发布与生产安装2026-11-12)，下文先保留批准前的验收记录。
+
 从重新获取的 `main@1c70c2def3ace12156140970a22a57dac0619d09` / **1.2.6** 建立 `/tmp/playboard-d14-closeout`、`codex/d14-week-two-closeout`。原工作区的已有改动、独立游戏及 D11–D13 工作区全部保留。
 
 ## 整合与审查
@@ -52,7 +54,7 @@ E2E 在既有 PostgreSQL 17 专用容器 **127.0.0.1:15441** 新建 **playboard_
 
 三个候选 release.json 的 commit 为 null，属于本地构建，**不能作为正式 Release 交付**。本轮未重建或修改游戏产物；当前平台 1.2.6 的 D11/D12 真实安装兼容证据见各自历史记录，不将先前规则/UI/候选联机写成本轮重新运行。
 
-UNO #4 自身仅改测试/CI，但合入游戏 main 会触发现有自动发布，可能交付 main 中既有的 **1.2.1 / 1.0.1 像素图稿候选**；波多黎各 #6 会触发 **1.1.2** 发布。不能把“测试 PR”当作没有发布副作用。后续须固定游戏 head，审查通过后按原工作流生成新标签与不可变附件，再更新游戏仓库清单；生产有明确启用的订阅时才会自动安装，未启用则由管理员审核。不得覆盖旧精确版本或把发布等同于上架。
+**发布流程更正（交付时复核）：** UNO #4 自身仅改测试/CI，现有工作流只在推送版本标签时发布；合入 main 仅检查，不能据此判断已发布。获准后另推送精确合并提交的标签，交付 main 中既有的 **1.2.1 / 1.0.1 像素图稿候选**；波多黎各 #6 在 main 合并后自动发布 **1.1.2**。不能把“测试 PR”当作没有发布副作用。后续须固定游戏 head，审查通过后按原工作流生成新标签与不可变附件，再更新游戏仓库清单；生产有明确启用的订阅时才会自动安装，未启用则由管理员审核。不得覆盖旧精确版本或把发布等同于上架。
 
 ## 服务器与待完成交付
 
@@ -67,3 +69,53 @@ D3 生产注册/登录闭环、D5 游戏正式发布/生产主动安装、真机
 D14 主提交 **06d3ee90738f8f97988dfc54787fc4e6c8946fcd** 已推送，创建 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72)，面向 main，统一交付上述平台候选与 D14 记录。GitHub 应用创建接口返回 403 `Resource not accessible by integration` 后，复用已授权 Git 认证创建成功，先查询避免重复，未记录凭据。三个原平台 head 已逐个通过祖先检查；整合与文档冲突处理未修改已验证产品树。
 
 平台 PR #69/#70/#71 和两个游戏 PR 均保留，尚未合并或删除分支；D14 PR 合入后才可按 GitHub 实际 merged 状态与精确 head 安全清理。后续仅补本节交付事实，不重复升版、构建或业务验证。最终 head 与远程 CI 以 PR 为准，不把原候选 CI 当作新整合提交的 CI。
+
+## 已批准合并、正式发布与生产安装（2026-11-12）
+
+用户明确回答“是”，批准合并平台 #72、UNO #4、波多黎各 #6，并完成游戏发布和服务器同步核验。重新 fetch 三仓 main、核对固定 head、完整差异及最新 CI/review 后，使用带 `sha` 约束的原生合并接口完成以下 merge commit；平台和两游戏的合并树分别等于已验证候选，没有加入其他提交或绕过保护。
+
+| 仓库 / PR | 合并提交 | 实际结果 |
+| --- | --- | --- |
+| 平台 [#72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72) | `21d12fdb3109d946ae2e3ed67b1965a05388d189` | merged；#69/#70/#71 的全部提交已包含，GitHub 均标记 merged |
+| UNO [#4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4) | `042868ce8d09fe5c4f7675f2003dc40f3b423207` | merged；现有 main 检查 success，随后推送两个未存在的新版本标签 |
+| 波多黎各 [#6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) | `0a59124d8bf463604cb1ae2f2ac72d1f4f9c28f0` | merged；原 main 自动发布流程完成 |
+
+首次合并脚本在额外 GET 预读遇到 HTTP 503，尚未执行合并；改以刚 fetch 的 main 和已核对的 PR 元数据执行固定 SHA 合并成功。UNO 首次标签推送因独立仓库缺少 HTTPS helper 未执行；仅该命令复用平台既有 helper 后推送成功，未持久修改认证配置或记录凭据。旧授权限制已由本次明确批准解除，不再保留为交付阻塞。
+
+### 正式 Release 与校验
+
+| 游戏 / 正式版本 | 标签所指提交 | 实际 ZIP 字节数 | 实际 ZIP SHA-256 |
+| --- | --- | --- | --- |
+| [UNO 1.2.1](https://github.com/PlayBoardgameTogether/playboard-game-uno/releases/tag/uno-v1.2.1) | `042868c` | 332,770 | `be42542e527792ccead2f17b0c16d7f285bac3418e77ef29e241b1ad7963849c` |
+| [毫不留情 1.0.1](https://github.com/PlayBoardgameTogether/playboard-game-uno/releases/tag/uno-no-mercy-v1.0.1) | `042868c` | 251,591 | `fe52b98b64462683e4ef3f81cf26b73d5e77ce20009496a9fa8da18324cc46c6` |
+| [波多黎各 1.1.2](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/releases/tag/puerto-rico-v1.1.2) | `0a59124` | 1,557,813 | `7065472879d1b8769eea6c6075a3ee65e19bad4ec71be532c69a5e987d286533` |
+
+本次实际下载三个新 Release 的 ZIP、release.json、SHA256SUMS；逐个核对正式发布状态、标签完整 SHA、manifest.commit、SDK、gameId/版本/文件名和 ZIP 摘要，三者均齐全且一致。三个标签保留旧发布，不移动任何已发布标签或替换旧附件。**登记已核对，无需改动**；[游戏仓库清单](game-repositories.md)更新为上述正式版本，平台集成副本和来源锁保持。
+
+UNO 正式产物与此前本地产物的大小/摘要不同。比较确认两玩法 server.js 完全相同、client.html 除内嵌 PNG 数据外完全相同、公开规则相同；以本次真实正式附件为交付和安装依据，不复用候选摘要。SDK 均为 ^0.1.0，UNO 规则内容 1.1.0、毫不留情/波多黎各规则内容 1.0.0，平台兼容版本为本轮实际运行的 1.2.6。
+
+远程实际 [UNO 休闲版](https://github.com/PlayBoardgameTogether/playboard-game-uno/actions/runs/43245536699)、[毫不留情](https://github.com/PlayBoardgameTogether/playboard-game-uno/actions/runs/43245537922)、[波多黎各](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/actions/runs/43245228569)工作流均 completed/success，三个 run 的 **check 和 release 两个 job 均 success**。这些是本次正式发布检查，不是先前 PR 中 skipped 的 release。
+
+### 平台与订阅实机核验
+
+原监督进程自行完成平台构建、排空、备份、迁移/游戏同步及切换；未手工重启、修改监督脚本或覆盖服务器运维补丁/.env。新备份 **update-jpwwRw / 76 文件 / 6,045,032 字节**，通过原 `verify-update-backup.mjs` 复验文件集合、大小、SHA-256、PGDMP 归档签名；previous=`1c70c2d`、candidate=`21d12fd`。本轮无新增迁移，没有生产恢复或数据库回滚。
+
+**23:15:37（北京时间）**，current.json、真实 API cwd、运行 package.json 一致为 **21d12fd / 1.2.6**；服务 active/running、NRestarts=0。匿名 Chromium 在 **1440×900、1280×800、390×844、320×740** 完成首页/详情/电脑页直达及刷新，ready/数据库就绪、页脚 1.2.6、pageerror 0、无检查到的整页横向溢出；实际响应的生产 CSS/电脑页 JS 与运行目录文件 SHA 相同。实际查看双端截图。页面切换取消的图片和 Cloudflare rum 请求未当作 API 失败或完整图像解码证据。
+
+只读确认生产原订阅 **auto_add=true、auto_update=true、revision=1**、持久授权管理员仍有效。实际正式附件验收后，仅调用当前生产原 `GameSubscriptionService.requestCheck` 排入一次检查；未伪造会话、提高权限、改开关或直接写安装数据。运行中原调度器在 **23:19:42 → 23:20:04** 完成官方发现、下载、摘要/manifest 复核及安装，批次 **succeeded**，三个新版本的 item 均为 **updated**。
+
+**23:20:26** 用只读 REPEATABLE READ 快照确认三新版本 enabled=true、安装摘要与上表正式 Release 完全一致；原 6 个包版本仍在、每个旧 package_hash 不变。新开桌目录切换到新版，旧版本取消大厅可用但不删除规则或桌面；没有在生产读取玩家私密 View、创建验收账号/对局，不能将保留旧包摘要等同于本轮实测玩家旧局恢复。其恢复/联机历史证据保留在 D11/D12 记录。
+
+### 新旧游戏资源与双端实际画面
+
+三个新版本的公开目录均只列出对应新版本；九张 icon/cover/background PNG 的响应 SHA 与正式包一致。三个源站桌面 HTML 与包内 client.html 严格逐字节一致，公网 HTML 仅额外插入可明确识别的 Cloudflare challenge 脚本，去除该唯一片段后严格全文一致；保留 sandbox CSP，波多黎各新帮助文字实际包含于响应。
+
+初轮将公网 HTML 直接按完整字节比较而失败；只读诊断确认没有游戏内容漂移。诊断探针还遇到回环地址拒连，按真实监督进程监听地址核对后源站比对成功，没有修改服务器监听配置。后续新包三组资源检查全部通过，但最后旧波多黎各 1.1.1 公网请求超出 30 秒；只对该失败请求用新的 curl 连接诊断，最终 **200 / 1,017,369 字节 / 14.75 秒**，除同一 CDN 挑战片段外与旧正式包 HTML 完全一致。旧 UNO 两玩法桌面均为 200。没有把首轮写成完整全绿，也没有重复已通过的新包检查。
+
+另行完成三个新版本详情页在 **1440×900 / 390×844** 的六次匿名实际渲染，**23:27:39** 全部 200、头像解码成功、pageerror 0、无检查到的整页横向溢出；实际查看 UNO 桌面、波多黎各手机截图。此检查不创建生产账号/对局，不能替代登录后的联机；原四视口平台检查及 D11/D12 的真实隔离联机证据各自保留。新增命令、日志、截图及实际附件保存在 `.data/d14-delivery/`，不提交。
+
+### 分支清理与剩余范围
+
+已逐个确认 GitHub merged、精确 source head 未变化、无其他开放 PR、工作区干净、main 包含全部提交后，以期望 SHA 约束删除远程并用本地 `git branch -d` 清理：平台 `codex/d11-uno-mobile`、`codex/d12-puerto-rico-help`、`codex/d13-responsive-accessibility`、`codex/d14-week-two-closeout`，游戏 `codex/d11-mobile-actions`、`codex/d12-decision-help`。全部工作区和 .data 验收证据保留，main 与正式发布标签保留；原主目录 36 项已有改动保持，其他任务分支不处理。
+
+本次仅补内部发布/运行记录，平台 **1.2.6 → 1.2.6**，README 一致，不重复已通过的本地业务验证或为文档手工重启应用。D3 生产收件→注册→登录闭环、其余四个未发布头像候选、物理手机/WebKit/屏幕阅读器/原生缩放仍未验收，不将本批三个生产更新扩大为全部候选已发布；D15 尚未开始。内部记录后续提交、同步与最终运行 SHA 以最终交付为准。

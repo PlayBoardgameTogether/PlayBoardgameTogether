@@ -1,5 +1,14 @@
 # 开发进度
 
+## D11–D14 已合并、三游戏正式发布并生产安装（2026-11-12，1.2.6）
+
+- 用户明确批准后，固定 head、最新 main、差异、CI 与审查核对通过，平台 [#72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72) 合并为 **21d12fd**，UNO [#4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4) 为 **042868c**，波多黎各 [#6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 为 **0a59124**；三合并树均等于已验证候选，平台 #69/#70/#71 全部已 merged。六个本地/远程功能分支按精确 head 和祖先核验安全清理，工作区、产物、main 及正式标签保留，原目录 36 项改动不动。
+- 正式发布 **UNO 1.2.1、毫不留情 1.0.1、波多黎各 1.1.2**，三个发布 run 的 check/release 均 success；实际下载 ZIP、release.json、SHA256SUMS 并校验标签 SHA、manifest.commit、SDK、版本/ID、字节数和摘要。UNO 流程更正为标签触发发布，非 main 合并自动发布；正式内嵌 PNG 字节与本地产物不同，但规则源码、客户端逻辑和说明比较一致。登记已核对，无需改动；游戏清单同步正式版本，来源锁与集成副本不漂移。
+- 平台原更新器完成切换，23:15:37 实测 **21d12fd / 1.2.6**、真实 API cwd 一致，服务 active/running、NRestarts=0；四视口匿名首页/详情/电脑刷新、ready、实际 JS/CSS、无 pageerror/整页溢出通过。新备份 **update-jpwwRw / 76 文件 / 6,045,032 字节** 的文件、大小、摘要、归档签名和前后 SHA 复验通过，无人工重启、配置覆盖、生产恢复或新增迁移。
+- 保持原 auto_add/auto_update=true、revision=1 和有效持久授权，仅调用原服务排入一次检查。原生产订阅 **23:19:42→23:20:04 succeeded**，三游戏均 updated；23:20:26 一致性只读查询确认 enabled=true 且精确摘要与正式附件一致，原 6 个包哈希全部保持。不伪造玩家身份、不直接改安装数据，不把保留旧字节写成实际玩家旧局验收。
+- 三新版本公开目录、九张 PNG 摘要、源站桌面全文与正式包一致；公网仅识别到 Cloudflare 挑战注入，严格剥离该片段后相同。旧波多黎各首轮请求超时后专门 curl 诊断最终 200，未重复新包检查；三个新详情在 1440/390px 六次实际渲染均 200、无 pageerror/整页溢出，实际查看截图。
+- 本批仅内部交付记录，平台保持 **1.2.6**，README 一致，不重复已通过的本地检查；D3 生产注册闭环、其余四个头像候选及真机/WebKit 等条件保留，D15 未开始。完整合并 SHA、正式附件摘要、发布流程更正及实机证据见 [D14 交付](daily-week-two-closeout-2026-11-12.md#已批准合并正式发布与生产安装2026-11-12)。
+
 ## 每日任务 D14：第二周整合与交付核验（2026-11-12，平台保持 1.2.6）
 
 - 从最新 main `1c70c2d` 在独立 `codex/d14-week-two-closeout` 以 merge commit 整合 D11/D12/D13 平台候选，保留原 head 祖先；只解决计划/进度记录冲突，原工作区和游戏待审分支保留。平台仅测试、配置和内部文档，**1.2.6 → 1.2.6**，README 一致，运行代码、协议、迁移、来源锁和游戏副本未改。
