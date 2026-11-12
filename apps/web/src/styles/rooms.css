@@ -46,6 +46,19 @@
   .room-create-shell > .muted {
     margin-bottom: 28px;
   }
+  .computer-ai-summary {
+    padding: 16px;
+    border-inline-start: 3px solid var(--accent);
+    border-radius: 12px;
+    background: var(--panel);
+    overflow-wrap: anywhere;
+  }
+  .computer-ai-summary p {
+    margin-block: 8px;
+  }
+  .computer-ai-summary small {
+    color: var(--muted);
+  }
   .room-create-fields {
     min-width: 0;
     border: 0;

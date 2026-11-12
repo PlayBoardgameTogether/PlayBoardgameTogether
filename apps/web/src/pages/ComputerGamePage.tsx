@@ -38,12 +38,16 @@ export function ComputerGamePage({ id, version }: { id: string; version: string 
   const [wallet, setWallet] = useState<AiPointWallet>();
   const [offerId, setOfferId] = useState('');
   const [budget, setBudget] = useState(100);
+  const [seatCount, setSeatCount] = useState<number>();
   const [aiError, setAiError] = useState('');
   const mounted = useRef(false);
   const lock = useRef(false);
   const key = `boardgame:computer-game:${id}@${version}`;
   const game = games?.find((item) => item.id === id && item.version === version);
   const offer = offers?.find((item) => item.id === offerId);
+  const selectedSeatCount = pending?.create.seatCount ?? seatCount ?? game?.players.min ?? 2;
+  const budgetValid = Number.isInteger(budget) && budget >= 1 && budget <= 1000000;
+  const minimumCallPoints = offer?.tokenPricing ? 1 : (offer?.pointsPerAction ?? 1);
 
   useEffect(() => {
     mounted.current = true;
@@ -197,9 +201,7 @@ export function ComputerGamePage({ id, version }: { id: string; version: string 
       <section className="room-create-shell">
         <p className="eyebrow">{game.name}</p>
         <h1>和电脑开一局</h1>
-        <p className="muted">
-          你坐第一席，其余席位优先使用官方 AI。点数或单局额度不足时自动使用免费脚本 AI 继续对局。
-        </p>
+        <p className="muted">你坐第一席，其余席位由电脑陪玩；可选择官方 AI 优先或全程免费脚本。</p>
         <p className="muted">这是完整正式对局，会计入对局记录；每人最多同时主持一个房间。</p>
         {authError ? (
           <PageFeedback title="需要确认登录状态">
@@ -244,7 +246,10 @@ export function ComputerGamePage({ id, version }: { id: string; version: string 
                   {offer && (
                     <>
                       <p className="muted">
-                        可用 {wallet?.available ?? 0} 点 · <OfficialAiPrice offer={offer} />
+                        AI 点数：可用 {wallet?.available ?? 0} 点（已预留 {wallet?.reserved ?? 0}{' '}
+                        点）。
+                        <br />
+                        <OfficialAiPrice offer={offer} />
                       </p>
                       <label>
                         每席位单局 AI 点数上限
@@ -255,28 +260,27 @@ export function ComputerGamePage({ id, version }: { id: string; version: string 
                           max={1000000}
                           step={1}
                           required
+                          aria-describedby="computer-budget-help"
                           value={budget}
                           disabled={busy}
                           onChange={(event) => setBudget(Number(event.target.value))}
                         />
                       </label>
-                      <p className="muted">
-                        各电脑席位共享你的余额，成功行动才扣点，脚本免费。保存上限也会更新此官方 AI
-                        的其他进行中席位；不会自动提高上限。
+                      <p className="muted" id="computer-budget-help">
+                        上限按席位分别累计，各电脑共享你的 AI 点数。开始时保存上限，也会更新此官方
+                        AI 的其他进行中席位；有活跃席位时只能提高，不能降低。
                       </p>
                     </>
                   )}
                 </>
-              ) : (
-                <p className="muted">官方 AI 尚未开放，本局使用免费脚本 AI。</p>
-              ))}
+              ) : null)}
             <label>
               总人数（含你）
               <select
                 name="seatCount"
                 disabled={busy || !!pending}
-                defaultValue={pending?.create.seatCount ?? game.players.min}
-                key={pending?.create.seatCount ?? 'new'}
+                value={selectedSeatCount}
+                onChange={(event) => setSeatCount(Number(event.target.value))}
               >
                 {Array.from(
                   { length: game.players.max - game.players.min + 1 },
@@ -288,8 +292,55 @@ export function ComputerGamePage({ id, version }: { id: string; version: string 
                 ))}
               </select>
             </label>
+            {!pending && offers && (
+              <section
+                className="computer-ai-summary"
+                aria-label="本局陪玩与预算"
+                aria-live="polite"
+              >
+                <strong>
+                  {selectedSeatCount - 1} 位电脑 · {offer ? `${offer.name}优先` : '免费脚本 AI'}
+                </strong>
+                {offer ? (
+                  <>
+                    <p>
+                      {budgetValid
+                        ? `每席位上限 ${budget} 点，${selectedSeatCount - 1} 位电脑合计上限 ${(selectedSeatCount - 1) * budget} 点。`
+                        : '请填写 1–1,000,000 的整数点数上限。'}
+                      这是消费上限，开局不会一次扣除；仅成功的官方 AI 行动按价格结算。
+                    </p>
+                    <p>
+                      {(wallet?.available ?? 0) < minimumCallPoints
+                        ? `当前可用点数不足 ${minimumCallPoints} 点，将先用免费脚本陪玩。`
+                        : '点数或该席位剩余额度不足时，免费脚本会接续当前行动。'}
+                      后续行动额度足够时再优先官方 AI；不会自动提高上限。
+                    </p>
+                    <small>
+                      余额为读取时的快照，其他对局也会使用；不保证每个席位都能用满上限。桌游币不能支付
+                      AI。
+                    </small>
+                  </>
+                ) : (
+                  <p>
+                    {offers.length ? '已选择全程脚本陪玩。' : '官方 AI 尚未开放。'}
+                    本局不使用官方模型，不扣 AI 点数。
+                  </p>
+                )}
+              </section>
+            )}
             {pending && (
-              <p role="status">已保存本次开局进度。继续时会核对原请求，不会重复建房或开局。</p>
+              <section className="computer-ai-summary" aria-label="已保存的开局设置">
+                <strong>
+                  {selectedSeatCount - 1} 位电脑 ·{' '}
+                  {pending.enrollment ? '官方 AI 优先' : '免费脚本 AI'}
+                </strong>
+                {pending.enrollment && (
+                  <p>
+                    每席位单局上限 {pending.enrollment.matchBudget} 点；额度不足时免费脚本接续。
+                  </p>
+                )}
+                <p role="status">已保存本次开局进度。继续时会核对原请求，不会重复建房或开局。</p>
+              </section>
             )}
             {error && (
               <p className="error-notice" role="alert">

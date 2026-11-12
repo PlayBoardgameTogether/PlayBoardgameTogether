@@ -1,5 +1,11 @@
 # 开发进度
 
+## 每日任务 D10：电脑陪玩与预算说明（2026-11-12，候选 1.2.6）
+
+- 从 main `120976e` / 1.2.5 独立开发，保留原工作区。电脑开局页补充每席位与多电脑合计上限、可用/预留点数、固定价/token 最低额度差异、免费回退和显式全程脚本说明。原操作恢复显示锁定设置，上限生效范围与桌游币区别明确；没有计费、权限、API、迁移、SDK、游戏或来源锁变化。
+- 平台 **1.2.5 → 1.2.6（PATCH）**，已有表单局部说明与反馈优化，README 同步。全 typecheck、lint（20 根 AST）及生产 build 通过；生产预览 UI 6/6，四视口亮暗/键盘/减少动态效果检查通过，实际查看截图。独立 `playboard_d10_test_20261112` / 15441 经原准备链串行完成定向预算集成 5/5（另 245 项名称过滤未执行）和真实电脑 E2E 6/6，无选中用例 skip；双端覆盖未知结果恢复、免费接续、完整结算/战绩和再开局，没有真实付费调用。
+- 已成功重新 fetch，服务器只读为 current.json/运行目录 `120976e / 1.2.5`，服务 active/running、NRestarts=0；尚未把本地候选当作上线。具体命令、原始运行画面、交付状态及真机/收费模型等限制见 [D10 记录](daily-computer-help-2026-11-12.md)。D3/D5 条件保留，D11 未开始。
+
 ## D8/D9 合并与生产验收（2026-11-11，1.2.5）
 
 - 用户明确批准后，D8 [PR #64](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/64) 固定 head `3ff3e61` 合并为 `05dd7de`；D9 整合仅文档冲突，21 文件/3 提交、head `5b5f62a`、pins success 及无阻塞审查核对后，[PR #65](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/65) 合并为 **8e6092a4a12293b3fb35d8e24f5c6748224285ba**。运行代码与本批已通过 typecheck/lint/build、3 单测、12 个独立业务 E2E、22 项 UI 的候选相同，没有重复无变化检查。
