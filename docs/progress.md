@@ -5,7 +5,7 @@
 - 从最新 main `1c70c2d` 在独立 `codex/d14-week-two-closeout` 以 merge commit 整合 D11/D12/D13 平台候选，保留原 head 祖先；只解决计划/进度记录冲突，原工作区和游戏待审分支保留。平台仅测试、配置和内部文档，**1.2.6 → 1.2.6**，README 一致，运行代码、协议、迁移、来源锁和游戏副本未改。
 - 冻结离线安装、全 typecheck、lint（20 根 AST）与生产 build 通过；lint 首轮 IPC 沙箱 EPERM 后外层原命令通过。四视口电脑 UI **16/16**；原准备链在新建独立 `playboard_d14_test_20261112` / 15441 串行完成桌面/手机双真人及真人对免费脚本完整局 **4/4**，含恢复、并发冲突、结算、战绩及再开局，无 skip。实际查看电脑页和真实结算双端截图。
 - 来源锁本地及远程均通过（10 仓库/154 文件）；三个正式 Release 实际下载 ZIP、release.json、SHA256SUMS，并与三个本地候选核验共 **6 包**的目录、manifest、SDK、名称/ID、版本/标签和摘要。**登记已核对，无需改动**；UNO 正式 1.2.0/1.0.0、候选 1.2.1/1.0.1，波多黎各正式 1.1.1、候选 1.1.2。候选本地 commit=null，未计为正式发布或生产安装。
-- 五个原 PR 均 open、review 列表为空，三个平台 pins success、两游戏 check success / release skipped。UNO 测试 PR 合入也会触发现有 main 像素图稿候选发布，已单列副作用；未经批准不将测试整合等同于游戏发布。历史自动审批已拒绝 D11 main 合并，本轮不绕过；D14 推送/PR 与最终授权状态以交付记录为准。
+- 五个原 PR 均 open、review 列表为空，三个平台 pins success、两游戏 check success / release skipped。UNO 测试 PR 合入也会触发现有 main 像素图稿候选发布，已单列副作用；未经批准不将测试整合等同于游戏发布。历史自动审批已拒绝 D11 main 合并，本轮不绕过；D14 主提交 `06d3ee9` 已推送并创建统一 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72)，保留原三个平台 head 祖先，尚未合并；最终 head/CI 以 PR 为准。
 - 22:58:15 只读核对 current.json、真实 API cwd、运行 package.json 一致 **1c70c2d / 1.2.6**，服务 active/running、NRestarts=0，公网 ready/database 就绪；公开游戏仍为上述正式版本，未重新核验生产安装摘要。没有合并 main、重启、游戏发布或主动安装；D3/D5 原条件、真机/WebKit/屏幕阅读器等未验范围保留，D15 尚未开始。实际命令、兼容关系与交付边界见 [D14 记录](daily-week-two-closeout-2026-11-12.md)。
 
 ## 每日任务 D13：双端与无障碍专项（2026-11-12，平台保持 1.2.6）
