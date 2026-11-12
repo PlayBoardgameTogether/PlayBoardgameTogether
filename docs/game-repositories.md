@@ -10,11 +10,11 @@
 
 | 游戏           | 仓库                                                                                              | 正式发布版本  | 发布格式         |
 | -------------- | ------------------------------------------------------------------------------------------------- | ------------- | ---------------- |
-| UNO 及毫不留情 | [playboard-game-uno](https://github.com/PlayBoardgameTogether/playboard-game-uno)                 | 1.2.0 / 1.0.0 | 分别发布安装 ZIP |
+| UNO 及毫不留情 | [playboard-game-uno](https://github.com/PlayBoardgameTogether/playboard-game-uno)                 | 1.2.1 / 1.0.1 | 分别发布安装 ZIP |
 | 五子棋         | [playboard-game-gomoku](https://github.com/PlayBoardgameTogether/playboard-game-gomoku)           | 1.0.3         | 安装 ZIP         |
 | 拉密           | [playboard-game-rummikub](https://github.com/PlayBoardgameTogether/playboard-game-rummikub)       | 1.0.3         | 安装 ZIP         |
 | 卡坦岛         | [playboard-game-catan](https://github.com/PlayBoardgameTogether/playboard-game-catan)             | 1.0.1         | 安装 ZIP         |
-| 波多黎各       | [playboard-game-puerto-rico](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico) | 1.1.1         | 安装 ZIP         |
+| 波多黎各       | [playboard-game-puerto-rico](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico) | 1.1.2         | 安装 ZIP         |
 | 阿瓦里         | [playboard-game-awari](https://github.com/PlayBoardgameTogether/playboard-game-awari)             | 1.0.0         | 安装 ZIP         |
 | Color Match    | [playboard-game-color-match](https://github.com/PlayBoardgameTogether/playboard-game-color-match) | 1.0.0         | 可信内置集成 tgz |
 | Grid Garden    | [playboard-game-grid-garden](https://github.com/PlayBoardgameTogether/playboard-game-grid-garden) | 1.0.0         | 可信内置集成 tgz |
