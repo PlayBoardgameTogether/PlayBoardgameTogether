@@ -56,3 +56,9 @@ PUERTO_RICO_TEST_VERSION=1.1.2 PUERTO_RICO_TEST_WORKER_HELP=true \
 只读核对生产 current.json、真实 API cwd 和运行 package.json 一致 **1c70c2d / 1.2.6**，systemd active/running、NRestarts=0。本轮未合并、打标、正式 Release、主动订阅安装、重启或更改生产数据；没有把候选当上线。游戏 PR 合入 main 会触发原自动验证/发布，应在获准合并并通过后核对精确标签、ZIP、release.json、SHA256SUMS，再按已开启订阅或管理员审核确认安装；发布后另同步游戏正式清单。
 
 未验收物理手机、Safari/WebKit、完整屏幕阅读器或真实模型，未重复无变化的平台生产构建或全量业务集成/E2E。D3 生产注册闭环、D5 发布/主动安装继续保留原条件；D13 未开始。PR、远程 CI 与最终交付状态据实补记。
+
+## PR 交付复核
+
+- 游戏 [PR #6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 固定 head **fd4d6e781ca06811e3537b0c07403ea4f53c8702**，10 文件/1 提交，open、可合并。远程 [check](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/actions/runs/43157224091) **success**：冻结安装、浏览器、规则、发布脚本、构建、四视口 UI、verify 与 artifact 全通过；release 按 PR 条件 **skipped**，没有正式发布。
+- 平台主提交 **47132e5dd5e07137d60281d0c29de14623c6a6e7** 已推送，创建 [PR #70](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/70)，4 文件、open、可合并；主提交的远程 pins 检查 success。这里只补交付事实，不重复代码检查或升版；后续 docs 提交仍属于同一 PR。
+- 两个 D12 分支保留待审查/合并授权，本轮没有尝试合并 main 或绕过 D11 的授权条件，服务器没有同步候选游戏或内部计划文档。原主目录仍为原有 36 项改动，本轮隔离工作区没有夹带。
