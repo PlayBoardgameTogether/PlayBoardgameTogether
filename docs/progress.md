@@ -1,5 +1,33 @@
 # 开发进度
 
+## 每日任务 D14：第二周整合与交付核验（2026-11-12，平台保持 1.2.6）
+
+- 从最新 main `1c70c2d` 在独立 `codex/d14-week-two-closeout` 以 merge commit 整合 D11/D12/D13 平台候选，保留原 head 祖先；只解决计划/进度记录冲突，原工作区和游戏待审分支保留。平台仅测试、配置和内部文档，**1.2.6 → 1.2.6**，README 一致，运行代码、协议、迁移、来源锁和游戏副本未改。
+- 冻结离线安装、全 typecheck、lint（20 根 AST）与生产 build 通过；lint 首轮 IPC 沙箱 EPERM 后外层原命令通过。四视口电脑 UI **16/16**；原准备链在新建独立 `playboard_d14_test_20261112` / 15441 串行完成桌面/手机双真人及真人对免费脚本完整局 **4/4**，含恢复、并发冲突、结算、战绩及再开局，无 skip。实际查看电脑页和真实结算双端截图。
+- 来源锁本地及远程均通过（10 仓库/154 文件）；三个正式 Release 实际下载 ZIP、release.json、SHA256SUMS，并与三个本地候选核验共 **6 包**的目录、manifest、SDK、名称/ID、版本/标签和摘要。**登记已核对，无需改动**；UNO 正式 1.2.0/1.0.0、候选 1.2.1/1.0.1，波多黎各正式 1.1.1、候选 1.1.2。候选本地 commit=null，未计为正式发布或生产安装。
+- 五个原 PR 均 open、review 列表为空，三个平台 pins success、两游戏 check success / release skipped。UNO 测试 PR 合入也会触发现有 main 像素图稿候选发布，已单列副作用；未经批准不将测试整合等同于游戏发布。历史自动审批已拒绝 D11 main 合并，本轮不绕过；D14 主提交 `06d3ee9` 已推送并创建统一 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72)，保留原三个平台 head 祖先，尚未合并；最终 head/CI 以 PR 为准。
+- 22:58:15 只读核对 current.json、真实 API cwd、运行 package.json 一致 **1c70c2d / 1.2.6**，服务 active/running、NRestarts=0，公网 ready/database 就绪；公开游戏仍为上述正式版本，未重新核验生产安装摘要。没有合并 main、重启、游戏发布或主动安装；D3/D5 原条件、真机/WebKit/屏幕阅读器等未验范围保留，D15 尚未开始。实际命令、兼容关系与交付边界见 [D14 记录](daily-week-two-closeout-2026-11-12.md)。
+
+## 每日任务 D13：双端与无障碍专项（2026-11-12，平台保持 1.2.6）
+
+- 新增电脑开局四视口生产预览入口与共用可达性检查，覆盖亮暗主题、根字体 200%、减少动态效果、焦点、预算校验及错误恢复；真实建房回归补核心控件、入座和开局命中检查。本轮只改测试/配置/内部记录，平台仍为 **1.2.6**，README 一致，无产品/协议/数据库/游戏副本变化。
+- 冻结安装、生产 build、typecheck、全 lint（20 根 AST）通过；电脑 UI 首轮 12/16，半像素原生校验滚动诊断后四个新增用例最终 4/4；真实四视口开局首轮 10/12，测试 ID 与棋桌懒加载等待修正后完整流程 4/4。未延长超时或降低断言；十二个独立真实用例最终均通过，不将分批结果写为单批全绿。独立 D13 测试库/15441，原准备链完整、清理串行。
+- 实际查看新建房/电脑页面，并复核 D11/D12 既有四视口游戏截图；游戏历史联机验证不冒充本轮重跑。D11 平台 #69 / UNO #4、D12 平台 #70 / 波多黎各 #6 仍 open，未混入本批，原目录 36 项改动保留。
+- 服务器只读确认 current.json、API cwd 和运行 package.json 一致 **1c70c2d / 1.2.6**，服务 active/running、NRestarts=0。无产品更新，不重启；无游戏发布/生产安装。物理设备、Safari/WebKit、屏幕阅读器、原生页面缩放未验收；D3/D5 条件保留，D14 未开始。完整命令、失败和范围见 [D13 记录](daily-responsive-accessibility-2026-11-12.md)。 主提交 `99b2d03` 已推送并创建 [PR #71](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/71)，仅八文件、未合并，分支保留待审查。
+
+## 每日任务 D12：波多黎各工人分配帮助（2026-11-12，游戏候选 1.1.2）
+
+- 独立游戏仓库补充必须上岗人数、缺少/超配与整数提示，以及确认旁的未提交岗位产能预览；手机原位换行、桌面键盘可用，权威规则/动作与隐私保持。游戏 **1.1.1 → 1.1.2（PATCH）**，contentVersion 1.0.0、资源 1.1.0 不变；主提交 `fd4d6e7` 已推送，[游戏 PR #6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 待审查。未发布、未安装生产。
+- 最终规则 16/16、四视口 UI 12/12、build、verify 1/1、发布脚本 1/1 通过；平台全 typecheck/lint（20 根 AST）、来源锁 10 仓库/154 文件及实际 1440/390/320px 三账号 E2E 3/3 通过，无选中 skip。默认锁定 1.0.0 桌面原链兼容最终 1/1。独立 D12 final 测试库/15441，准备、迁移、同步与资源校验完整，清理串行。
+- 原版提示缺口、旧头像尺寸假设、异步断言、旧候选不可变拒绝和旧版审核状态漏列均有失败证据与明确处理，未放宽安全保护；实际查看双端帮助及真实联机截图。平台只改测试/内部文档，保持 **1.2.6**，README 一致；登记已核对无需改动，游戏副本/来源锁不漂移，原目录与 D11 待审查工作不动。
+- 生产仅只读确认仍为 **1c70c2d / 1.2.6**、真实 API cwd 一致、服务 active/running、NRestarts=0。未合并、发布、生产主动安装或重启；真机/WebKit/真实模型等限制与完整命令见 [D12 记录](daily-puerto-rico-help-2026-11-12.md)。D3/D5 原条件保留，D13 未开始。平台主提交 `47132e5` 已推送并创建 [PR #70](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/70)；游戏固定 head `fd4d6e7` 远程完整 check success，release 按 PR 条件跳过，两个 PR 保留待审查/授权。
+
+## 每日任务 D11：UNO 手机行动验收（2026-11-12，平台保持 1.2.6）
+
+- 在 UNO 独立仓库验收现版，只补测试与内部记录：[PR #4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4)，提交 `e631eda` 已推送、待审查。四视口启用手机触摸，两玩法 24 张手牌末端选色、相同快照的草稿/滚动/焦点和失败重试通过；累计罚牌、换手、轮盘、UNO、隔离保持。规则 23/23、两实际 ZIP 构建和 QuickJS verify 1/1 通过，未改规则/桌面/资源或游戏版本。
+- 平台旧 E2E 的隐藏图标 PNG 假设与现有 WebP 展示冲突；按实际来源核对严格 MIME、同源可见头像成功解码及隐藏状态。真实联机首轮桌面/320px 两玩法 4/4，通过原准备链修正后仅复验 390px 2/2，总计六个独立完整用例通过，非单批全绿；覆盖上传、脚本 AI、iframe 行动、刷新、私密 View、结算及回房。专用 `playboard_d11_test_20261112` / 15441 和独立资源目录，不操作开发/生产数据。
+- 全 typecheck、lint（20 根 AST）及差异检查通过，实际查看 320px 六人桌选色及联机棋桌。仅测试/内部文档，平台保持 **1.2.6**、README 一致；登记已核对，无需改动，游戏来源锁与集成副本保持。正式 UNO Release 仍为 1.2.0/1.0.0，头像候选未发布，无生产安装/真实模型。11:43:33 只读确认生产 `1c70c2d / 1.2.6`、API cwd 一致，服务 active/running、NRestarts=0；PR/同步与限制见 [D11 记录](daily-uno-mobile-2026-11-12.md)。D12 未推进，D3/D5 原条件保留。
+
 ## D10 合并与生产验收（2026-11-12，1.2.6）
 
 - [PR #67](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/67) 固定 head `934a7c8`、完整 13 文件/2 提交、pins success 和无阻塞审查核对后，以 merge commit 合并为 **deee8bdcb1cb5368be932637c96328c3b930ff0b**；合并树等于已验证候选。原更新器完成构建、备份、排空及切换，未手动重启或覆盖运维补丁。备份 **update-C5pRNx / 76 文件 / 6,045,031 字节** 的文件集合、长度、摘要、归档签名和前后 SHA 全部复验通过。
