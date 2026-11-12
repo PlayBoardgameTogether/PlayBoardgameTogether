@@ -1,5 +1,11 @@
 # 开发进度
 
+## 每日任务 D11：UNO 手机行动验收（2026-11-12，平台保持 1.2.6）
+
+- 在 UNO 独立仓库验收现版，只补测试与内部记录：[PR #4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4)，提交 `e631eda` 已推送、待审查。四视口启用手机触摸，两玩法 24 张手牌末端选色、相同快照的草稿/滚动/焦点和失败重试通过；累计罚牌、换手、轮盘、UNO、隔离保持。规则 23/23、两实际 ZIP 构建和 QuickJS verify 1/1 通过，未改规则/桌面/资源或游戏版本。
+- 平台旧 E2E 的隐藏图标 PNG 假设与现有 WebP 展示冲突；按实际来源核对严格 MIME、同源可见头像成功解码及隐藏状态。真实联机首轮桌面/320px 两玩法 4/4，通过原准备链修正后仅复验 390px 2/2，总计六个独立完整用例通过，非单批全绿；覆盖上传、脚本 AI、iframe 行动、刷新、私密 View、结算及回房。专用 `playboard_d11_test_20261112` / 15441 和独立资源目录，不操作开发/生产数据。
+- 全 typecheck、lint（20 根 AST）及差异检查通过，实际查看 320px 六人桌选色及联机棋桌。仅测试/内部文档，平台保持 **1.2.6**、README 一致；登记已核对，无需改动，游戏来源锁与集成副本保持。正式 UNO Release 仍为 1.2.0/1.0.0，头像候选未发布，无生产安装/真实模型。11:43:33 只读确认生产 `1c70c2d / 1.2.6`、API cwd 一致，服务 active/running、NRestarts=0；PR/同步与限制见 [D11 记录](daily-uno-mobile-2026-11-12.md)。D12 未推进，D3/D5 原条件保留。
+
 ## D10 合并与生产验收（2026-11-12，1.2.6）
 
 - [PR #67](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/67) 固定 head `934a7c8`、完整 13 文件/2 提交、pins success 和无阻塞审查核对后，以 merge commit 合并为 **deee8bdcb1cb5368be932637c96328c3b930ff0b**；合并树等于已验证候选。原更新器完成构建、备份、排空及切换，未手动重启或覆盖运维补丁。备份 **update-C5pRNx / 76 文件 / 6,045,031 字节** 的文件集合、长度、摘要、归档签名和前后 SHA 全部复验通过。
