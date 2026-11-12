@@ -28,9 +28,15 @@ for (const edition of [
     if (info.project.name === 'mobile') {
         // The current mobile catalog intentionally hides redundant icons; lazy images need not decode.
         await expect(icon).toBeHidden();
-        const art = await page.request.get((await icon.getAttribute('src'))!);
+        const source = (await icon.getAttribute('src'))!;
+        // The platform's catalog override uses WebP; installed package art is PNG.
+        // The visible avatar above already verifies that this same image decodes.
+        expect(source).toBe(await card.locator('.game-cover img').getAttribute('src'));
+        const art = await page.request.get(source);
         expect(art.ok()).toBe(true);
-        expect(art.headers()['content-type']).toContain('image/png');
+        expect(art.headers()['content-type']).toContain(
+            new URL(source, page.url()).pathname.endsWith('.webp') ? 'image/webp' : 'image/png',
+        );
     } else {
         await expect.poll(() => icon.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 100)).toBe(true);
     }
