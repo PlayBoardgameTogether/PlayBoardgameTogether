@@ -9,6 +9,7 @@
 | 公开开发文档 | `pnpm test:developers` | 先 `pnpm build` |
 | 管理员后台 | `pnpm test:admin-ui` | 先 `pnpm build` |
 | 单个页面，例如公共聊天 | `pnpm test:ui public-chat.spec.ts` | 先 `pnpm build` |
+| 电脑开局四视口与无障碍 | `pnpm exec playwright test -c tests/config/responsive-start.config.ts` | 先 `pnpm build`；1440×900、1280×800、390×844、320×740，含双主题、200% 字体、键盘与错误恢复 |
 | 游戏包管理 | `pnpm test:ui game-package-upload-ui.spec.ts admin-games-ui.spec.ts` | 先 `pnpm build` |
 | 花砖计分动画 | `pnpm exec playwright test -c tests/config/azul.config.ts` | 自动启动 Vite 开发服务 |
 | 玩家名称显示 | `pnpm exec playwright test -c tests/config/player-names.config.ts` | 自动启动 Vite 开发服务 |
