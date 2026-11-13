@@ -1,5 +1,13 @@
 # 开发进度
 
+## 每日任务 D15：在线 ZIP 公开结果设计（2026-11-13，平台保持 1.2.6）
+
+- 重新获取 main 成功，以 `add094003876376b8fef83b7cfde5b9aeea87f76` 在干净的 `codex/d15-zip-result-design` 独立工作区核对现有结果 DTO、QuickJS、安装/装配、真人/自动终局事务、本人战绩与精确版本恢复；原目录落后 143 提交、36 项既有改动全部保留，无混入。
+- 完成 [D15 设计](daily-zip-public-result-design-2026-11-13.md) 与 [ADR-011（Proposed）](adr/011-optional-package-public-results.md)：拟由 game.json 显式声明 `publicResult: "winners-scores-v1"`，同步 `getPublicResult(outcome)` 在原有界 QuickJS 返回严格公开胜者/可选完整分数或显式 null，按固定参与者映射现有 DTO 和 resultSummaries，不从游戏画面/手牌猜成绩。非法输出使原终局事务回滚，保留去重、回放、房间复位、自动任务与计费边界。
+- 明确单胜/共同获胜、无数值评分、未知结果、未表达的平局语义及额外秘密字段拒绝；持久声明拟用新增可空列，旧包/旧局不启用、不回填、旧摘要逐字节保持。不改 SDK 核心以免内置源码摘要漂移；新 descriptor 可使旧平台在安装时拒绝新包，但安装后不能保证降级旧平台仍识别声明，列为 D21 发布门槛。
+- 本轮仅内部设计与任务状态，平台 **1.2.6 → 1.2.6**、README 一致，现有规范未被改写为已支持；没有运行代码、协议、迁移、游戏仓库/来源锁/目录改动。`git diff --check` 与五文档/21 个新增相对链接/新文档围栏/版本/变更范围检查通过；首轮全历史扫描碰到既有 Windows file 链接，保留历史并按新增范围核验。不运行数据库测试、E2E 或 build，不将 D16–D21 待执行矩阵算作本轮通过。
+- **23:38:23（北京时间）**，current.json、实际 API cwd、运行 package.json 一致为 **add0940 / 1.2.6**；`boardgame-local.service` active/running、NRestarts=0，本机 `/health/ready` 200、database.ready=true。仅只读核验，无安装/生产写入/重启；本轮文档尚未同步服务器。D3 注册闭环、其余四个头像候选与真机/WebKit 条件保留，D16 未开始。提交与 PR 状态在完成检查后补记。
+
 ## D11–D14 已合并、三游戏正式发布并生产安装（2026-11-12，1.2.6）
 
 - 用户明确批准后，固定 head、最新 main、差异、CI 与审查核对通过，平台 [#72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72) 合并为 **21d12fd**，UNO [#4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4) 为 **042868c**，波多黎各 [#6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 为 **0a59124**；三合并树均等于已验证候选，平台 #69/#70/#71 全部已 merged。六个本地/远程功能分支按精确 head 和祖先核验安全清理，工作区、产物、main 及正式标签保留，原目录 36 项改动不动。

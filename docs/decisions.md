@@ -1,5 +1,7 @@
 # 决策记录
 
+- [ADR-011](adr/011-optional-package-public-results.md)（Proposed，D15 设计）：在线 ZIP 显式声明可选公开结果，在有界 QuickJS 投影并复用原终局事务；旧包/旧局/摘要不变，平台先于游戏发布。尚未实现，详见 [D15 设计](daily-zip-public-result-design-2026-11-13.md)。
+
 - [ADR-006](adr/006-bounded-online-update.md)：候选构建后暂停新请求、在途请求最多排空 30 秒，常驻连接和未结束对局不再永久阻塞；短暂断线沿用持久快照与回执恢复，排空超时恢复服务并报告失败，首次上线需选择新版 API 并重启新版监督脚本。
 
 - [ADR-005](adr/005-runtime-game-packages.md)：管理员即时安装固定三文件 ZIP，QuickJS WASM 规则与 sandbox HTML 桌面，复用正式游戏事务，持久精确版本并保留旧局；普通源码项目不执行在线 npm 构建。
