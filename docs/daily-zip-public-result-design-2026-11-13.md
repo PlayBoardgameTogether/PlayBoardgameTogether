@@ -120,4 +120,4 @@ D16 的 TypeScript/持久化/包导出影响要求 typecheck、lint、相关单�
 - **23:38:23（北京时间）**，服务器 current.json 的 `add094003876376b8fef83b7cfde5b9aeea87f76` 与实际 API 进程 cwd 一致，运行 package.json **1.2.6**；服务 active/running、NRestarts=0，本机 `/health/ready` 200、database.ready=true。仅只读核验，没有请求安装、写生产库、重启、发信或调用收费模型；本轮文档尚未同步服务器，不把 D14 公网验收当作本轮重测。
 - D3 的生产收件→注册→登录、其余四个头像候选及真机/WebKit 条件保持原记录；本轮不扩大处理范围。
 
-交付状态将在文档检查与提交完成后补记。
+主提交 **af1cd69** 已推送到 `codex/d15-zip-result-design`，已创建面向 main 的 [PR #74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74)，尚未合并；后续只补交付记录，不改变设计范围。GitHub 应用创建接口返回 403，CLI 沙箱代理受限后复用已有 Git 认证在允许的执行环境创建成功，未输出或落盘凭据。功能分支保留待审查，本轮文档未同步服务器；下一项是 D16 运行时支持。
