@@ -6,7 +6,7 @@
 
 UNO 独立仓库以 `main@042868c` 开发休闲版 **1.2.1 → 1.3.0（MINOR）**：显式声明可选公开结果，同步 QuickJS 投影只返回权威 winners，支持规则产生的共同胜者，不返回数值分数。内容规则仍 1.1.0、资源/桌面不变；毫不留情仍为 1.0.1，未启用结果。游戏源码、打包和规则测试均在独立仓库，不编辑平台锁定副本。
 
-平台只新增两个专门的集成/E2E 文件和本轮内部记录；保持 D16 候选平台 **1.3.0 → 1.3.0**，README 一致，不重复升号。没有本批运行代码、协议、数据库迁移、SDK、来源锁或依赖变化。官方 catalog 与游戏 release.config/manifest 已核对，**登记已核对，无需改动**；目录不虚构最新版号，生产清单不提前写未发布版本。
+平台只新增两个专门的集成/E2E 文件、两份显式专项配置和本轮内部记录；保持 D16 候选平台 **1.3.0 → 1.3.0**，README 一致，不重复升号。没有本批运行代码、协议、数据库迁移、SDK、来源锁或依赖变化。官方 catalog 与游戏 release.config/manifest 已核对，**登记已核对，无需改动**；目录不虚构最新版号，生产清单不提前写未发布版本。
 
 ## 复现入口
 
@@ -15,11 +15,11 @@ UNO 独立仓库以 `main@042868c` 开发休闲版 **1.2.1 → 1.3.0（MINOR）*
 ```sh
 export PLAYBOARD_UNO_RESULT_ZIP=/absolute/path/to/uno-1.3.0.zip
 export PLAYBOARD_UNO_LEGACY_ZIP=/absolute/path/to/uno-1.2.0.zip
-pnpm --config.verify-deps-before-run=false test:integration --config .data/d17/vitest.config.mjs
-pnpm --config.verify-deps-before-run=false test:e2e tests/e2e/uno-public-results.spec.ts --output=.data/d17/e2e
+pnpm --config.verify-deps-before-run=false test:integration --config vitest.uno-results.config.ts
+pnpm --config.verify-deps-before-run=false test:e2e --config playwright.uno-results.config.ts --output=.data/d17/e2e
 ```
 
-本地临时 Vitest 配置仅包含 `tests/integration/uno-public-results.test.ts` 并设置 fileParallelism=false，未修改原 `test:integration` 准备链。执行前检查独立 **playboard_d17_test_20261114 / 127.0.0.1:15441** 与开发 **playboard_d1_scratch** 不同；仅新工作区派生私有 .env，未改原配置。集成与 E2E 的清理串行，039 仅迁移独立测试库。没有新数据库/容器权限或配置变更。
+专用 Vitest 配置仅包含 `tests/integration/uno-public-results.compat.ts` 并设置 fileParallelism=false，未修改原 `test:integration` 准备链。执行前检查独立 **playboard_d17_test_20261114 / 127.0.0.1:15441** 与开发 **playboard_d1_scratch** 不同；仅新工作区派生私有 .env，未改原配置。集成与 E2E 的清理串行，039 仅迁移独立测试库。没有新数据库/容器权限或配置变更。
 
 旧包取自此前下载的真实正式 Release `uno-v1.2.0`，本轮 `sha256sum --check SHA256SUMS` 通过；未把重新打包的旧源码当作正式旧字节。新包从本轮 UNO 仓库实际 Chromium 打包，**329100 字节**，SHA-256 `6882d00805f66b60ad71e7e71af208b52f96b253d601d70ff515914d78a10a1e`。本地 release.json.commit=null，未计为正式发布。
 
@@ -30,12 +30,14 @@ pnpm --config.verify-deps-before-run=false test:e2e tests/e2e/uno-public-results
 | 两仓冻结离线安装 | 通过，无依赖或锁文件变化 |
 | 平台 `pnpm ... typecheck` | 全工作区通过；该入口不单独编译测试文件，不声称测试 TS 亦经过 tsc |
 | 平台 `pnpm ... lint` | ESLint、20 根 AST 边界及原 Prettier 全通过；最终测试辅助修改另作 ESLint/Prettier 通过 |
-| 原 `test:integration --config .data/d17/vitest.config.mjs` | 首次因测试根缺少 @boardgame/protocol 直接依赖而未收集用例，改为公开源码相对导入；次轮双真人和脚本 **2/3**，旧局安装新版因未传审核 catalogHash 按保护拒绝 |
+| 早期原 `test:integration --config .data/d17/vitest.config.mjs` | 首次因测试根缺少 @boardgame/protocol 直接依赖而未收集用例，改为公开源码相对导入；次轮双真人和脚本 **2/3**，旧局安装新版因未传审核 catalogHash 按保护拒绝 |
 | 原链定向 `-t 'old active match'` | 测试先 review 并传实际 catalogHash，旧局 **1/1**；另外两项名称过滤跳过，不计通过。共三个独立用例分批通过，不记为单批全绿 |
-| 原 `test:e2e tests/e2e/uno-public-results.spec.ts` | **2/2，无 skip**，1440×900 与 390×844；真实上传/审核、脚本 AI、iframe 操作、刷新、完整结算/回房，实际查看最终截图 |
+| 早期原 `test:e2e tests/e2e/uno-public-results.spec.ts` | **2/2，无 skip**，1440×900 与 390×844；真实上传/审核、脚本 AI、iframe 操作、刷新、完整结算/回房，实际查看最终截图 |
 | 平台 `pnpm ... build` | 全生产构建、开发实验台排除、编译 API、隔离 ZIP 恢复及 AI worker 检查通过；保留既有 model-viewer chunk 提示 |
 | `node scripts/check-game-repositories.mjs` | 普通沙箱子进程 EPERM 后获准环境原命令通过：**10 仓库 / 154 文件**；未修改检查或游戏锁 |
 | 游戏规则与 ZIP/UI | 初轮 24/25，补全新增测试中合法摸牌后的保留步骤后休闲版 11/11，毫不留情原批 14/14；实际 ZIP verify 1/1、最终精确标签 verify 1/1，四视口双玩法 UI 全通过 |
+
+收尾审查将需要外部实际 ZIP 的文件命名为 `.compat.ts`，新增仓库内 `vitest.uno-results.config.ts` / `playwright.uno-results.config.ts` 显式入口，保留原隔离准备链和全部断言。普通全量测试不要求未发布的外部候选；这不是用 skip 掩盖失败。通过默认 Vitest 文件列表和 Playwright `--list` 实际确认不误收集专项，专项配置 ESLint/Prettier 通过。最终用上述持久入口重新执行：集成 **3/3、无 skip（11.59 秒）**；真实双端 E2E **2/2、无 skip（36.0 秒）**。日志为 `.data/d17/integration-entry-final.log` 与 `e2e-entry-final.log`；首轮失败及分批修正仍按上表保留，不将历史失败抹去。
 
 三个集成用例分别覆盖：双真人完整局、真人/真实免费脚本完整局，以及原 1.2.0 活动局在安装新 1.3.0 后重启继续完成。新局结果逐席位等于权威 winners、没有 score；旧局仍锁定 1.2.0、持久状态不因安装改变、终局结果 null 不回填。所有流程检查非参与者 404、API 重建后的精确版本、完整动作/回放帧数量、原请求重复返回同一结果且不新增持久记录、不同内容复用 ID 冲突、本人记录和房间复位。没有通过直接写游戏状态缩短完整对局。
 
@@ -53,7 +55,7 @@ pnpm --config.verify-deps-before-run=false test:e2e tests/e2e/uno-public-results
 
 ## 已推送与待审 PR
 
-游戏主提交 **4e3633a77088a8c099dcffdd96c8010384a95a3e** 已推送，创建 [UNO PR #5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5)；平台主提交 **c2bfa5ae8fb4a84f7e41aeeb82cd472dc815e272** 已推送，创建 [平台 PR #76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76)。平台 PR 含 D15/D16 四个前置提交，本批自身五文件；都没有合并，分支保留待审查。
+游戏主提交 **4e3633a77088a8c099dcffdd96c8010384a95a3e** 已推送，创建 [UNO PR #5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5)；平台主提交 **c2bfa5ae8fb4a84f7e41aeeb82cd472dc815e272** 已推送，创建 [平台 PR #76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76)。平台 PR 含 D15/D16 四个前置提交，本批实现/记录五文件，收尾另补两份显式专项配置；都没有合并，分支保留待审查。
 
 游戏主提交的 [run 43605629262](https://github.com/PlayBoardgameTogether/playboard-game-uno/actions/runs/43605629262) check 全步骤 success，release 按 PR 条件 skipped；平台主提交的 [run 43605638689](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43605638689) pins success。此处只记录已核对 head 的检查，不宣称远程运行了平台集成/E2E；这些由上述本地独立环境验证。两 PR 当前 review 列表为空，不等同于人工批准。
 
