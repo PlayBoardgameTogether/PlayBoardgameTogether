@@ -5,6 +5,7 @@ import { createAccount } from '../../apps/api/src/auth.js';
 import { createDatabase, type Database } from '../../apps/api/src/db/index.js';
 import { createRegistry, GameRegistry } from '../../apps/api/src/registry/index.js';
 import { PackageRuntime } from '../../apps/api/src/registry/package-runtime.js';
+import { MatchService } from '../../apps/api/src/matches.js';
 import { readGamePackage } from '../../apps/api/src/catalog/game-package.js';
 import { gamePackageFiles, zipSync, strToU8 } from '../fixtures/game-package.js';
 
@@ -80,7 +81,7 @@ describe('optional ZIP public results in the authoritative transaction', () => {
     await app.close();
   });
 
-  async function archive(projection: string, declared = true, extraSource = '') {
+  async function archive(projection: string, declared = true, extraSource = '', version = '1.0.0') {
     const files = await gamePackageFiles();
     const descriptor = JSON.parse(files['game.json'].toString());
     files['game.json'] = strToU8(
@@ -88,7 +89,7 @@ describe('optional ZIP public results in the authoritative transaction', () => {
     );
     files['server.js'] = Buffer.from(
       files['server.js'].toString().replace('>= 5', '>= 1') +
-        `\ngame.getPublicResult = ${projection};\n${extraSource}`,
+        `\ngame.getPublicResult = ${projection};\ngame.manifest.version = ${JSON.stringify(version)};\n${extraSource}`,
     );
     return Buffer.from(zipSync(files));
   }
@@ -98,21 +99,21 @@ describe('optional ZIP public results in the authoritative transaction', () => {
     payload: unknown,
     method: 'POST' | 'PUT' = 'POST',
   ) => app.inject({ method, url: path, headers, payload });
-  async function install(bytes: Buffer) {
+  async function install(bytes: Buffer, catalogHash?: string) {
     const response = await app.inject({
       method: 'POST',
-      url: `/api/v1/admin/game-packages?requestId=${randomUUID()}`,
+      url: `/api/v1/admin/game-packages?requestId=${randomUUID()}${catalogHash ? `&expectedCatalogHash=${catalogHash}` : ''}`,
       headers: { ...admin, 'content-type': 'application/zip' },
       payload: bytes,
     });
     return response;
   }
-  async function start(computer = false) {
-    const created = await write('/api/v1/rooms', alice, {
+  async function start(computer = false, version = '1.0.0', owner = alice) {
+    const created = await write('/api/v1/rooms', owner, {
       requestId: randomUUID(),
       name: '公开结果验收',
       gameId: 'online.score-race',
-      version: '1.0.0',
+      version,
       seatCount: 2,
       options: {},
       ...(computer ? { computerOpponents: true } : {}),
@@ -153,7 +154,7 @@ describe('optional ZIP public results in the authoritative transaction', () => {
     }
     const ready = await write(
       `/api/v1/rooms/${roomId}/my-ready`,
-      alice,
+      owner,
       {
         requestId: randomUUID(),
         expectedRoomRevision: revision,
@@ -162,7 +163,7 @@ describe('optional ZIP public results in the authoritative transaction', () => {
       'PUT',
     );
     expect(ready.statusCode).toBe(200);
-    const started = await write(`/api/v1/rooms/${roomId}/start`, alice, {
+    const started = await write(`/api/v1/rooms/${roomId}/start`, owner, {
       requestId: randomUUID(),
       expectedRoomRevision: ready.json().data.roomRevision,
     });
@@ -188,12 +189,242 @@ describe('optional ZIP public results in the authoritative transaction', () => {
       (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.seat_index) FROM seats s WHERE s.room_id=m.room_id) AS seats,
       (SELECT count(*)::int FROM match_actions WHERE match_id=m.id) AS actions,
       (SELECT count(*)::int FROM match_replay_frames WHERE match_id=m.id) AS frames,
-      (SELECT count(*)::int FROM command_receipts WHERE operation='match.action:' || m.id::text) AS receipts
+      (SELECT count(*)::int FROM command_receipts WHERE operation='match.action:' || m.id::text) AS receipts,
+      (SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM ai_tasks t WHERE t.match_id=m.id) AS tasks
       FROM matches m WHERE id=$1`,
         [matchId],
       )
     ).rows[0];
   }
+
+  it('serializes competing terminal requests and returns only the committed result on retry', async () => {
+    expect((await install(await archive('(o) => ({winners:o.winners})'))).statusCode).toBe(200);
+    const { matchId } = await start();
+    const commands = [0, 1].map(() => ({
+      requestId: randomUUID(),
+      expectedRevision: 0,
+      action: { type: 'claim' },
+    }));
+    const responses = await Promise.all(commands.map((command) => act(matchId, command)));
+    const winner = responses.findIndex((response) => response.statusCode === 200);
+    expect(winner).toBeGreaterThanOrEqual(0);
+    expect(responses.map((response) => response.statusCode).sort()).toEqual([200, 422]);
+    expect(responses[1 - winner].json().error.code).toBe('ACTION_NOT_ALLOWED');
+    const saved = await snapshot(matchId);
+    expect(saved).toMatchObject({ actions: 1, frames: 2, receipts: 1 });
+    const retry = await act(matchId, commands[winner]);
+    expect(retry.statusCode).toBe(200);
+    expect(retry.json().data.result).toEqual(responses[winner].json().data.result);
+    expect(retry.json().data.events).toEqual([]);
+    expect(await snapshot(matchId)).toEqual(saved);
+  });
+
+  it('retains participant, Origin, CSRF and revoked-session boundaries for public results', async () => {
+    expect((await install(await archive('(o) => ({winners:o.winners})'))).statusCode).toBe(200);
+    const { matchId } = await start();
+    const before = await snapshot(matchId);
+    const payload = { requestId: randomUUID(), expectedRevision: 0, action: { type: 'claim' } };
+    const path = `/api/v1/matches/${matchId}/actions`;
+    expect((await write(path, admin, payload)).statusCode).toBe(404);
+    expect((await write(path, bob, payload)).statusCode).toBe(422);
+    expect(
+      (await write(path, { ...alice, origin: 'https://untrusted.invalid' }, payload)).statusCode,
+    ).toBe(403);
+    expect((await write(path, { ...alice, 'x-csrf-token': 'invalid' }, payload)).statusCode).toBe(
+      403,
+    );
+    expect(
+      (await write(path, alice, { ...payload, seatId: before.match.state.seats[1] })).json().error
+        .code,
+    ).toBe('VALIDATION_ERROR');
+    expect(await snapshot(matchId)).toEqual(before);
+    expect((await act(matchId, payload)).statusCode).toBe(200);
+    const saved = await snapshot(matchId);
+    expect((await view(matchId, admin)).statusCode).toBe(404);
+    expect(
+      (await app.inject({ url: `/api/v1/matches/${matchId}/replay`, headers: admin })).statusCode,
+    ).toBe(404);
+    const otherHistory = await app.inject({ url: '/api/v1/profile/matches', headers: admin });
+    expect(otherHistory.json().data.items).toEqual([]);
+    expect(
+      (await app.inject({ url: `/api/v1/matches/${matchId}/replay`, headers: bob })).statusCode,
+    ).toBe(200);
+    const logout = await write('/api/v1/auth/logout', alice, {});
+    expect(logout.statusCode).toBe(200);
+    for (const url of [
+      `/api/v1/matches/${matchId}/view`,
+      `/api/v1/matches/${matchId}/replay`,
+      '/api/v1/profile/matches',
+    ]) {
+      expect((await app.inject({ url, headers: alice })).statusCode).toBe(401);
+    }
+    expect((await act(matchId, payload)).statusCode).toBe(401);
+    expect(await snapshot(matchId)).toEqual(saved);
+  });
+
+  it('keeps old and declared versions independent and refuses a missing exact version after restart', async () => {
+    expect(
+      (await install(await archive('() => {throw new Error("must not run")}', false))).statusCode,
+    ).toBe(200);
+    const old = await start();
+    const digest = registry.digest('online.score-race', '1.0.0');
+    const bytes = await archive('(o) => ({winners:o.winners})', true, '', '1.1.0');
+    const review = await app.inject({
+      method: 'POST',
+      url: '/api/v1/admin/game-packages/review',
+      headers: { ...admin, 'content-type': 'application/zip' },
+      payload: bytes,
+    });
+    expect(review.statusCode).toBe(200);
+    expect((await install(bytes, review.json().data.catalogHash)).statusCode).toBe(200);
+    const current = await start(false, '1.1.0', admin);
+    await app.close();
+    db = createDatabase(url!);
+    registry = createRegistry(false);
+    app = await createApp({ db, config, registry });
+    expect((await view(old.matchId)).json().data.gameVersion).toBe('1.0.0');
+    expect(registry.digest('online.score-race', '1.0.0')).toEqual(digest);
+    expect((await act(old.matchId)).statusCode).toBe(200);
+    expect((await view(old.matchId)).json().data.result).toBeNull();
+    expect(
+      (
+        await write(`/api/v1/matches/${current.matchId}/actions`, admin, {
+          requestId: randomUUID(),
+          expectedRevision: 0,
+          action: { type: 'claim' },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect((await view(current.matchId, admin)).json().data.result.players).toEqual([
+      { seatId: expect.any(String), winner: true },
+      { seatId: expect.any(String), winner: false },
+    ]);
+    const saved = await snapshot(old.matchId);
+    // Remove only the old test fixture's runtime row; retain the newer installed version.
+    const removed = (
+      await db.query(
+        "DELETE FROM game_packages WHERE game_id='online.score-race' AND game_version='1.0.0' RETURNING *",
+      )
+    ).rows[0];
+    try {
+      await app.close();
+      db = createDatabase(url!);
+      registry = createRegistry(false);
+      app = await createApp({ db, config, registry });
+      for (const suffix of ['view', 'replay']) {
+        const response = await app.inject({
+          url: `/api/v1/matches/${old.matchId}/${suffix}`,
+          headers: alice,
+        });
+        expect(response.statusCode).toBe(503);
+        expect(response.json().error.code).toBe('GAME_VERSION_UNAVAILABLE');
+      }
+      expect((await view(current.matchId, admin)).statusCode).toBe(200);
+      expect(await snapshot(old.matchId)).toEqual(saved);
+    } finally {
+      await db.query(
+        'INSERT INTO game_packages SELECT * FROM jsonb_populate_record(NULL::game_packages,$1)',
+        [removed],
+      );
+    }
+    expect((await view(old.matchId)).json().data.result).toBeNull();
+    expect(await snapshot(old.matchId)).toEqual(saved);
+  });
+
+  it.each([
+    ['exception', '() => {throw new Error("SECRET_RESULT_MARKER")}', 'ACTION_NOT_ALLOWED'],
+    ['timeout', '() => {while(true){}}', 'ACTION_NOT_ALLOWED'],
+    [
+      'non-finite score',
+      '(o) => ({winners:o.winners,scores:{...o.scores,[o.winners[0]]:NaN}})',
+      'VALIDATION_ERROR',
+    ],
+  ])(
+    'rolls back a terminal %s without leaking or consuming RNG on retry',
+    async (_name, projection, code) => {
+      expect((await install(await archive(projection))).statusCode).toBe(200);
+      const { matchId } = await start();
+      const before = await snapshot(matchId);
+      const command = { requestId: randomUUID(), expectedRevision: 0, action: { type: 'claim' } };
+      for (let retry = 0; retry < 2; retry++) {
+        const response = await act(matchId, command);
+        expect(response.statusCode).toBe(422);
+        expect(response.json().error.code).toBe(code);
+        expect(response.body).not.toContain('SECRET_RESULT_MARKER');
+        expect(await snapshot(matchId)).toEqual(before);
+      }
+    },
+  );
+
+  it.each(['invalid projection', 'late persistence failure'])(
+    'keeps a frozen automation proposal atomic on %s',
+    async (failure) => {
+      const projection =
+        failure === 'invalid projection'
+          ? '() => ({winners:["outsider"]})'
+          : '(o) => ({winners:o.winners})';
+      const source = `game.getDecisionContext = (state, viewer) => game.getView(state, viewer).canClaim
+        ? {decisionKey:'claim', legalActions:[{type:'claim'}]} : null;`;
+      expect((await install(await archive(projection, true, source))).statusCode).toBe(200);
+      const { matchId } = await start(true);
+      // Explicit frozen-proposal fixture: no worker/model call or scheduler timing is mocked.
+      await db.query("UPDATE matches SET state=jsonb_set(state,'{turn}','1') WHERE id=$1", [
+        matchId,
+      ]);
+      const taskId = randomUUID();
+      await db.query(
+        `INSERT INTO ai_tasks(id,match_id,seat_id,source_revision,controller_epoch,decision_key,policy_id,policy_version,policy_hash,status,lease_owner,lease_until,lease_generation,request_id,proposed_action,proposal_hash)
+      SELECT $1,match_id,seat_id,0,controller_epoch,'claim',policy_id,policy_version,policy_hash,'proposed','d19',now()+interval '1 hour',1,$2,'{"type":"claim"}'::jsonb,'frozen'
+      FROM match_participants WHERE match_id=$3 AND occupant_kind='bot'`,
+        [taskId, randomUUID(), matchId],
+      );
+      const service = new MatchService(db, registry);
+      const before = await snapshot(matchId);
+      await expect(service.actAutomation(taskId, 'wrong-worker', 1)).rejects.toMatchObject({
+        code: 'AI_TASK_STALE',
+      });
+      expect(await snapshot(matchId)).toEqual(before);
+      if (failure === 'late persistence failure') {
+        await db.query(
+          "CREATE FUNCTION fail_d19_task() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.status='succeeded' THEN RAISE EXCEPTION 'late task failure'; END IF; RETURN NEW; END $$",
+        );
+        await db.query(
+          'CREATE TRIGGER fail_d19_task BEFORE UPDATE ON ai_tasks FOR EACH ROW EXECUTE FUNCTION fail_d19_task()',
+        );
+      }
+      try {
+        if (failure === 'invalid projection') {
+          await expect(service.actAutomation(taskId, 'd19', 1)).rejects.toMatchObject({
+            code: 'VALIDATION_ERROR',
+          });
+        } else {
+          await expect(service.actAutomation(taskId, 'd19', 1)).rejects.toThrow(
+            'late task failure',
+          );
+        }
+        expect(await snapshot(matchId)).toEqual(before);
+      } finally {
+        if (failure === 'late persistence failure') {
+          await db.query('DROP TRIGGER fail_d19_task ON ai_tasks');
+          await db.query('DROP FUNCTION fail_d19_task()');
+        }
+      }
+      if (failure === 'late persistence failure') {
+        expect(await service.actAutomation(taskId, 'd19', 1)).toEqual({ revision: 1 });
+        expect((await view(matchId)).json().data).toMatchObject({
+          status: 'finished',
+          revision: 1,
+          result: { players: [{ winner: false }, { winner: true }] },
+        });
+        expect(await snapshot(matchId)).toMatchObject({
+          actions: 1,
+          frames: 2,
+          receipts: 1,
+          tasks: [{ status: 'succeeded', applied_revision: 1 }],
+        });
+      }
+    },
+  );
 
   it.each([
     ['single winner without scores', '(o) => ({winners:o.winners})', false, false],

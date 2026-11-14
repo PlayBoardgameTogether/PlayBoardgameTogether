@@ -4,7 +4,7 @@
 
 计划周期：**2026-11-06—2026-12-05，共 30 个自然日**
 
-状态（2026-11-14）：**D1、D2、D4、D6、D7 已完成；D8–D14 均已合并交付；D15–D17 已提交待审，D18 结算/战绩隔离验收已完成，[PR #77](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/77) 待审**。前置设计 [#74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74)、运行时 [#75](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/75)、试点验证 [#76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76) 均 open；UNO [#5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5) 未合并/发布。平台候选 **1.3.0**，生产仍为 **add0940 / 1.2.6**（本轮 22:51 只读实测）。**D19–D30 未开始**；不将本地结果写成已上线。
+状态（2026-11-14，D19）：**D1、D2、D4、D6、D7 已完成；D8–D14 均已合并交付；D15–D18 已提交待审，D19 事务/兼容隔离验收已完成** · [记录](daily-result-compatibility-2026-11-14.md)。前置设计 [#74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74)、运行时 [#75](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/75)、试点 [#76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76)、战绩 [#77](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/77) 均 open；UNO [#5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5) 未合并/发布。平台候选 **1.3.0**，生产仍为 **add0940 / 1.2.6**（本轮 23:46 只读实测）。**D20–D30 未开始**；D21 降级阻断与发布门槛仍待，不将隔离验收写成已上线。
 
 D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72)、UNO [#4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4)、波多黎各 [#6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 已合并；正式发布并由原生产订阅安装 **UNO 1.2.1、毫不留情 1.0.1、波多黎各 1.1.2**，三包摘要一致、旧版本保留，历史四视口/新备份证据见 [D14 交付](daily-week-two-closeout-2026-11-12.md#已批准合并正式发布与生产安装2026-11-12)。**D3 已确认真实收件，生产注册/登录闭环仍待；D5 本批三个生产更新已验收，其余四个头像候选未发布**。旧 D5 #56 的独立 PR 收尾维持原条件，本批不处理无关分支。
 
@@ -76,11 +76,11 @@ D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull
 
 | 日程 | 状态 | 优先级 / 主题 | 当日交付 | 验收标准 |
 | --- | --- | --- | --- | --- |
-| D15 · 11-20 | **设计已完成，[PR #74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74) 待审查** · [记录](daily-zip-public-result-design-2026-11-13.md)，ADR-011 Proposed，运行时未实现 | P1 · ZIP 公开结果设计 | 核对现有 result summary、QuickJS 包契约与旧版本加载，制定可选结果投影方案；明确胜者、共同获胜、无分数和无结果的语义 | 平台不增加 gameId 分支；不从手牌或前端画面猜成绩；旧包继续工作，旧局结果不回填；如必须破坏兼容，先停止该实现并确认迁移范围 |
+| D15 · 11-20 | **设计已完成，[PR #74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74) 待审查** · [记录](daily-zip-public-result-design-2026-11-13.md)，ADR-011 Proposed，运行时见 D16 候选 | P1 · ZIP 公开结果设计 | 核对现有 result summary、QuickJS 包契约与旧版本加载，制定可选结果投影方案；明确胜者、共同获胜、无分数和无结果的语义 | 平台不增加 gameId 分支；不从手牌或前端画面猜成绩；旧包继续工作，旧局结果不回填；如必须破坏兼容，先停止该实现并确认迁移范围 |
 | D16 · 11-21 | **已实现并推送，PR #75 待审查** · [记录](daily-package-public-results-2026-11-14.md) | P1 · 结果运行时支持 | 实现服务端可选公开结果能力、严格输出校验及既有终局事务接入，按实际需要更新共享契约/文档 | 只接受受限公开字段；非法结果不泄密；与 State/RNG、回放和回执保持同一事务，失败不留下半份结算；保留旧包回归 |
 | D17 · 11-22 | **候选实现与隔离验证完成，待前置部署/审查** · [记录](daily-uno-public-results-2026-11-14.md)；未发布/安装 | P1 · 一个在线游戏试点 | 在 UNO 独立仓库接入休闲版公开胜者，使用新游戏版本和真实 ZIP 验证 | 真人/脚本完整对局产生正确胜者；无数值评分时不合成分数；终局重复请求不重复结算，旧 1.2.0 对局按原版本恢复 |
 | D18 · 11-23 | **隔离验收完成，PR #77 待审，依赖前置合并** · [记录](daily-result-history-2026-11-14.md) | P1 · 结算和战绩衔接 | 将试点结果接入既有结算卡和本人游戏筛选记录；复用回放与回房间入口 | 在线试点与内置游戏使用一致的公开结果展示；未知结果明确显示；分页、筛选和切换账号不会串数据，不读取对手私密视图 |
-| D19 · 11-24 | 未开始 | P0 · 事务与兼容验收 | 集中验证新结果能力的重试、回滚、精确版本、进程恢复和读取权限，检查旧包与内置游戏 | 原准备脚本下的相关集成/E2E 通过；覆盖共同获胜、无分数和非法输出；新旧游戏可共存，没有篡改历史结果或绕过沙箱 |
+| D19 · 11-24 | **隔离验收完成，待前置审查与 D21 发布门槛** · [记录](daily-result-compatibility-2026-11-14.md) | P0 · 事务与兼容验收 | 集中验证新结果能力的重试、回滚、精确版本、进程恢复和读取权限，检查旧包与内置游戏 | 原准备脚本下的相关集成/E2E 通过；覆盖共同获胜、无分数和非法输出；新旧游戏可共存，没有篡改历史结果或绕过沙箱 |
 | D20 · 11-25 | 未开始 | P2 · 单局收获提示 | 若本周主功能已通过，复用本人徽章接口，在结算后展示当前完成场次/成长进度及已有徽章入口 | 只展示本人真实当前进度；无可靠前后对比时不声称“本局新解锁”；刷新不重复庆祝，不新增永久授予或胜率推算体系 |
 | D21 · 11-26 | 未开始 | P1 · 第三周缓冲 | 修复结果链路问题，完成跨仓兼容说明与发布顺序检查 | 先让平台具备兼容能力，再发布依赖它的新游戏包；订阅不得给不兼容运行时安装候选；无法保证兼容时暂停发布并记为阻塞 |
 
