@@ -2,7 +2,7 @@
 
 执行日期：2026-11-14（北京时间）；按每日任务顺序提前推进，原排期为 11-21。
 
-本地实现和必要验证完成，候选平台 **1.2.6 → 1.3.0**（向后兼容新增能力，MINOR）。D15 [PR #74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74) 尚未合并；本分支保留其两个提交作为前置，从 `main@add094003876376b8fef83b7cfde5b9aeea87f76` 开始，不将 D15 重复设计或擅自合并。原目录落后 main 143 提交、36 项已有改动保持；使用独立 `/tmp/playboard-d15` / `codex/d16-package-public-results`。
+实现、必要验证及推送/PR 交付完成，候选平台 **1.2.6 → 1.3.0**（向后兼容新增能力，MINOR）。D15 [PR #74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74) 尚未合并；本分支保留其两个提交作为前置，从 `main@add094003876376b8fef83b7cfde5b9aeea87f76` 开始，不将 D15 重复设计或擅自合并。原目录落后 main 143 提交、36 项已有改动保持；使用独立 `/tmp/playboard-d15` / `codex/d16-package-public-results`。
 
 ## 实现与可观察行为
 
@@ -39,3 +39,12 @@ D16 为平台运行时支持；没有修改/发布 UNO 或任何独立游戏，�
 039 为兼容可空新增列，旧程序可继续处理旧包；但旧 API 读取已经安装新声明包的同一数据库时可能忽略声明。**未实现阻止旧可执行程序启动的运维机制；依赖该能力的正式游戏发布前仍须核验部署版本及降级阻断方案**。先平台支持、实际运行验证，再按授权发布游戏；不把 descriptor 严格拒绝新 ZIP 等同于已持久包的降级保护。ADR-011 维持 Proposed。
 
 本分支尚未合并，不向生产同步未审查代码、不安装游戏或改变订阅配置；推送/PR 和本轮服务器只读状态在成功后另记。22:14:06 只读检查确认服务器 current.json、实际 API cwd 和运行 package.json 一致为 **add0940 / 1.2.6**，systemd active/running、NRestarts=0，本机 `/health/ready` 返回 200、status=ready、database.ready=true。最初探针错误假设 API cwd 在 apps/api，查看服务进程树后按实际发布根目录核对成功；没有修改配置、读取玩家 View、迁移或重启。原 36 项改动及所有其他工作区保留。日志、私有配置、临时 Vitest 配置与构建产物留在 `.data/d16/` 或忽略路径，不提交。
+
+
+## 已推送与待审 PR
+
+主提交 **688dd6f452f12506f39a3d8905e82e5208bbe79e** 已推送到 `codex/d16-package-public-results`，创建面向 main 的 [PR #75](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/75)，包含 D15 的两个前置提交及 D16 实现。GitHub 连接器创建返回 403 后，复用已有 Git helper 认证通过原生 gh API 成功创建，先查重、无凭据落盘；当前 shell 缺少 Git 作者配置，单次命令沿用此前 `Codex <codex@openai.com>` 身份，不修改全局配置。
+
+主提交的远程精确集成检查 [run 43603979565](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43603979565) completed/success；只计该项 CI，不将其当作远程全套业务测试。后续仅补交付记录，不重复本地业务验证。
+
+PR 尚未合并，D15 #74 保留；本轮分支有未合并内容，按指引保留，不删除其他任务分支或工作区。未将本轮代码或文档同步生产，未发布/安装游戏。生产继续运行已核验的 add0940 / 1.2.6；下一项为 D17 UNO 独立仓库试点，需遵守平台先部署、游戏后发布与运维降级门槛。
