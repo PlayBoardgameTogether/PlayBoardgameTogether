@@ -1,5 +1,9 @@
 # 数据模型
 
+## ZIP 可选公开结果（039，1.3.0）
+
+`039_package_public_result.sql` 追加 `game_packages.public_result_contract text`，可空且 CHECK 仅允许 `winners-scores-v1`。旧行保持 NULL，不更改包哈希/规则、历史 State 或已存结果；安装时与源码、目录切换和回执原子保存，重启按精确版本读取。公开结果继续使用 034 的 `matches.result_summary`，在既有终局事务写入；NULL 表示无可记录结果，不推算历史。没有新增公开成绩表或第二套结算任务。
+
 ## 账户安全（038，1.2.0）
 
 复用 accounts 私有 email_canonical/email_verified_at 与 password_hash，sessions 保存原有撤销时间。新增 `account_security_challenges`，以 `(account_id,purpose)` 为主键、随机 UUID id 唯一；purpose 仅 bind-email/reset-password，保存规范目标邮箱、签发时密码哈希、验证码 Argon2id 哈希、过期/申请/成功发送时间和 0–5 次错误计数。账户外键级联；不保存验证码或密码明文。用途、账户、邮箱、密码版本及有效时间均匹配才可核销。改密/换绑/找回成功在同事务删除该账户挑战并撤销全部会话，失败回滚；错误验证码次数提交保留。

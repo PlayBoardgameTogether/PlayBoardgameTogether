@@ -87,4 +87,4 @@ games/splendor 的 splendor.base@1.0.0 是轮流行动的宝石引擎构筑扩�
 
 ## 平台公开结果摘要（0.12.0）
 
-平台通过 API registry 中的 resultSummaries 按精确版本选择性接入胜者/得分摘要，不新增或修改 GameExtension 必需方法、不修改既有规则摘要。接入前必须确认 getOutcome 的 winners/scores 是公开信息；投影只允许 seatId、winner、可选 score，额外 outcome 字段全部丢弃，且校验获胜席位/分数键与固定参与者一致。不得按未知游戏的字段名自动认定信息可公开，也不按分数推断排名或同分规则。在线 ZIP 暂不接入，继续使用游戏自身的最终 View 和本人回放。
+平台通过 API registry 中的 resultSummaries 按精确版本选择性接入胜者/得分摘要，不新增或修改 GameExtension 必需方法、不修改既有规则摘要。接入前必须确认 getOutcome 的 winners/scores 是公开信息；投影只允许 seatId、winner、可选 score，额外 outcome 字段全部丢弃，且校验获胜席位/分数键与固定参与者一致。不得按未知游戏的字段名自动认定信息可公开，也不按分数推断排名或同分规则。在线 ZIP 自平台 1.3.0 起可通过 game.json 的 `publicResult: "winners-scores-v1"` 与沙箱同步 `getPublicResult(outcome)` 显式接入；未声明包保持最终 View 和本人回放，不自动从 outcome 推断。此能力在包适配层实现，不修改 GameExtension 或 SDK 核心；字段、限额及升级顺序见 [ZIP 规范](../apps/web/public/developer-docs/game-packages.md#可选公开结果平台-130)。

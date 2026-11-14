@@ -1,5 +1,9 @@
 # 协议
 
+## ZIP 公开结果能力（1.3.0）
+
+HTTP/WS DTO 不变。显式声明 `publicResult: "winners-scores-v1"` 的新 ZIP 可在原终局事务通过沙箱同步 getPublicResult 接入既有 MatchView.result 和本人历史 result；旧包/旧局保持原行为，不回填。非法投影以既有 VALIDATION_ERROR、VM 失败以 ACTION_NOT_ALLOWED 脱敏返回，动作事务回滚。此“公开”仅指摘要字段可向原参与者展示，不增加旁观或非成员读取权限。包输入、限额及版本顺序见 [ZIP 规范](../apps/web/public/developer-docs/game-packages.md#可选公开结果平台-130)。
+
 ## 账户安全（1.2.0）
 
 新接口为兼容新增，不修改既有注册/登录格式；共享 schema 位于 `protocol/auth.ts`，client-sdk 提供 accountSecurity、requestBindingCode、bindEmail、changePassword、revokeOtherSessions、requestRecoveryCode、recoverPassword，响应作为 unknown 校验。所有响应 no-store，写入 4 KiB 上限并检查精确 Origin；`/account/security` 写入另需 session/CSRF，身份仅来自 session，不接受 accountId 或角色字段。
