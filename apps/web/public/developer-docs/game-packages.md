@@ -8,7 +8,7 @@ ZIP 根目录必须恰好包含以下三个文件，无父目录、附加文件�
 
 | 文件 | 内容 |
 | --- | --- |
-| game.json | 严格 JSON：`{"format":"boardgame-package-v1","rules":"公开规则说明"}`，可选 presentation。rules 必填，最多 16000 字符 |
+| game.json | 严格 JSON：`{"format":"boardgame-package-v1","rules":"公开规则说明"}`，可选 presentation 和 publicResult。rules 必填，最多 16000 字符 |
 | server.js | 无 imports/require 的独立 JavaScript，声明 `const game = {...}`，实现现有 GameExtension 方法 |
 | client.html | 自包含桌面 HTML，内联 JavaScript/CSS，图片可用 data URL |
 
@@ -25,6 +25,23 @@ setup 接收 `{seats,options,rng}`，applyAction 接收 `(state,actor,action,rng
 安装会验证所需方法及最小/最大人数下的 setup、序列化恢复、本人 View、动作说明、初始事件投影和结局格式。该检查不证明所有规则或私密投影正确；管理员仍应选择可信来源并审查玩法与投影。完整 State 只传给服务端规则；桌面仅收到当前身份的 View 和已投影事件。
 
 v1 使用游戏自身内联桌面与空默认图包，不接入图包切换、平台音效或教程。可以通过可选 getDecisionContext 接入现有脚本/模型 AI，未声明的旧包继续只支持真人。原静态游戏保留已有全部能力。
+
+## 可选公开结果（平台 1.3.0）
+
+默认不记录 ZIP 的胜负摘要。只有在 `game.json` 显式添加 `"publicResult":"winners-scores-v1"` 时，平台才要求并启用同步 `game.getPublicResult(outcome)`。该方法在原有界 QuickJS 内运行，输入是本次权威 getOutcome 的 JSON；不能调用宿主、读数据库或获取额外身份。示例：
+
+```javascript
+// 仅当本游戏规则确认这些席位是可向所有原参与者公开的胜者时使用。
+game.getPublicResult = outcome => ({ winners: outcome.winners });
+```
+
+方法返回显式 `null`，或严格 `{winners:string[],scores?:Record<string,number>}`。winners 必须为 1–20 个唯一的本局固定参与者席位 ID（1–128 字符）；多胜者表示共同胜出。scores 可省略；提供时必须恰好包含全部固定参与者的有限数字分数，可为负数、0 或小数。平台按固定座位顺序保存既有结果 DTO，不推断排名，不补零。空胜者、陌生/重复席位、缺失/多余分数键和任何额外字段均拒绝。无可靠公开结果、平局或合作失败等当前 DTO 未表达的情形返回 null，不能将其伪造为全员胜利。
+
+只在终局动作事务调用投影；安装自检若初始状态已结束也会校验，否则仅核对方法存在，不保证所有终局正确。`undefined`、Promise、异常、非 JSON 值、非有限分数和无效输出均不会降级为 null。返回编码（含内部校验信封）最多 16 KiB，仍受 16 MiB 内存、512 KiB 栈和 100 ms 执行限制；结构/席位无效返回脱敏 VALIDATION_ERROR，VM 执行失败或超限返回脱敏 ACTION_NOT_ALLOWED。安装错误不保存半份包；终局错误回滚 State/RNG/revision、结果、回放、房间复位及动作回执。这样的包可能无法完成终局，必须在独立仓库发布前用完整对局回归发现，不可覆盖已安装精确版本修补。
+
+039 迁移保存可空 public_result_contract；新进程按精确版本恢复投影。未声明包即使有同名方法也不调用，旧包规则摘要不变；旧结束局不补算结果。已声明包在规则摘要增加契约标记。历史战绩、回放与结果读取不重新执行投影；公开结果不开放非参与者读取权限。
+
+发布依赖包之前，先部署并核验平台 1.3.0 或后续兼容版本，再验证真实 ZIP。1.2.6 的严格 descriptor 会拒绝新 ZIP；但已装入新包的数据库不能直接退回旧 API，旧程序可能忽略持久声明。当前未提供自动阻断旧程序降级的机制，正式游戏发布前必须完成兼容及运维门槛核验。本次平台能力不表示 UNO 等现有正式包已启用，也不代表已发布/安装新游戏。
 
 ## 可选 AI（2026-10-03）
 
@@ -79,6 +96,6 @@ parent.postMessage({type:'boardgame:resize', height:560, fit:'viewport'}, '*');
 
 上传前检查身份及 CSRF，事务内再次检查活跃管理员和未撤销 session。安装元数据、源码、桌面及回执一起原子提交；只有提交后注册并返回成功。同一账户/requestId/ZIP 重试返回原结果，不重复安装；不同字节复用 ID 为 REQUEST_ID_CONFLICT。同版本不同包为 STATE_CONFLICT，必须提升版本，不能覆盖内置或旧版本。相同包重传不会重新上架已下架版本。
 
-最多保存 100 个在线版本、10000 个安装回执；管理员每进程每分钟最多 20 次上传。ZIP 字节不解压到磁盘，不执行安装脚本，不记录源代码或原始错误到日志。规则和桌面持久在 PostgreSQL，数据库备份包括全部包，上传者账户生命周期不删除已安装包。新增 023/024/025 迁移需运行 `pnpm db:migrate`。
+最多保存 100 个在线版本、10000 个安装回执；管理员每进程每分钟最多 20 次上传。ZIP 字节不解压到磁盘，不执行安装脚本，不记录源代码或原始错误到日志。规则和桌面持久在 PostgreSQL，数据库备份包括全部包，上传者账户生命周期不删除已安装包。新增 023/024/025/039 迁移需运行 `pnpm db:migrate`。
 
 规则摘要锁定包 SHA-256、实际规则源码/公开规则、格式/引擎版本与 manifest；源码损坏后的旧局拒绝恢复，保留原状态。旧局锁定精确版本，不自动替换最新版。当前仍为单 API 进程实时部署；其他 API 进程在涉及游戏的请求前同步已安装版本。更换引擎语义需要版本兼容方案，不应直接改变已有规则摘要。没有任意 npm 项目的自动构建和发布能力。

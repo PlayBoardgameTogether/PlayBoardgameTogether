@@ -1,5 +1,42 @@
 # 开发进度
 
+## 每日任务 D19：公开结果事务与兼容验收（2026-11-14，候选保持 1.3.0）
+
+- 从 D18 `6023ba6` 创建独立 `codex/d19-result-compatibility`，编辑前及交付前 fetch main 均为 `add0940`，保留 D15–D18 未合并祖先和原目录改动。扩展原集成测试八项，覆盖不同请求并发终局、参与者/Origin/CSRF/撤销会话、新旧包共存/精确旧版缺失、投影异常/超时/NaN 及冻结自动提案晚期失败；失败前后单 SQL 快照比较 State/RNG、结果、房间、回放、回执和任务，故障解除原提案成功。
+- 原准备链串行使用独立 `playboard_d19_test_20261114` / 15441。三文件首轮 22/24，自动夹具缺少电脑决策契约被 422 拒绝，补齐后仅失败两项 2/2；NaN 夹具隔离风险后该项复验通过，最终 **24 个独立用例分批通过**。真实 UNO 新旧包集成 3/3，旧输入首轮为本地打包，改正式 Release 摘要后旧局 1/1；双端正式旧包/新候选完整 E2E **4/4、无 skip、2.2 分钟**，覆盖结算/回放、分页及换号隔离。实际查看桌面新旧与手机新包结算截图。完整 typecheck、lint（20 根 AST）、定向格式/差异检查通过；环境失败与分批边界见 [D19 记录](daily-result-compatibility-2026-11-14.md)。
+- 仅测试/内部文档，平台 **1.3.0 → 1.3.0**、README 一致，产品/契约/迁移/游戏副本/来源锁/登记及依赖不变。平台 #74–#77、UNO #5 均仍 open；D21 运维降级阻断与发布门槛未完成，ADR-011 保持 Proposed，没有合并/发布/安装候选。
+- **23:46:33** 只读确认生产 current.json、API cwd/package.json 一致 **add0940 / 1.2.6**，服务 active/running、NRestarts=0、ready/database 就绪；未同步未审查候选或重启。未执行全库回归/生产 build、真机/WebKit/真实收费模型；D3/D5 条件保留，D20 未开始。主提交 `b6c0d19` 已推送，[PR #78](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/78) open、未合并；主提交 pins CI success；五文件本轮改动，完整 PR 含前置祖先，分支保留待审。
+
+## 每日任务 D18：结算与本人战绩衔接（2026-11-14，候选保持 1.3.0）
+
+- 复用现有结算卡、本人战绩、回放与回房入口，无需新增产品实现。扩展实际 UNO 新 1.3.0 / 旧 1.2.0 ZIP 双端完整局，核对公开胜者、无合成分数、旧包未知结果和只读回放；复制原完整参与者建立明确的 23 条分页夹具，验证 20+3、时间相同游标、筛选与同文档换号后的迟到响应隔离，非参与者 view/replay 404。
+- 原隔离准备链串行使用专用 `playboard_d18_test_20261114` / 15441，最终 ZIP E2E **4/4（1.7 分钟）**、内置 Color Match 双端完整结算/筛选恢复/再开局 **2/2（39.8 秒）**，均无 skip；typecheck、全 lint（20 根 AST）、最终定向 ESLint/Prettier 与差异检查通过。实际查看双端新包结算和旧包分页截图。早期夹具 bot 字段、安装按钮与链接名称及换号导航的失败/中断均保留记录，未放宽安全断言。
+- 仅测试/内部文档，平台 **1.3.0 → 1.3.0**，README 一致；游戏副本、来源锁、目录登记、运行代码及迁移不变。主提交 `1ee8250` 已推送并创建 [PR #77](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/77)，独立 `codex/d18-result-history` 保留 D15–D17 祖先，原目录已有改动不动；前置平台 #74/#75/#76 和 UNO #5 尚未合并，不提前发布或安装依赖新平台的游戏。
+- 22:51 只读确认生产 **add0940 / 1.2.6**、实际 API cwd 一致、服务 active/running、NRestarts=0，ready/database 就绪；未重启/同步候选。本轮无全库集成/E2E/生产 build、真机/WebKit 或真实收费模型，D19/D21 事务兼容/降级发布门槛及 D3/D5 原条件保留；完整入口、失败、证据与交付边界见 [D18 记录](daily-result-history-2026-11-14.md)。下一项 D19。
+
+## 每日任务 D17：UNO 休闲版公开胜者试点（2026-11-14，游戏候选 1.3.0）
+
+- UNO 独立仓库休闲版 **1.2.1 → 1.3.0（MINOR）**，声明可选公开结果并在原受限 QuickJS 只投影权威 winners，支持共同胜出、不合成分数。规则内容/资源/桌面不变，毫不留情保持 1.0.1；四份兼容快照固定 D16 SHA，版本化旧解析器验证旧平台拒绝新声明。
+- 游戏 25 个独立规则用例分批通过、两实际 ZIP/精确标签 verify 各 1/1、四视口双玩法 UI 通过。平台双真人/免费脚本/旧 1.2.0 活动局最终专用入口集成 **3/3**、真实桌面/手机 E2E **2/2**（均无 skip），普通回归不会误收集依赖外部 ZIP 的专项；覆盖权威结果、无分数、重启/旧版、重复/冲突、非参与者、本人记录和房间复位。原隔离准备链串行清理专用 D17 测试库，实际查看双端结算截图。
+- 平台完整 typecheck、lint（20 根 AST）、build 与本地来源锁 **10 仓库/154 文件**通过；测试导入、旧局安装审核摘要及共同胜出测试步骤的失败均按实际契约修正，未降低保护。详见 [D17 记录](daily-uno-public-results-2026-11-14.md)。平台仅测试/内部文档，保持 D16 候选 **1.3.0**，README 一致；登记已核对，无需改动，游戏副本/来源锁不漂移。
+- D15/D16 尚未合并，游戏 **4e3633a / [PR #5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5)**、平台 **c2bfa5a / [PR #76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76)** 已分别推送，游戏主提交远程 check success / release skipped，平台主提交 pins success；未合并/发布/生产安装，不提前发布依赖新运行时的游戏。22:29 只读核验生产 **add0940 / 1.2.6**、API cwd 一致、服务 active/running、NRestarts=0、ready/database 就绪。D18、D19/D21 发布/降级门槛仍待，D3/D5 原条件和真机等未验范围保留。
+
+
+## 每日任务 D16：ZIP 公开结果运行时（2026-11-14，候选 1.3.0）
+
+- 复用尚未合并的 D15 PR #74 设计提交，在独立 `codex/d16-package-public-results` 实现显式 publicResult 声明、有界同步 QuickJS getPublicResult 投影及严格固定参与者校验；新 039 可空列与原安装事务保存，按精确版本装配原 resultSummaries，复用原真人/自动终局事务、回放、房间复位与回执，无新增 SDK 核心或 HTTP/WS DTO。
+- 支持共同胜出、无分数/完整有限数字分数、显式未知结果；非法输出、VM 失败与晚期数据库故障全回滚并脱敏。未声明旧包不调用方法，旧规则摘要逐字节保持，不回填历史；新包追加结果契约摘要标记。
+- typecheck、完整 lint（含 20 根 AST）、35/35 相关单测、旧包/内置结算 6/6 集成通过；新增集成首轮 4 项断言错误（首次请求前误查延迟 registry），修正并扩展后 **10/10** 通过。原准备链使用独立 `playboard_d16_test_20261114`、15441 串行执行；生产 build 与 bundle/API/ZIP/worker 检查通过。初始扩大测试范围的调用在资源准备阶段终止，不计通过；详细命令/失败边界见 [D16 记录](daily-package-public-results-2026-11-14.md)。
+- 平台 **1.2.6 → 1.3.0**，兼容新增能力，README 同步；未改游戏仓库/副本/来源锁/登记或锁文件。主提交 **688dd6f** 已推送至 `codex/d16-package-public-results` 并创建 [PR #75](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/75)，含 D15 前置设计，尚未合并/同步生产。22:14 只读确认生产 **add0940 / 1.2.6**、API cwd 一致、服务 active/running、ready/database 就绪，原工作区 36 项改动不动。D17 试点、D18 UI、D19 扩展兼容及 D21 运维降级门槛未完成，ADR-011 保持 Proposed；不自动发布依赖游戏。
+
+## 每日任务 D15：在线 ZIP 公开结果设计（2026-11-13，平台保持 1.2.6）
+
+- 重新获取 main 成功，以 `add094003876376b8fef83b7cfde5b9aeea87f76` 在干净的 `codex/d15-zip-result-design` 独立工作区核对现有结果 DTO、QuickJS、安装/装配、真人/自动终局事务、本人战绩与精确版本恢复；原目录落后 143 提交、36 项既有改动全部保留，无混入。
+- 完成 [D15 设计](daily-zip-public-result-design-2026-11-13.md) 与 [ADR-011（Proposed）](adr/011-optional-package-public-results.md)：拟由 game.json 显式声明 `publicResult: "winners-scores-v1"`，同步 `getPublicResult(outcome)` 在原有界 QuickJS 返回严格公开胜者/可选完整分数或显式 null，按固定参与者映射现有 DTO 和 resultSummaries，不从游戏画面/手牌猜成绩。非法输出使原终局事务回滚，保留去重、回放、房间复位、自动任务与计费边界。
+- 明确单胜/共同获胜、无数值评分、未知结果、未表达的平局语义及额外秘密字段拒绝；持久声明拟用新增可空列，旧包/旧局不启用、不回填、旧摘要逐字节保持。不改 SDK 核心以免内置源码摘要漂移；新 descriptor 可使旧平台在安装时拒绝新包，但安装后不能保证降级旧平台仍识别声明，列为 D21 发布门槛。
+- 本轮仅内部设计与任务状态，平台 **1.2.6 → 1.2.6**、README 一致，现有规范未被改写为已支持；没有运行代码、协议、迁移、游戏仓库/来源锁/目录改动。`git diff --check` 与五文档/21 个新增相对链接/新文档围栏/版本/变更范围检查通过；首轮全历史扫描碰到既有 Windows file 链接，保留历史并按新增范围核验。不运行数据库测试、E2E 或 build，不将 D16–D21 待执行矩阵算作本轮通过。
+- **23:38:23（北京时间）**，current.json、实际 API cwd、运行 package.json 一致为 **add0940 / 1.2.6**；`boardgame-local.service` active/running、NRestarts=0，本机 `/health/ready` 200、database.ready=true。仅只读核验，无安装/生产写入/重启；本轮文档尚未同步服务器。D3 注册闭环、其余四个头像候选与真机/WebKit 条件保留，D16 未开始。主提交 **af1cd69** 已推送，创建 [PR #74](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/74)，open、未合并，分支保留待审查。
+
 ## D11–D14 已合并、三游戏正式发布并生产安装（2026-11-12，1.2.6）
 
 - 用户明确批准后，固定 head、最新 main、差异、CI 与审查核对通过，平台 [#72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72) 合并为 **21d12fd**，UNO [#4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4) 为 **042868c**，波多黎各 [#6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 为 **0a59124**；三合并树均等于已验证候选，平台 #69/#70/#71 全部已 merged。六个本地/远程功能分支按精确 head 和祖先核验安全清理，工作区、产物、main 及正式标签保留，原目录 36 项改动不动。

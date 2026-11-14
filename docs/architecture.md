@@ -1,5 +1,11 @@
 # 架构
 
+## 在线 ZIP 可选公开结果（D16，1.3.0）
+
+catalog 在严格 descriptor 解析可选 `publicResult: "winners-scores-v1"`，039 迁移将声明与原安装/源码/回执同事务保存。PackageRuntime 在原有界 QuickJS 提供独立同步投影，registry/package-public-result 只接受显式 null 或严格公开 winners/可选完整 scores，并按 match 固定参与者构建原 MatchResult。声明版本在 GamePackageService 装配时注册到既有 resultSummaries；原 MatchService 终局事务负责保存、回放、房间复位与请求回执，无额外动作或异步结算通道。
+
+投影失败抛脱敏错误并回滚；未声明旧包不注册回调，旧规则摘要逐字节保留，新声明包追加契约标记。SDK 核心、HTTP/WS DTO、浏览器身份与私密 View 边界保持。1.2.6 会拒绝新 ZIP，但已安装新包后不能保证退回旧 API 的语义；发布前仍需 D19/D21 兼容及运维门槛。详见 [D16 验证记录](daily-package-public-results-2026-11-14.md)。
+
 ## 账户安全（2026-11-03，1.2.0）
 
 `account-security.ts` 拥有本人安全信息、验证码签发/核销、邮箱绑定/换绑、改密/找回及会话撤销事务；`account-security-routes.ts` 只处理原 session/Origin/CSRF、输入体积和有界限流。注册、绑定和找回复用 `MailSettingsService` 的动态 SMTP 与传输隔离，验证码按独立用途表隔离，不新增运行服务或替代认证。`AuthService.login` 在签发 session 前按同一账户锁重验密码版本，撤销通知在事务提交后投递。Web 个人/管理员安全页共用本人表单与 typed client-sdk，后台外壳继续负责角色准入，不新增代改他人账户链路。

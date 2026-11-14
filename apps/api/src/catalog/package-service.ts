@@ -11,8 +11,19 @@ import { PackageRuntime } from '../registry/package-runtime.js';
 import { readGamePackage } from './game-package.js';
 import { AppError } from '../errors.js';
 import { compareGameVersions } from './official-source.js';
+import {
+  packagePublicResultContractSchema,
+  type PackagePublicResultContract,
+} from '../registry/package-public-result.js';
 
-type Row = { game_id: string; game_version: string; package_hash: string; server_source: string; public_rules: string };
+type Row = {
+  game_id: string;
+  game_version: string;
+  package_hash: string;
+  server_source: string;
+  public_rules: string;
+  public_result_contract: PackagePublicResultContract | null;
+};
 
 export class GamePackageService {
   private readonly loaded = new Map<string, string>();
@@ -31,11 +42,16 @@ export class GamePackageService {
     if (extension.manifest.id !== row.game_id || extension.manifest.version !== row.game_version) {
       throw new AppError('GAME_VERSION_UNAVAILABLE', '持久游戏包版本不匹配', 422);
     }
+    const contract = packagePublicResultContractSchema.nullable().parse(row.public_result_contract);
+    // Prepare every fallible optional adapter before registering the immutable version.
+    const resultSummary = contract ? this.runtime.publicResult(row.server_source) : undefined;
+    const source = `boardgame-package-v1:quickjs-0.31.0:${row.package_hash}:${JSON.stringify({
+      server: row.server_source, rules: row.public_rules,
+    })}`;
     this.registry.register(extension, {
       ...extension.manifest.defaultAssetPack, language: 'zh-CN', assets: [],
-    }, [], Buffer.from(`boardgame-package-v1:quickjs-0.31.0:${row.package_hash}:${JSON.stringify({
-      server: row.server_source, rules: row.public_rules,
-    })}`));
+    }, [], Buffer.from(source + (contract ? `:public-result:${contract}` : '')));
+    if (resultSummary) this.registry.resultSummaries.set(key, resultSummary);
     this.registry.rules.set(key, row.public_rules);
     this.loaded.set(key, row.package_hash);
   }
@@ -45,7 +61,10 @@ export class GamePackageService {
     const versions = await this.db.query<{ game_id: string; game_version: string; package_hash: string }>('SELECT game_id,game_version,package_hash FROM game_packages');
     for (const row of versions.rows) {
       if (this.loaded.get(`${row.game_id}@${row.game_version}`) === row.package_hash) continue;
-      const source = await this.db.query<Row>('SELECT game_id,game_version,package_hash,server_source,public_rules FROM game_packages WHERE game_id=$1 AND game_version=$2', [row.game_id, row.game_version]);
+      const source = await this.db.query<Row>(
+        'SELECT game_id,game_version,package_hash,server_source,public_rules,public_result_contract FROM game_packages WHERE game_id=$1 AND game_version=$2',
+        [row.game_id, row.game_version],
+      );
       this.register(source.rows[0]!);
     }
   }
@@ -53,6 +72,9 @@ export class GamePackageService {
     const hash = createHash('sha256').update(bytes).digest('hex');
     const packageData = readGamePackage(bytes);
     const extension = this.runtime.extension(packageData.server), manifest = extension.manifest;
+    const resultSummary = packageData.publicResult
+      ? this.runtime.publicResult(packageData.server)
+      : undefined;
     packageVersionParams.parse({ id: manifest.id, version: manifest.version });
     // Smoke-test the actual SDK lifecycle without altering any existing match or RNG.
     for (const count of new Set([manifest.players.min, manifest.players.max])) {
@@ -75,7 +97,9 @@ export class GamePackageService {
         extension.getActionSpec(recovered, viewer);
         extension.projectEvents(initial.events, viewer);
       }
-      z.object({ status: z.enum(['ongoing', 'finished']) }).parse(extension.getOutcome(recovered));
+      const outcome = extension.getOutcome(recovered);
+      const status = z.object({ status: z.enum(['ongoing', 'finished']) }).parse(outcome).status;
+      if (status === 'finished') resultSummary?.(outcome, seats);
     }
     const result = gamePackageResultSchema.parse({ gameId: manifest.id, version: manifest.version, name: manifest.name, hash });
     return { hash, packageData, manifest, result };
@@ -163,7 +187,11 @@ export class GamePackageService {
         // Replace catalog availability atomically; immutable old rules remain recoverable.
         await client.query('UPDATE game_installations SET enabled=false WHERE game_id=$1 AND enabled=true', [manifest.id]);
         await client.query('INSERT INTO game_installations(game_id,game_version,content_version,sdk_range,manifest,enabled) VALUES($1,$2,$3,$4,$5,true)', [manifest.id, manifest.version, manifest.contentVersion, manifest.sdkRange, manifest]);
-        await client.query('INSERT INTO game_packages(game_id,game_version,package_hash,server_source,client_html,public_rules,installed_by,presentation) VALUES($1,$2,$3,$4,$5,$6,$7,$8)', [manifest.id, manifest.version, hash, packageData.server, packageData.client, packageData.rules, owner, packageData.presentation ?? {}]);
+        await client.query(
+          'INSERT INTO game_packages(game_id,game_version,package_hash,server_source,client_html,public_rules,installed_by,presentation,public_result_contract) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+          [manifest.id, manifest.version, hash, packageData.server, packageData.client,
+            packageData.rules, owner, packageData.presentation ?? {}, packageData.publicResult ?? null],
+        );
       }
       await client.query('INSERT INTO game_package_receipts(account_id,request_id,package_hash,result) VALUES($1,$2,$3,$4)', [owner, requestId, hash, result]);
       await client.query('COMMIT');
