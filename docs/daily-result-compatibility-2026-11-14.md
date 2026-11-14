@@ -69,3 +69,34 @@ D15–D18 依赖仍未合并，本轮不向生产同步候选。新结果包安�
 主提交的精确来源检查 [run 43612508191](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43612508191) completed/success；该 CI 仅校验游戏来源锁，不当作远程全套业务测试。后续仅补交付文档，不重复无变化代码检查。
 
 GitHub 应用创建接口返回 403，随后复用既有 Git helper 的内存认证经 gh API 先查重再创建成功，无凭据输出或落盘。仅同步本轮审查后的文件，原目录 36 项改动及所有其他工作区保持。相关分支均仍有未合并内容，保留，不删除其他任务分支。没有合并、标签、Release、生产安装、候选服务器同步或重启。
+
+
+## 已批准合并、生产上线与分支清理（2026-11-14—15）
+
+用户本轮明确要求合并后，重新获取 main，核对 #74–#78 五个 PR 的精确 head、完整 28 文件/11 提交与远程 pins success，review/review thread 均为空，无阻塞审查。最新 main 为 add0940，是已验证 D19 候选的祖先。D16 以来产品、SDK、游戏和依赖树未再变化；复用已通过检查，不把无变化合并再当作新业务测试。
+
+固定 PR #78 head **42b072bae94493631398544e2a95ad419ab3ade4** 通过 merge commit 合入 **2a62857c19dcebecd129e03e96095a3ee79b89e5**；`git diff --exit-code origin/main HEAD` 通过，树与已验证候选完全相同。前置 #74–#77 全部祖先同时进入 main，GitHub 已逐一确认五个 PR 的 merged 状态；无须逐个触发中间平台部署。应用合并接口返回 403 后复用项目已有内存认证，gh API 先重验 main/head 再带 sha 合并成功，无凭据输出或落盘，不绕过分支保护。
+
+原更新器 **11-14 23:57** 自动完成构建、排空、备份、迁移/游戏同步及切换。没有维护操作、手动重启、启动仓库 reset、配置覆盖或数据库恢复。当前运行通过私有 current.json、API 实际 cwd 和运行 package.json 三者核对，不能用 `/opt/boardgame` 的旧 Git HEAD 推断线上版本；其原有运维补丁与未提交文件保持。
+
+本次备份 `update-Pfgzav` 的 `verify-update-backup.mjs` 只读复验通过：**76 文件 / 8,150,070 字节**，包含文件集合、大小、SHA-256、PGDMP 签名与 release.json 的前后 SHA。previous 为 add0940，candidate 为 2a62857，createdAt 为 2026-11-14T15:57:40.873Z。迁移在北京时间 **23:57:41** 保存 `039_package_public_result.sql`，checksum `1166ca3d8f8b4485f3042d73df6194d5634e8f198ff213553627c6e8cdf3e1ef` 与运行源码一致；可空 text 列已存在。
+
+只读 REPEATABLE READ 快照确认 18 份在线包的声明均为 null；与 D14 最终生产安装记录比较，UNO、毫不留情、波多黎各的各个既有版本哈希和上架状态完全保持，UNO 1.3.0 尚不存在。不读取玩家私密 View，不直接修改安装数据，也不把“旧字节保持”写成真实生产玩家旧局验收。
+
+**11-15 00:01:21（北京时间）**，服务器实际为 **2a62857 / 1.3.0**，服务 active/running、NRestarts=0，ready 200、database.ready=true。匿名 Chromium 四视口 **1440×900、1280×800、390×844、320×740**：首页/详情/电脑页面刷新均 200、页脚 1.3.0、登录保护正常；检查到的业务页无 pageerror/整页溢出。新增公开结果指南四尺寸正确呈现，整页无横向溢出；指南原始 Markdown、全局 CSS 与电脑页 JS 响应均和实际运行文件逐字节/摘要相同。已查看 1440px 与 390px 的实际文档截图。导航离页取消懒加载资源与 Cloudflare rum 请求的 ERR_ABORTED 只记作探针日志，不当作产品报错或资源成功加载的证据；探针最终完整通过。
+
+实际命令与结果保留于本地忽略目录 `.data/d19-delivery/`：`live-platform.mjs` / `production-health.json` / 公网截图、`verify-migration.mjs` / `migration-verified.json`、`merge.json` 和 `cleanup.json`。上述生产检查均只读，没有真实注册、建房、行动、收费调用或游戏安装；本地 D19 的历史完整对局证据继续按原记录保留。
+
+五个源分支均核对对应 merged PR、精确远程/本地 head、main 祖先、无新增/未推送/未提交内容及其他开放 PR后清理：
+
+| PR | 已删除的本地与远程分支 | 已合入 head |
+| --- | --- | --- |
+| #74 | codex/d15-zip-result-design | d5d507b |
+| #75 | codex/d16-package-public-results | 8f377a1 |
+| #76 | codex/d17-uno-results-validation | d5cd5ac |
+| #77 | codex/d18-result-history | 6023ba6 |
+| #78 | codex/d19-result-compatibility | 42b072b |
+
+工作区先切为原 SHA 的 detached HEAD，再用本地 `git branch -d` 与远程期望 SHA 约束删除，最终 prune；全部 worktree 与忽略证据保留。原主目录 36 项已有改动、UNO #5 与其他未完成任务分支不动。此后交付文档另用独立分支，不恢复或复用已清理源分支。
+
+平台累计 **1.2.6 → 1.3.0（MINOR）**；本次仅内部记录，不再升版或重跑无变化的本地业务检查。D21 降级阻断和正式发布门槛仍待，UNO #5 不在本轮平台合并范围，未合并/发布/安装；D20、D3/D5 及真机/WebKit/收费模型条件保留。内部文档的提交和服务器同步成功后补记，不为文档强制重启应用。
