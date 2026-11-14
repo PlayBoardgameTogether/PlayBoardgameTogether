@@ -40,3 +40,9 @@ pnpm --config.verify-deps-before-run=false test:e2e --config playwright.uno-resu
 **22:51:06** 只读确认生产 current.json、实际 API cwd 与运行 package.json 一致为 **add0940 / 1.2.6**；`boardgame-local.service` active/running、NRestarts=0，实际 API 19301 `/health/ready` 返回 200、status=ready、database.ready=true。普通沙箱不能访问 system bus，获准只读环境完成核验；没有修改生产或重启。
 
 本轮测试/内部记录不要求生产应用更新；前置运行时尚未合并，不向生产同步候选源码。UNO 1.3.0 未发布/生产安装。D19 更完整的事务/授权/兼容矩阵、D21 降级与发布门槛仍待，不能用本轮 UI 通过替代。真机、WebKit、屏幕阅读器及真实付费模型未验证；D3/D5 原条件保留。下一项为 D19。
+
+## 已提交与 PR
+
+主提交 **1ee825037c5c0a67a06e01c641ac9b08902eb3cf** 已正常推送，创建 [平台 PR #77](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/77)，目标 main，当前 open、未合并。PR 保留 D15–D17 依赖祖先，本轮自身五文件；功能分支保留待审，不清理其他任务分支。创建 PR 的应用接口 403，改用既有 Git helper 的内存认证与 gh API 成功，凭据未输出/落盘；初次提交因缺少作者配置未成功，沿用历史 Codex 身份的单命令配置后提交成功，不修改全局 Git 配置。
+
+没有标签、正式 Release、生产安装、服务器同步或重启。候选运行时及其游戏发布仍按 D19/D21 门槛与用户授权分别处理。
