@@ -1,8 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from './fixtures.js';
-function requiredZip() {
-  const path = process.env.PLAYBOARD_UNO_RESULT_ZIP;
-  if (!path) throw new Error('PLAYBOARD_UNO_RESULT_ZIP must identify an actual UNO ZIP');
+import { matchViewSchema } from '../../packages/protocol/src/index.js';
+import { verifyResultHistory } from './result-history.js';
+function requiredZip(legacy: boolean) {
+  const name = legacy ? 'PLAYBOARD_UNO_LEGACY_ZIP' : 'PLAYBOARD_UNO_RESULT_ZIP';
+  const path = process.env[name];
+  if (!path) throw new Error(`${name} must identify an actual UNO ZIP`);
   return path;
 }
 const colorNames: Record<string, string> = {
@@ -27,9 +30,10 @@ const symbols: Record<string, string> = {
   roulette: '◉',
 };
 for (const edition of [
-  { id: 'online.uno', name: 'UNO · 休闲版', version: '1.3.0', archive: 'uno' },
+  { id: 'online.uno', name: 'UNO · 休闲版', version: '1.3.0', archive: 'uno', legacy: false },
+  { id: 'online.uno', name: 'UNO · 休闲版', version: '1.2.0', archive: 'uno', legacy: true },
 ]) {
-  test(`${edition.name} public-result ZIP completes a real human/script-AI game`, async ({
+  test(`${edition.name} ${edition.version} ZIP completes a real human/script-AI game`, async ({
     page,
   }, info) => {
     test.setTimeout(180000);
@@ -40,17 +44,18 @@ for (const edition of [
     await expect(page.getByRole('heading', { name: '游戏大厅', exact: true })).toBeVisible();
     await page.goto('/admin/catalog');
     await page.getByRole('button', { name: '上传游戏 ZIP' }).click();
-    const bytes = await readFile(requiredZip());
-    await page
-      .getByLabel('游戏 ZIP 文件')
-      .setInputFiles({
-        name: `${edition.archive}-${edition.version}.zip`,
-        mimeType: 'application/zip',
-        buffer: bytes,
-      });
+    const bytes = await readFile(requiredZip(edition.legacy));
+    await page.getByLabel('游戏 ZIP 文件').setInputFiles({
+      name: `${edition.archive}-${edition.version}.zip`,
+      mimeType: 'application/zip',
+      buffer: bytes,
+    });
     await page.getByRole('button', { name: '检查游戏包', exact: true }).click();
     await page
-      .getByRole('button', { name: /^(审核通过并上架|确认已安装版本)$/, exact: true })
+      .getByRole('button', {
+        name: /^(审核通过并上架|审核通过并更新|确认已安装版本)$/,
+        exact: true,
+      })
       .click();
     await expect(page.getByRole('status').filter({ hasText: '已安装并上架' })).toBeVisible();
     await page.goto('/');
@@ -176,15 +181,26 @@ for (const edition of [
     expect(finished).toBe(true);
     await expect(frame.locator('#status')).toContainText('获胜');
     const final = await snapshot();
-    expect(final.result.players).toEqual(
-      final.players.map((player: { seatId: string }) => ({
-        seatId: player.seatId,
-        winner: final.view.winners.includes(player.seatId),
-      })),
-    );
     const resultPanel = page.getByRole('region', { name: '本局结果', exact: true });
     await expect(resultPanel).toBeVisible();
-    await expect(resultPanel.locator('.match-result-players li')).toHaveCount(2);
+    if (edition.legacy) {
+      expect(final.result).toBeNull();
+      await expect(resultPanel).toContainText('本局未记录结果摘要');
+      await expect(resultPanel.locator('.match-result-players li')).toHaveCount(0);
+    } else {
+      expect(final.result.players).toEqual(
+        final.players.map((player: { seatId: string }) => ({
+          seatId: player.seatId,
+          winner: final.view.winners.includes(player.seatId),
+        })),
+      );
+      await expect(resultPanel.locator('.match-result-players li')).toHaveCount(2);
+      for (const [index, player] of final.result.players.entries()) {
+        await expect(resultPanel.locator('.match-result-players li').nth(index)).toContainText(
+          player.winner ? '胜出' : '未胜出',
+        );
+      }
+    }
     await expect(resultPanel).not.toContainText('分');
     await page.screenshot({ path: info.outputPath('uno-ai-finished.png'), fullPage: true });
     await page.getByRole('button', { name: '返回房间', exact: true }).click();
@@ -194,5 +210,6 @@ for (const edition of [
       true,
     );
     await page.screenshot({ path: info.outputPath('uno-ai-returned-room.png'), fullPage: true });
+    await verifyResultHistory(page, info, matchViewSchema.parse(final));
   });
 }
