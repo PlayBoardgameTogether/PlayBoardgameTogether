@@ -5,7 +5,7 @@
 - 从 D18 `6023ba6` 创建独立 `codex/d19-result-compatibility`，编辑前及交付前 fetch main 均为 `add0940`，保留 D15–D18 未合并祖先和原目录改动。扩展原集成测试八项，覆盖不同请求并发终局、参与者/Origin/CSRF/撤销会话、新旧包共存/精确旧版缺失、投影异常/超时/NaN 及冻结自动提案晚期失败；失败前后单 SQL 快照比较 State/RNG、结果、房间、回放、回执和任务，故障解除原提案成功。
 - 原准备链串行使用独立 `playboard_d19_test_20261114` / 15441。三文件首轮 22/24，自动夹具缺少电脑决策契约被 422 拒绝，补齐后仅失败两项 2/2；NaN 夹具隔离风险后该项复验通过，最终 **24 个独立用例分批通过**。真实 UNO 新旧包集成 3/3，旧输入首轮为本地打包，改正式 Release 摘要后旧局 1/1；双端正式旧包/新候选完整 E2E **4/4、无 skip、2.2 分钟**，覆盖结算/回放、分页及换号隔离。实际查看桌面新旧与手机新包结算截图。完整 typecheck、lint（20 根 AST）、定向格式/差异检查通过；环境失败与分批边界见 [D19 记录](daily-result-compatibility-2026-11-14.md)。
 - 仅测试/内部文档，平台 **1.3.0 → 1.3.0**、README 一致，产品/契约/迁移/游戏副本/来源锁/登记及依赖不变。平台 #74–#77、UNO #5 均仍 open；D21 运维降级阻断与发布门槛未完成，ADR-011 保持 Proposed，没有合并/发布/安装候选。
-- **23:46:33** 只读确认生产 current.json、API cwd/package.json 一致 **add0940 / 1.2.6**，服务 active/running、NRestarts=0、ready/database 就绪；未同步未审查候选或重启。未执行全库回归/生产 build、真机/WebKit/真实收费模型；D3/D5 条件保留，D20 未开始。提交与 PR 状态成功后补记。
+- **23:46:33** 只读确认生产 current.json、API cwd/package.json 一致 **add0940 / 1.2.6**，服务 active/running、NRestarts=0、ready/database 就绪；未同步未审查候选或重启。未执行全库回归/生产 build、真机/WebKit/真实收费模型；D3/D5 条件保留，D20 未开始。主提交 `b6c0d19` 已推送，[PR #78](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/78) open、未合并；主提交 pins CI success；五文件本轮改动，完整 PR 含前置祖先，分支保留待审。
 
 ## 每日任务 D18：结算与本人战绩衔接（2026-11-14，候选保持 1.3.0）
 

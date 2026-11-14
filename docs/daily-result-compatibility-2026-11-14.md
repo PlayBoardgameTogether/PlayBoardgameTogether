@@ -62,4 +62,10 @@ pnpm --config.verify-deps-before-run=false test:e2e --config playwright.uno-resu
 
 D15–D18 依赖仍未合并，本轮不向生产同步候选。新结果包安装后降级旧 API 的语义仍未被阻断；D21 须完成运维兼容和平台先部署、游戏后发布的门槛，才能单独按授权处理发布与订阅安装。D3 注册闭环、其余四个头像候选和既有设备/外部服务限制继续保留。D20 为可选成长提示，未在本轮推进。
 
-本轮提交、推送及 PR 成功后补记；保留所有尚未合并的相关分支，不清理其他任务工作区。
+## 已提交与待审 PR
+
+主提交 **b6c0d19c9146a6ec48b05ab97407fba4825c2be5** 已推送到 `codex/d19-result-compatibility`，创建面向 main 的 [PR #78](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/78)，open、未合并。本轮自身五文件；PR 完整差异还包含尚未合并的 D15–D18，保留所有前置祖先，不能将完整 PR 当作仅五文件变更审查。
+
+主提交的精确来源检查 [run 43612508191](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43612508191) completed/success；该 CI 仅校验游戏来源锁，不当作远程全套业务测试。后续仅补交付文档，不重复无变化代码检查。
+
+GitHub 应用创建接口返回 403，随后复用既有 Git helper 的内存认证经 gh API 先查重再创建成功，无凭据输出或落盘。仅同步本轮审查后的文件，原目录 36 项改动及所有其他工作区保持。相关分支均仍有未合并内容，保留，不删除其他任务分支。没有合并、标签、Release、生产安装、候选服务器同步或重启。
