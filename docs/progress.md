@@ -5,7 +5,7 @@
 - UNO 独立仓库休闲版 **1.2.1 → 1.3.0（MINOR）**，声明可选公开结果并在原受限 QuickJS 只投影权威 winners，支持共同胜出、不合成分数。规则内容/资源/桌面不变，毫不留情保持 1.0.1；四份兼容快照固定 D16 SHA，版本化旧解析器验证旧平台拒绝新声明。
 - 游戏 25 个独立规则用例分批通过、两实际 ZIP/精确标签 verify 各 1/1、四视口双玩法 UI 通过。平台双真人/免费脚本/旧 1.2.0 活动局三独立集成分批通过，真实桌面/手机 E2E **2/2**；覆盖权威结果、无分数、重启/旧版、重复/冲突、非参与者、本人记录和房间复位。原隔离准备链串行清理专用 D17 测试库，实际查看双端结算截图。
 - 平台完整 typecheck、lint（20 根 AST）、build 与本地来源锁 **10 仓库/154 文件**通过；测试导入、旧局安装审核摘要及共同胜出测试步骤的失败均按实际契约修正，未降低保护。详见 [D17 记录](daily-uno-public-results-2026-11-14.md)。平台仅测试/内部文档，保持 D16 候选 **1.3.0**，README 一致；登记已核对，无需改动，游戏副本/来源锁不漂移。
-- D15/D16 尚未合并，游戏与平台本轮候选分别交付；未合并/发布/生产安装，不提前发布依赖新运行时的游戏。22:29 只读核验生产 **add0940 / 1.2.6**、API cwd 一致、服务 active/running、NRestarts=0、ready/database 就绪。D18、D19/D21 发布/降级门槛仍待，D3/D5 原条件和真机等未验范围保留。
+- D15/D16 尚未合并，游戏 **4e3633a / [PR #5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5)**、平台 **c2bfa5a / [PR #76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76)** 已分别推送，游戏主提交远程 check success / release skipped，平台主提交 pins success；未合并/发布/生产安装，不提前发布依赖新运行时的游戏。22:29 只读核验生产 **add0940 / 1.2.6**、API cwd 一致、服务 active/running、NRestarts=0、ready/database 就绪。D18、D19/D21 发布/降级门槛仍待，D3/D5 原条件和真机等未验范围保留。
 
 
 ## 每日任务 D16：ZIP 公开结果运行时（2026-11-14，候选 1.3.0）

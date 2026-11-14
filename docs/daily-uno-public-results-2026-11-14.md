@@ -50,3 +50,11 @@ pnpm --config.verify-deps-before-run=false test:e2e tests/e2e/uno-public-results
 **22:29:25** 只读核验真实服务器：current.json **add094003876376b8fef83b7cfde5b9aeea87f76**，实际 API cwd 一致，运行 package.json **1.2.6**；`boardgame-local.service` active/running、NRestarts=0，实际 API 19301 的 `/health/ready` 为 200、status=ready、database.ready=true。最初使用历史 8080 探针得到 404，改从实际 API 进程确认非秘密端口后通过；没有修改配置或重启。本批候选尚未上线，生产订阅/游戏安装不作新验收声明。
 
 未验证物理手机、WebKit、屏幕阅读器、真实付费模型、旧 1.2.1 活动局专门矩阵及 D19 更完整授权/回滚组合。D3 的生产注册闭环与其余四个头像候选维持原记录；下一项为 D18 结算和个人战绩衔接验收。
+
+## 已推送与待审 PR
+
+游戏主提交 **4e3633a77088a8c099dcffdd96c8010384a95a3e** 已推送，创建 [UNO PR #5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5)；平台主提交 **c2bfa5ae8fb4a84f7e41aeeb82cd472dc815e272** 已推送，创建 [平台 PR #76](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/76)。平台 PR 含 D15/D16 四个前置提交，本批自身五文件；都没有合并，分支保留待审查。
+
+游戏主提交的 [run 43605629262](https://github.com/PlayBoardgameTogether/playboard-game-uno/actions/runs/43605629262) check 全步骤 success，release 按 PR 条件 skipped；平台主提交的 [run 43605638689](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43605638689) pins success。此处只记录已核对 head 的检查，不宣称远程运行了平台集成/E2E；这些由上述本地独立环境验证。两 PR 当前 review 列表为空，不等同于人工批准。
+
+UNO 首次 CLI 推送缺少凭据，复用平台既有 Git helper 的内存认证后成功；GitHub 应用创建 PR 返回 403，改用同一认证的 gh API 先查重后创建，无凭据输出/落盘。后续仅补交付记录，不重复本地业务检查；没有发布标签、正式 Release、生产游戏安装、服务器同步或分支删除。
