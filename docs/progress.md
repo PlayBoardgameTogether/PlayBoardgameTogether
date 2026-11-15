@@ -5,7 +5,7 @@
 - 在既有房间/对局结算卡增加「我的成长」，只读取本人现有徽章集合，显示当前正式完成场次、下一个场次徽章进度及收藏入口。API 的 50 局上限显示为「至少 50 局」，旧局也明确是当前进度；没有局前对比，不声称本局新解锁、不重复庆祝或授予。
 - 读取失败可独立重试，不阻断结果/回放/再开局；按 matchId/账号隔离、离页取消、响应账号核对，会话失效清除旧上下文。无协议、数据库、游戏副本/来源锁、登记或依赖变化。平台 **1.3.0 → 1.4.0（MINOR）**，兼容新增结算展示，README 同步。
 - 冻结离线安装、全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 与差异检查通过；原隔离准备链下真实完整对局 E2E **2/2、40.5 秒、无 skip**，覆盖失败/重试、权威进度、刷新、徽章跳转、战绩与再次开局。亮暗主题四宽度及键盘入口检查通过，实际查看双端截图；上限/错账号另用明确 UI 夹具，不计为额外真实完局。
-- 独立 `/tmp/playboard-d20` / `codex/d20-match-progress` 基于 main **95e017f**，原工作区其他任务全部保留。08:59:14 只读确认生产 **95e017f / 1.3.0**、真实 API cwd 一致，服务 active/running、NRestarts=0、ready/database 就绪；候选尚未合并/上线。D21 发布兼容门槛、UNO #5 未发布、D3/D5 原条件及真机/WebKit 限制保留，下一项 D21。完整命令和范围见 [D20 记录](daily-match-progress-2026-11-15.md)。
+- 独立 `/tmp/playboard-d20` / `codex/d20-match-progress` 基于 main **95e017f**，原工作区其他任务全部保留。08:59:14 只读确认生产 **95e017f / 1.3.0**、真实 API cwd 一致，服务 active/running、NRestarts=0、ready/database 就绪；候选尚未合并/上线。D21 发布兼容门槛、UNO #5 未发布、D3/D5 原条件及真机/WebKit 限制保留，下一项 D21。主提交 **5dfc535** 已推送并创建 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)，open、未合并，功能分支保留待审。完整命令和范围见 [D20 记录](daily-match-progress-2026-11-15.md)。
 
 ## D15–D19 已合并与平台 1.3.0 生产验收（2026-11-14—15）
 

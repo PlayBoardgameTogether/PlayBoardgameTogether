@@ -41,3 +41,9 @@ D15–D19 平台能力已经合并并通过生产验收，因此继续 D20 可�
 只读服务器检查 **08:59:14（北京时间）**：current.json、实际 API cwd 和运行 package.json 一致 **95e017f / 1.3.0**，boardgame-local.service active/running、NRestarts=0，ready 200、database.ready=true。本轮尚未合并或同步候选，不将旧生产版本当作新版上线；没有生产玩家、发信、付费模型或游戏安装操作。
 
 真机、Safari/WebKit、屏幕阅读器、真实供应商调用未验证；D3 生产注册/登录闭环、D5 其余四个头像候选以及 D21 降级阻断与游戏发布门槛继续保留。下一项为 D21，本轮不提前扩展。
+
+## 已提交与待审 PR
+
+主提交 **5dfc535d0ee173d1bde28a21aeab5fc845e1ea2a** 已推送到 `codex/d20-match-progress`，创建面向 main 的 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)，open、未合并。完整差异仅本批 10 个文件，无其他任务祖先；功能分支及工作区保留待审查，原主目录保持。
+
+GitHub 应用创建接口返回 403（Resource not accessible by integration），随后复用既有命令行认证先查重再创建成功，无凭据输出/落盘。首次提交缺少本机默认作者配置，仅为该命令使用本仓库既有 Codex 身份，没有修改全局 Git 配置。当前未获本批 main 合并授权，按项目规则交付待审 PR，未同步候选或宣称上线；适用服务器同步随获准合并后的实际发布流程验收。后续仅补交付链接，不重复已通过且无变化的代码检查。
