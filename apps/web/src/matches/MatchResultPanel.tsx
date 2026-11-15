@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { MatchView } from '@boardgame/protocol';
 import { api } from '../platform.js';
+import { MatchProgress } from './MatchProgress.js';
 import '../styles/match-results.css';
 
 export function MatchResultPanel({ data, inRoom = false }: { data: MatchView; inRoom?: boolean }) {
@@ -28,6 +29,7 @@ export function MatchResultPanel({ data, inRoom = false }: { data: MatchView; in
           })}
         </ul>
       )}
+      {data.status === 'finished' && <MatchProgress matchId={data.matchId} />}
       <div className="match-result-actions">
         {inRoom && (
           <a className="button-link secondary" href={`/matches/${data.matchId}`}>
