@@ -2,6 +2,22 @@
 
 执行日期：2026-11-15（北京时间），按每日顺序提前推进，原排期 11-26。
 
+## 本轮续作：整合 D20（2026-11-15）
+
+重新 fetch `origin/main` 成功，最新 main **a3dbfac** 已含 D20 / 1.4.0；GitHub 只读确认 D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 仍 open，旧 head **6f997a6** 与 main 冲突。复用干净的 D21 独立工作区，以 merge commit 整合 main，保留 D20 成长组件、双端回归和生产交付记录，并保留 D21 的启动兼容保护。没有修改原目录或其他任务。
+
+候选平台版本随新基线由 **1.4.0 → 1.4.1（PATCH）**，替代本批原候选 1.3.1，仍是同一批兼容修复，不是第二次功能升版。README 与当前运维说明同步；下文 1.3.1、D20 待审和 09:26 生产状态均为初验时的历史事实，本轮结果另记。新结果包在生产保护验收前继续暂停发布。
+
+本轮实际复验（均为 `pnpm --config.verify-deps-before-run=false`）：
+
+- 全工作区 `typecheck`、`lint` 与 `build` 通过；含 20 源目录 AST 边界、格式、生产 bundle、实际编译公开结果投影、隔离 ZIP 和 AI worker。初次 lint 再次被沙箱 tsx IPC 的 EPERM 阻断，获准环境同命令通过，没有关闭检查。
+- `exec vitest run tests/unit/runtime-compatibility.test.ts tests/unit/online-update.test.ts` **22/22**；显式传入既有 `npm_execpath` 的 `exec vitest run tests/unit/update-command.test.ts` **10/10**，共 **32 个独立单测**，无 skip。直接 `node tests/deployment/update-backup.test.mjs` **13/13**，核对实际子用例计数，不把最初 `node --test` 只有一项文件级汇总当作十三项。
+- 原 `test:integration --config .data/d21/vitest.config.mjs` 在既有独立 **playboard_d21_test_20261115 / 15441** 串行准备、迁移、同步后 **3 文件、30/30、17.15 秒、无 skip**，含旧 API 启动前阻断、迁移前结构、新旧包和原订阅事务。开发库名称与测试库不同，没有清理开发或生产库。
+- `bash -n deploy.sh`、差异/版本一致性检查通过。逐项核对 D20 的三个 Web 文件、原 E2E、徽章说明和交付记录均与 main 完全一致；D21 运行脚本及兼容测试与已审候选完全一致。没有 UI 变更，不重复 D20 的 E2E 或渲染验收，也没有新增测试/依赖/游戏版本。
+- **10:01:36（北京时间）**，生产 current.json、真实 API cwd/package.json 一致 **a3dbfac / 1.4.0**；systemd active/running、NRestarts=0，API 与实际 UPDATE_HOST 入口 `/health/ready` 都为 **200 / database.ready=true**。初次误用默认 8080 返回 HTML、再按端口读回环被拒；只读监听及配置定位到服务器实际绑定地址后通过，未改服务。监督脚本仍无本批保护，本轮没有重启、安装、迁移或生产写入。
+
+本轮日志保留在忽略的 `.data/d21/refresh-*`。PR 更新和最终提交以下方交付段为准；本轮尚未合并/上线，生产保护加载及 UNO 发布门槛保持，D22 未开始。
+
 ## 范围与实现
 
 开始及交付前成功获取 main，基线 **95e017f22ab906ccce65c14bcf0ace7143192c1a / 1.3.0**。独立 `/tmp/playboard-d21`、`codex/d21-runtime-compatibility`；原目录已有改动及 D20 工作区保持。D20 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80) 成长提示仍待审，本批从 main 独立交付，不夹带该功能。

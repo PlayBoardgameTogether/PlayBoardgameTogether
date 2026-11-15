@@ -1,11 +1,32 @@
 # 开发进度
 
+## D21 续作：整合 D20 与 1.4.1 候选复验（2026-11-15）
+
+- 重新获取 main **a3dbfac / 1.4.0**，复用干净的 D21 工作区，合入 D20 并解决四文件冲突，完整保留其成长组件、E2E 与生产交付记录。D21 运行兼容保护不变，候选改为 **1.4.0 → 1.4.1（PATCH）**；README、当前运维说明一致，原 1.3.1 为同批历史候选，无第二次升版。
+- 本轮全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 通过；相关单测 **32/32**、备份/更新流程 **13/13**，原隔离 D21 库准备链下集成 **30/30、17.15 秒**，均无 skip。初次 lint IPC 受限后获准原命令通过。D20 文件与 main、D21 运行脚本与原候选逐项一致，无 UI 行为变化，不重复无变化 E2E。
+- **10:01:36（北京时间）** 只读核对 current.json、真实 API cwd/package.json 一致 **a3dbfac / 1.4.0**，服务 active/running、NRestarts=0，实际 API/监督入口 ready 均 200、database.ready=true。监督程序尚无本批保护，本轮没有重启、游戏发布/安装或生产数据操作。
+- [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 更新交付中，尚未合并；原目录与其他任务保留。UNO 1.3.0 仍须等待生产保护加载及实机验收，ADR-011 保持 Proposed，D22 未开始。完整命令、环境诊断与历史边界见 [D21 记录](daily-runtime-compatibility-2026-11-15.md#本轮续作整合-d202026-11-15)。
+
 ## 每日任务 D21：结果包运行兼容与发布门槛（2026-11-15，候选 1.3.1）
 
 - 从最新 main `95e017f / 1.3.0` 建独立工作区，保留原目录改动和 D20 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)。新增受生产构建核验的能力声明及有界只读一致性检查；更新器在候选排空前、每次启动及失败恢复前阻断不兼容发布，维护部署复用同一工具。下架版本仍受保护，数据库不可达或损坏元数据也阻断；不修改安装、规则摘要、迁移、API/WS/SDK 或游戏副本。
 - 全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 通过；版本补齐后仅重建 Web/bundle，最终受影响脚本作定向检查。Vitest 32 个独立用例、原部署备份 13/13 通过；原独立 D21 测试库准备链下首轮集成 29/29，后续查询/脱敏调整及迁移前结构补测最终三项 3/3，其余 27 项筛选未运行，合计 30 个独立集成用例分批通过。环境失败、探针断言修正、命令及未验范围见 [D21](daily-runtime-compatibility-2026-11-15.md)。没有 UI 改动，不重复无变化 E2E/截图。
 - 平台 **1.3.0 → 1.3.1（PATCH）**，兼容性缺陷修复，README 同步。目录登记已核对无需改动，来源锁/游戏版本保持。UNO #5 精确 head `2165c0f` 仍 open、远程 check success；正式 1.2.1 三附件存在，1.3.0 Release 为 404。真实新候选/正式旧 ZIP 摘要与旧解析器拒绝验证通过，不发布/安装候选。
 - **09:26:22（北京时间）** 只读确认生产 current.json、API cwd/package.json 一致 **95e017f / 1.3.0**，服务 active/running、NRestarts=0、ready/database 就绪；启动器尚无本批保护，候选尚未同步或重启。必须先合并并按原维护流程加载/实机验收保护，再按授权发布 UNO；直接绕过新版启动器执行旧 API 不受保护。ADR-011 继续 Proposed，D3/D5 条件及真机/WebKit/收费模型限制保持，D22 未开始。主提交 `b7b705e` 已推送至 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81)，未合并，分支保留待审。
+
+## D20 已合并与平台 1.4.0 生产验收（2026-11-15）
+
+- 用户明确批准后，最新 main、完整 10 文件/2 提交、固定 head `4f9c443`、pins success 和无阻塞审查核对通过；[PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80) 以 merge commit **2d00ebfdf52410dcb7323e6e50865015b39bd97f** 合入 main，GitHub 已确认 merged，合并树等于已验证候选。没有合并其他任务或发布游戏。
+- 原更新器自动完成构建、排空、备份及切换；新备份 **update-A1f3yP / 76 文件 / 8,152,043 字节** 的文件集合、大小、摘要、数据库归档签名和前后 SHA 只读复验通过。没有人工重启、覆盖配置、生产数据库恢复或新增迁移。
+- **09:50:03（北京时间）**，current.json、真实 API cwd/package.json 一致 **2d00ebf / 1.4.0**，服务 active/running、NRestarts=0、ready 200、database.ready=true。公网四视口首页/详情/电脑刷新、页脚、成长 JS/结果 CSS 与运行字节比对通过；无 pageerror/整页溢出，匿名对局/本人徽章保护保持。仅匿名 GET，生产身份成长交互未操作，不冒充生产真人完局。
+- 本地/远程 `codex/d20-match-progress` 经 merged、精确 head、祖先及无其他开放 PR 核对安全清理；工作区、证据和原主目录 36 项改动及其他任务保留。平台本批 **1.3.0 → 1.4.0（MINOR）**，本次仅内部记录不重复升号或业务测试。D21、UNO #5、D3/D5 和真机/WebKit 等限制保留，完整交付见 [D20 记录](daily-match-progress-2026-11-15.md#已批准合并生产验收与分支清理2026-11-15)。
+
+## 每日任务 D20：结算后的当前成长进度（2026-11-15，候选 1.4.0）
+
+- 在既有房间/对局结算卡增加「我的成长」，只读取本人现有徽章集合，显示当前正式完成场次、下一个场次徽章进度及收藏入口。API 的 50 局上限显示为「至少 50 局」，旧局也明确是当前进度；没有局前对比，不声称本局新解锁、不重复庆祝或授予。
+- 读取失败可独立重试，不阻断结果/回放/再开局；按 matchId/账号隔离、离页取消、响应账号核对，会话失效清除旧上下文。无协议、数据库、游戏副本/来源锁、登记或依赖变化。平台 **1.3.0 → 1.4.0（MINOR）**，兼容新增结算展示，README 同步。
+- 冻结离线安装、全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 与差异检查通过；原隔离准备链下真实完整对局 E2E **2/2、40.5 秒、无 skip**，覆盖失败/重试、权威进度、刷新、徽章跳转、战绩与再次开局。亮暗主题四宽度及键盘入口检查通过，实际查看双端截图；上限/错账号另用明确 UI 夹具，不计为额外真实完局。
+- 独立 `/tmp/playboard-d20` / `codex/d20-match-progress` 基于 main **95e017f**，原工作区其他任务全部保留。08:59:14 只读确认生产 **95e017f / 1.3.0**、真实 API cwd 一致，服务 active/running、NRestarts=0、ready/database 就绪；候选尚未合并/上线。D21 发布兼容门槛、UNO #5 未发布、D3/D5 原条件及真机/WebKit 限制保留，下一项 D21。主提交 **5dfc535** 已推送并创建 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)，open、未合并，功能分支保留待审。完整命令和范围见 [D20 记录](daily-match-progress-2026-11-15.md)。
 
 ## D15–D19 已合并与平台 1.3.0 生产验收（2026-11-14—15）
 

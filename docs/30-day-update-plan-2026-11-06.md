@@ -4,13 +4,13 @@
 
 计划周期：**2026-11-06—2026-12-05，共 30 个自然日**
 
-最新增量（2026-11-15）：**D20 的 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80) / 1.4.0 待审查；D21 独立候选 1.3.1 的兼容阻断已隔离验证，待审查合并及生产监督程序加载**，见 [D21](daily-runtime-compatibility-2026-11-15.md)。服务器本轮只读仍为 95e017f / 1.3.0，保护尚未加载，因此 UNO 1.3.0 继续暂停发布，ADR-011 保持 Proposed。D22–D30 未开始，下方 D19 段保留当时交付事实。
-
-状态（2026-11-15，D19 已合并/平台 1.3.0 生产验收）：**D1、D2、D4、D6、D7 已完成，D8–D19 的平台交付均已合并**。[PR #78](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/78) 固定 head 42b072b 合并为 **2a62857**，#74–#77 祖先全部入 main，GitHub 均已确认 merged；本批五个源分支安全清理、工作区保留。服务器 **2a62857 / 1.3.0**，服务/ready、039 迁移、备份及四视口公网页面核验通过；详见 [D19 交付](daily-result-compatibility-2026-11-14.md#已批准合并生产上线与分支清理2026-11-1415)。**UNO [#5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5) 未合并/发布/安装**，D21 降级阻断与依赖游戏发布门槛仍待，ADR-011 保持 Proposed。**D20–D30 未开始**；不将平台上线写成新游戏结果已上线。
+状态（2026-11-15，D20 已合并/平台 1.4.0 生产验收）：**D1、D2、D4、D6、D7 已完成，D8–D20 的平台交付均已合并**。[PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80) 固定 head **4f9c443** 合并为 **2d00ebf**，合并树与已验证候选相同；本轮源分支已安全清理，工作区和其他任务保留。服务器 **2d00ebf / 1.4.0**，服务/ready、新备份及四视口公网页面与成长资源核验通过，详见 [D20 交付](daily-match-progress-2026-11-15.md#已批准合并生产验收与分支清理2026-11-15)。**UNO [#5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5) 未合并/发布/安装**，D21 降级阻断与依赖游戏发布门槛仍待，ADR-011 保持 Proposed；后续按各自验收记录推进，不将平台上线写成新游戏结果已上线。
 
 D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/72)、UNO [#4](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/4)、波多黎各 [#6](https://github.com/PlayBoardgameTogether/playboard-game-puerto-rico/pull/6) 已合并；正式发布并由原生产订阅安装 **UNO 1.2.1、毫不留情 1.0.1、波多黎各 1.1.2**，三包摘要一致、旧版本保留，历史四视口/新备份证据见 [D14 交付](daily-week-two-closeout-2026-11-12.md#已批准合并正式发布与生产安装2026-11-12)。**D3 已确认真实收件，生产注册/登录闭环仍待；D5 本批三个生产更新已验收，其余四个头像候选未发布**。旧 D5 #56 的独立 PR 收尾维持原条件，本批不处理无关分支。
 
 原排期保留，已按用户继续推进的要求提前执行；完成标记仅代表列明验收范围。D4 的七套附件、三个旧安装摘要差异及六个未发布候选见 [D4 记录](daily-release-audit-2026-11-06.md)，D5 历史验证见 [订阅记录](daily-subscription-validation-2026-11-07.md)。D6 的隔离恢复与 1.2.3 上线证据保留在 [恢复记录](daily-recovery-drill-2026-11-08.md)。
+
+最新增量（2026-11-15）：**D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已整合 D20/main，候选版本顺延为 1.4.1，本轮复验已通过，待审查合并**，见 [D21](daily-runtime-compatibility-2026-11-15.md)。生产监督程序加载与新结果包发布门槛保持；UNO 1.3.0 未发布/安装，ADR-011 保持 Proposed。D22–D30 未开始。
 
 ## 本月目标与排期假设
 
@@ -83,8 +83,8 @@ D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull
 | D17 · 11-22 | **平台验证已合并，UNO #5 仍待 D21 门槛** · [记录](daily-uno-public-results-2026-11-14.md)；未发布/安装 | P1 · 一个在线游戏试点 | 在 UNO 独立仓库接入休闲版公开胜者，使用新游戏版本和真实 ZIP 验证 | 真人/脚本完整对局产生正确胜者；无数值评分时不合成分数；终局重复请求不重复结算，旧 1.2.0 对局按原版本恢复 |
 | D18 · 11-23 | **隔离验收已合并交付（PR #77）** · [记录](daily-result-history-2026-11-14.md) | P1 · 结算和战绩衔接 | 将试点结果接入既有结算卡和本人游戏筛选记录；复用回放与回房间入口 | 在线试点与内置游戏使用一致的公开结果展示；未知结果明确显示；分页、筛选和切换账号不会串数据，不读取对手私密视图 |
 | D19 · 11-24 | **已合并并随 1.3.0 验收，D21 发布门槛仍待** · [记录](daily-result-compatibility-2026-11-14.md) | P0 · 事务与兼容验收 | 集中验证新结果能力的重试、回滚、精确版本、进程恢复和读取权限，检查旧包与内置游戏 | 原准备脚本下的相关集成/E2E 通过；覆盖共同获胜、无分数和非法输出；新旧游戏可共存，没有篡改历史结果或绕过沙箱 |
-| D20 · 11-25 | **PR #80 / 1.4.0 待审查合并** | P2 · 单局收获提示 | 若本周主功能已通过，复用本人徽章接口，在结算后展示当前完成场次/成长进度及已有徽章入口 | 只展示本人真实当前进度；无可靠前后对比时不声称“本局新解锁”；刷新不重复庆祝，不新增永久授予或胜率推算体系 |
-| D21 · 11-26 | **1.3.1 隔离验证完成，待审查及生产保护加载** · [记录](daily-runtime-compatibility-2026-11-15.md) | P1 · 第三周缓冲 | 修复结果链路问题，完成跨仓兼容说明与发布顺序检查 | 先让平台具备兼容能力，再发布依赖它的新游戏包；订阅不得给不兼容运行时安装候选；无法保证兼容时暂停发布并记为阻塞 |
+| D20 · 11-25 | **已合并，1.4.0 已上线（PR #80）** · [记录](daily-match-progress-2026-11-15.md) | P2 · 单局收获提示 | 若本周主功能已通过，复用本人徽章接口，在结算后展示当前完成场次/成长进度及已有徽章入口 | 只展示本人真实当前进度；无可靠前后对比时不声称“本局新解锁”；刷新不重复庆祝，不新增永久授予或胜率推算体系 |
+| D21 · 11-26 | **1.4.1 已整合 D20 并复验，待审查及生产保护加载** · [记录](daily-runtime-compatibility-2026-11-15.md) | P1 · 第三周缓冲 | 修复结果链路问题，完成跨仓兼容说明与发布顺序检查 | 先让平台具备兼容能力，再发布依赖它的新游戏包；订阅不得给不兼容运行时安装候选；无法保证兼容时暂停发布并记为阻塞 |
 
 **周末检查点：** 至少一个在线游戏的新版本能把正确的公开结果写入个人记录，同时旧包、旧局、隐私边界和事务恢复保持有效。
 

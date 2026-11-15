@@ -1,4 +1,4 @@
-import { matchViewSchema } from '../../packages/protocol/src/index.js';
+import { badgeCollectionSchema, matchViewSchema } from '../../packages/protocol/src/index.js';
 import { viewSchema } from '@boardgame/color-match/shared';
 import { test, expect, type Page } from './fixtures.js';
 
@@ -179,6 +179,11 @@ test('plays a complete computer game, shows persisted results and filters histor
 }, info) => {
   test.setTimeout(180000);
   await login(page);
+  let failProgress = true;
+  await page.route('**/api/v1/profile/badges', async (route) => {
+    if (failProgress) return route.abort('failed');
+    return route.continue();
+  });
   await page.goto('/games/color-match/1.0.0');
   await page.getByRole('link', { name: '和电脑开一局', exact: true }).click();
   await expect(page.getByLabel('总人数（含你）')).toHaveValue('2');
@@ -229,11 +234,25 @@ test('plays a complete computer game, shows persisted results and filters histor
   await expect(page).toHaveURL(`/rooms/${finished.roomId}`);
   const result = page.getByRole('region', { name: '本局结果', exact: true });
   await expect(result).toBeVisible();
+  const growth = result.getByRole('region', { name: '我的成长', exact: true });
+  await expect(growth).toContainText('成长进度暂时无法读取');
+  await expect(result.getByRole('link', { name: '查看回放', exact: true })).toBeVisible();
+  failProgress = false;
+  await growth.getByRole('button', { name: '重试读取成长进度' }).click();
+  const badges = badgeCollectionSchema.parse(
+    (await (await page.request.get('/api/v1/profile/badges')).json()).data,
+  );
+  expect(badges.items.find((item) => item.id === 'fifty-matches')?.progress).toBe(1);
+  await expect(growth).toContainText('当前已完成 1 局正式对局');
+  await expect(growth.getByRole('progressbar', { name: '常来坐坐' })).toHaveAttribute('value', '1');
+  await expect(growth.getByRole('progressbar')).toHaveAttribute('max', '10');
+  await expect(growth).not.toContainText('新解锁');
   const originalViewport = page.viewportSize()!;
   for (const theme of ['light', 'dark']) {
     await page.evaluate((value) => localStorage.setItem('boardgame.theme', value), theme);
     await page.reload();
     await expect(result).toBeVisible();
+    await expect(growth).toContainText('当前已完成 1 局正式对局');
     for (const width of [1440, 1280, 390, 320]) {
       await page.setViewportSize({ width, height: 900 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -246,6 +265,45 @@ test('plays a complete computer game, shows persisted results and filters histor
     }
   }
   await page.setViewportSize(originalViewport);
+  const badgeLink = growth.getByRole('link', { name: '查看我的徽章' });
+  await badgeLink.focus();
+  await expect(badgeLink).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: '我的徽章', exact: true })).toBeVisible();
+  await expect(page.getByRole('article', { name: '初试身手', exact: true })).toContainText(
+    '已获得',
+  );
+  await page.goto(`/matches/${matchId}`);
+  await expect(growth).toContainText('当前已完成 1 局正式对局');
+  // Capped and mismatched collections are explicit UI fixtures, not extra completed games.
+  await page.unroute('**/api/v1/profile/badges');
+  let wrongAccount = false;
+  await page.route('**/api/v1/profile/badges', (route) =>
+    route.fulfill({
+      json: {
+        ok: true,
+        traceId: 'progress-fixture',
+        data: {
+          ...badges,
+          accountId: wrongAccount ? '00000000-0000-4000-8000-000000000001' : badges.accountId,
+          items: badges.items.map((item) =>
+            ['first-match', 'ten-matches', 'fifty-matches'].includes(item.id)
+              ? { ...item, progress: item.target, earned: true }
+              : item,
+          ),
+        },
+      },
+    }),
+  );
+  await page.reload();
+  await expect(growth).toContainText('当前已完成至少 50 局正式对局');
+  await expect(growth).toContainText('已达成全部场次成长徽章');
+  await expect(growth.getByRole('progressbar')).toHaveCount(0);
+  wrongAccount = true;
+  await page.reload();
+  await expect(growth).toContainText('成长进度暂时无法读取');
+  await expect(growth).not.toContainText('50');
+  await page.unroute('**/api/v1/profile/badges');
   await page.goto('/profile/history');
   const record = page.locator('.match-history-row').filter({ hasText: 'Color Match · 电脑对局' });
   await expect(record).toContainText(
