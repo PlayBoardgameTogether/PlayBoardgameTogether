@@ -2,6 +2,8 @@
 
 状态：**Proposed**，2026-11-13。D15 设计交付，不代表契约已实现或已发布。
 
+最新进展（2026-11-15）：D16–D19 平台能力已合并并以 1.3.0 验收上线；D21 候选 1.3.1 已实现并在隔离环境验证部署入口兼容阻断，但尚未加载生产监督程序，UNO 新结果包仍未发布/安装。本 ADR 继续 Proposed，待实机发布门槛通过再记录 Accepted；完整边界见 [D21](../daily-runtime-compatibility-2026-11-15.md)。下文设计与日期段保留为历史。
+
 现有内置扩展通过 registry 的精确版本显式结果回调接入原终局事务；在线 ZIP 的 getOutcome 没有公开信息声明，不能直接将其 winners/scores 当作可向参与者公开的战绩。旧包、旧局与已保存的规则摘要须继续有效。
 
 拟在 game.json 增加可选 `publicResult: "winners-scores-v1"`，同时要求 server.js 提供同步 `getPublicResult(outcome)`。返回显式 null 或严格的公开 winners/可选完整 scores；宿主校验固定参与者，构造既有 MatchResult DTO。非法输出、异常和资源超限回滚原终局动作事务，不静默忽略，不在读取时补算。方法仍运行于原有界 QuickJS，不进入 Node 或客户端。

@@ -47,12 +47,22 @@ describe('production online updates', () => {
     const old = { sha: 'old', path: 'old' };
     const next = { sha: 'new', path: 'new' };
     const deps = {
+      check: vi.fn(async () => undefined),
       current: () => old, drain: vi.fn(async () => idle), stop: vi.fn(async () => undefined),
       start: vi.fn(async (release: typeof old) => { void release; }), backup: vi.fn(async () => undefined), prepareDatabase: vi.fn(async () => undefined),
       persist: vi.fn(async () => undefined), activate: vi.fn(), resume: vi.fn(),
     };
     return { old, next, deps };
   }
+  it('keeps the current API live when the candidate fails the compatibility preflight', async () => {
+    const { deps, next } = fixture();
+    deps.check.mockRejectedValueOnce(new Error('incompatible runtime'));
+    await expect(applyPrepared(deps, next)).rejects.toThrow('incompatible runtime');
+    expect(deps.drain).not.toHaveBeenCalled();
+    expect(deps.stop).not.toHaveBeenCalled();
+    expect(deps.backup).not.toHaveBeenCalled();
+    expect(deps.activate).not.toHaveBeenCalled();
+  });
   it('does not stop or migrate the live service while busy', async () => {
     const { deps, next } = fixture(false);
     expect(await applyPrepared(deps, next)).toBe(false);

@@ -1,5 +1,9 @@
 # 架构
 
+## 在线包运行兼容预检（D21，候选 1.3.1）
+
+监督程序与维护部署共用 runtime-compatibility.mjs，在有界只读 REPEATABLE READ 事务读取已安装声明，对照受生产构建检验的 runtime-capabilities.json；不按版本号推断能力，下架精确版本仍受保护。候选排空前、每次启动与失败恢复启动前检查，拒绝时不选用不兼容进程或改写数据库。无新业务模块、迁移/网络契约；直接绕过新版入口执行旧程序不受保护，父进程须按维护流程显式加载。实际生产状态与跨仓顺序见 [D21](daily-runtime-compatibility-2026-11-15.md)。
+
 ## 在线 ZIP 可选公开结果（D16，1.3.0）
 
 catalog 在严格 descriptor 解析可选 `publicResult: "winners-scores-v1"`，039 迁移将声明与原安装/源码/回执同事务保存。PackageRuntime 在原有界 QuickJS 提供独立同步投影，registry/package-public-result 只接受显式 null 或严格公开 winners/可选完整 scores，并按 match 固定参与者构建原 MatchResult。声明版本在 GamePackageService 装配时注册到既有 resultSummaries；原 MatchService 终局事务负责保存、回放、房间复位与请求回执，无额外动作或异步结算通道。

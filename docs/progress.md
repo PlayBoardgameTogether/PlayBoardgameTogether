@@ -1,5 +1,12 @@
 # 开发进度
 
+## 每日任务 D21：结果包运行兼容与发布门槛（2026-11-15，候选 1.3.1）
+
+- 从最新 main `95e017f / 1.3.0` 建独立工作区，保留原目录改动和 D20 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)。新增受生产构建核验的能力声明及有界只读一致性检查；更新器在候选排空前、每次启动及失败恢复前阻断不兼容发布，维护部署复用同一工具。下架版本仍受保护，数据库不可达或损坏元数据也阻断；不修改安装、规则摘要、迁移、API/WS/SDK 或游戏副本。
+- 全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 通过；版本补齐后仅重建 Web/bundle，最终受影响脚本作定向检查。Vitest 32 个独立用例、原部署备份 13/13 通过；原独立 D21 测试库准备链下首轮集成 29/29，后续查询/脱敏调整及迁移前结构补测最终三项 3/3，其余 27 项筛选未运行，合计 30 个独立集成用例分批通过。环境失败、探针断言修正、命令及未验范围见 [D21](daily-runtime-compatibility-2026-11-15.md)。没有 UI 改动，不重复无变化 E2E/截图。
+- 平台 **1.3.0 → 1.3.1（PATCH）**，兼容性缺陷修复，README 同步。目录登记已核对无需改动，来源锁/游戏版本保持。UNO #5 精确 head `2165c0f` 仍 open、远程 check success；正式 1.2.1 三附件存在，1.3.0 Release 为 404。真实新候选/正式旧 ZIP 摘要与旧解析器拒绝验证通过，不发布/安装候选。
+- **09:26:22（北京时间）** 只读确认生产 current.json、API cwd/package.json 一致 **95e017f / 1.3.0**，服务 active/running、NRestarts=0、ready/database 就绪；启动器尚无本批保护，候选尚未同步或重启。必须先合并并按原维护流程加载/实机验收保护，再按授权发布 UNO；直接绕过新版启动器执行旧 API 不受保护。ADR-011 继续 Proposed，D3/D5 条件及真机/WebKit/收费模型限制保持，D22 未开始。
+
 ## D15–D19 已合并与平台 1.3.0 生产验收（2026-11-14—15）
 
 - 用户批准后，重新获取 main、审查 D15–D19 完整 28 文件/11 提交、五个精确 head、pins success 与无阻塞审查。固定 D19 [PR #78](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/78) head `42b072b`，以 merge commit **2a62857c19dcebecd129e03e96095a3ee79b89e5** 合并；合并树与已验证候选完全一致，平台 #74/#75/#76/#77 的祖先全部进入 main，GitHub 均已确认 merged。没有合并 UNO #5、发布标签或安装依赖游戏。

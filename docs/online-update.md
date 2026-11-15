@@ -1,5 +1,13 @@
 # 生产服务在线更新
 
+## 公开结果包兼容保护（D21，候选 1.3.1）
+
+新版监督程序在启动、候选排空前和失败恢复启动前，以 `scripts/runtime-compatibility.mjs` 对数据库中所有已安装声明检查发布目录的 `runtime-capabilities.json`。下架版本也检查，无声明旧包继续兼容。能力缺失、元数据损坏或数据库不可达均阻断，候选预检失败不排空当前 API；只读一致性检查有超时，错误沿用 readiness 分类，不输出连接配置。
+
+须按原维护流程备份并加载新版监督模块及新增检查模块，普通网页自动更新不会替换父进程。正式发布依赖游戏前，确认真实监督进程已加载保护，当前发布具备经 build 验证的声明，再核对运行 SHA/版本、ready 和新备份；实际加载状态见 [D21 记录](daily-runtime-compatibility-2026-11-15.md)。
+
+维护预检使用 `node --env-file=.env scripts/runtime-compatibility.mjs /absolute/path/to/reviewed-release`，沿用私有生产配置。安装声明包后只恢复到满足能力的发布；下架不解除要求，禁止删除声明、手改 current.json、复制能力文件到旧 API 或换回旧监督程序绕过检查。直接执行旧程序绕过入口不受保护；失败保留数据并排查连通性/能力，不自动恢复数据库。完整顺序见 [D21](daily-runtime-compatibility-2026-11-15.md#保护边界与发布顺序)。
+
 使用 `pnpm start:online` 替代分别启动 API 与静态站点。首次部署仍需 `pnpm install --frozen-lockfile`、`pnpm db:migrate`、`pnpm games:sync`、`pnpm assets:seed`、`pnpm build`。更新监督进程默认监听 `127.0.0.1:8080`，同时托管生产 Web 和转发 HTTP/WS 到私有 `127.0.0.1:3001` API。原 API 服务需先停掉；让现有 HTTPS 反向代理转发到 8080 并保留 Host、Origin、WebSocket Upgrade。WEB_ORIGIN 必须填写用户实际访问的同源地址，HTTPS 设置 COOKIE_SECURE=true。由已有 Windows 服务管理器或 systemd 托管此长驻命令，监督进程不能代替操作系统开机启动服务。
 
 首次启动使用本地已构建版本，之后每五分钟检查 origin。默认跟踪 `main`，不再跟随启动目录的功能分支；生产配置请明确设置 `UPDATE_BRANCH=main`，已有显式配置不会被自动覆盖。功能改动在独立 `codex/<任务>` 分支验证后通过 PR 合并到 main，生产只获取合并后的提交。这里“最新版”指发布分支最新提交，不是 GitHub Release。只接受无内嵌凭据的 GitHub HTTPS/SSH origin，将拉取转换为 HTTPS；私人仓库需通过 Git credential helper 提供只读凭据，禁止把 token 写在 URL。SSH-only 私有凭据需另配 HTTPS helper。
