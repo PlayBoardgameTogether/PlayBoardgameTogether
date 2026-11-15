@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { createUpdateControl, updateStatusForClient } from './update-control.mjs';
 import { buildRelease, prepareReleaseDatabase, runUpdateCommand } from './update-command.mjs';
 import { backupUpdate, migrationPolicy } from './update-backup.mjs';
+import { assertReleaseCompatibility } from './runtime-compatibility.mjs';
 const { fetch, AbortSignal } = globalThis;
 
 export function githubRemote(value) {
@@ -42,6 +43,7 @@ export async function releaseVersion(path) {
 }
 
 export async function applyPrepared(deps, candidate) {
+  await deps.check(candidate);
   if (!await deps.drain()) return false;
   const previous = deps.current();
   try {
@@ -102,6 +104,9 @@ async function main() {
     if (child === target) child = undefined;
   }
   async function start(release) {
+    // This supervisor owns the check, including when the selected API predates it.
+    // Recheck after drain/stop and on recovery: installs may occur during a build.
+    await assertReleaseCompatibility(release.path, env);
     await stat(resolve(release.path, 'apps/web/dist/index.html'));
     child = fork(resolve(release.path, 'apps/api/dist/main.js'), [], {
       cwd: release.path, env: { ...env, BOARDGAME_UPDATE_SUPERVISED: 'true' },
@@ -288,9 +293,14 @@ async function main() {
           }
           pending = { sha, path: release };
         }
-        setStage('drain');
         updates.patch({ phase: 'waiting' });
         const applied = await applyPrepared({
+          check: async release => {
+            // Reject incompatible candidates while the current service is live.
+            setStage('history');
+            await assertReleaseCompatibility(release.path, env);
+            setStage('drain');
+          },
           drain, current: () => current,
           stop: async () => { if (stage === 'drain') setStage('stop'); await stop(); },
           start: async release => { if (release === pending) setStage('start'); await start(release); },
@@ -361,5 +371,10 @@ async function main() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch(() => { console.error('[online-update] startup failed; check built files, ports, GitHub origin and supervisor.lock'); process.exitCode = 1; });
+  main().catch(error => {
+    console.error(error?.code === 'RUNTIME_INCOMPATIBLE'
+      ? '[online-update] startup blocked; check database access and release runtime capabilities'
+      : '[online-update] startup failed; check built files, ports, GitHub origin and supervisor.lock');
+    process.exitCode = 1;
+  });
 }

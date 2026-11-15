@@ -8,6 +8,16 @@ import { PackageRuntime } from '../../apps/api/src/registry/package-runtime.js';
 import { MatchService } from '../../apps/api/src/matches.js';
 import { readGamePackage } from '../../apps/api/src/catalog/game-package.js';
 import { gamePackageFiles, zipSync, strToU8 } from '../fixtures/game-package.js';
+import {
+  assertReleaseCompatibility,
+  requiredCapabilities,
+} from '../../scripts/runtime-compatibility.mjs';
+import { mkdtemp, mkdir, writeFile, readFile, access, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { createServer } from 'node:net';
 
 process.loadEnvFile('.env');
 const url = process.env.TEST_DATABASE_URL;
@@ -108,6 +118,111 @@ describe('optional ZIP public results in the authoritative transaction', () => {
     });
     return response;
   }
+  it('reads a pre-039 package table without requiring the new column', async () => {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('ALTER TABLE game_packages DROP COLUMN public_result_contract');
+      expect(await requiredCapabilities(client)).toEqual([]);
+    } finally {
+      await client.query('ROLLBACK');
+      client.release();
+    }
+    expect(await db.query('SELECT public_result_contract FROM game_packages')).toBeDefined();
+  });
+
+  it('blocks legacy releases after installation, including disabled result versions', async () => {
+    const legacy = await mkdtemp(join(tmpdir(), 'playboard-legacy-release-'));
+    const env = { ...process.env, DATABASE_URL: url! };
+    try {
+      expect((await install(await archive('() => null', false))).statusCode).toBe(200);
+      await assertReleaseCompatibility(legacy, env);
+      const bytes = await archive('() => ({ winners: ["seat-1"] })', true, '', '1.1.0');
+      const review = await app.inject({
+        method: 'POST',
+        url: '/api/v1/admin/game-packages/review',
+        headers: { ...admin, 'content-type': 'application/zip' },
+        payload: bytes,
+      });
+      expect(review.statusCode).toBe(200);
+      expect((await install(bytes, review.json().data.catalogHash)).statusCode).toBe(200);
+      const before = await db.query(
+        'SELECT game_version,package_hash FROM game_packages ORDER BY game_version',
+      );
+      await expect(assertReleaseCompatibility(legacy, env)).rejects.toMatchObject({
+        code: 'RUNTIME_INCOMPATIBLE',
+      });
+      await assertReleaseCompatibility(resolve('.'), env);
+      await db.query(
+        "UPDATE game_installations SET enabled=false WHERE game_id='online.score-race' AND game_version='1.1.0'",
+      );
+      await expect(assertReleaseCompatibility(legacy, env)).rejects.toMatchObject({
+        code: 'RUNTIME_INCOMPATIBLE',
+      });
+      await assertReleaseCompatibility(resolve('.'), env);
+      expect(
+        (
+          await db.query(
+            'SELECT game_version,package_hash FROM game_packages ORDER BY game_version',
+          )
+        ).rows,
+      ).toEqual(before.rows);
+    } finally {
+      await rm(legacy, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a saved legacy API before executing it and releases the supervisor lock', async () => {
+    expect((await install(await archive('() => null'))).statusCode).toBe(200);
+    const state = await mkdtemp(join(tmpdir(), 'playboard-supervisor-compat-'));
+    const sha = 'a'.repeat(40);
+    const legacy = join(state, 'releases', sha);
+    const marker = join(state, 'legacy-api-executed');
+    const portProbe = createServer();
+    await new Promise<void>((done) => portProbe.listen(0, '127.0.0.1', done));
+    const address = portProbe.address();
+    if (!address || typeof address === 'string') throw new Error('Expected an isolated TCP port');
+    await new Promise<void>((done, reject) =>
+      portProbe.close((error) => (error ? reject(error) : done())),
+    );
+    try {
+      await mkdir(join(legacy, 'apps/api/dist'), { recursive: true });
+      await mkdir(join(legacy, 'apps/web/dist'), { recursive: true });
+      await writeFile(join(legacy, 'apps/web/dist/index.html'), 'legacy');
+      await writeFile(
+        join(legacy, 'apps/api/dist/main.js'),
+        `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'executed');`,
+      );
+      await writeFile(join(state, 'current.json'), JSON.stringify({ sha, path: legacy }));
+      const result = promisify(execFile)(process.execPath, ['scripts/online-update.mjs'], {
+        cwd: resolve('.'),
+        timeout: 15000,
+        env: {
+          ...process.env,
+          DATABASE_URL: url!,
+          UPDATE_STATE_DIR: state,
+          API_PORT: String(address.port),
+          UPDATE_PORT: address.port === 8080 ? '8081' : '8080',
+          UPDATE_ENABLED: 'false',
+        },
+      });
+      await expect(result).rejects.toMatchObject({ code: 1 });
+      await result.catch((error) => {
+        expect(error.stderr).toContain('startup blocked');
+        expect(error.stderr).not.toContain(url!);
+      });
+      await expect(access(marker)).rejects.toMatchObject({ code: 'ENOENT' });
+      await expect(access(join(state, 'supervisor.lock'))).rejects.toMatchObject({
+        code: 'ENOENT',
+      });
+      expect(JSON.parse(await readFile(join(state, 'current.json'), 'utf8'))).toEqual({
+        sha,
+        path: legacy,
+      });
+    } finally {
+      await rm(state, { recursive: true, force: true });
+    }
+  });
   async function start(computer = false, version = '1.0.0', owner = alice) {
     const created = await write('/api/v1/rooms', owner, {
       requestId: randomUUID(),

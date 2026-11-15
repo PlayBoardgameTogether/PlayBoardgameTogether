@@ -3,8 +3,10 @@ import { setTimeout, clearTimeout } from 'node:timers';
 import { createRegistry } from '../apps/api/dist/registry/index.js';
 import { PackageRuntime } from '../apps/api/dist/registry/package-runtime.js';
 import { readFile } from 'node:fs/promises';
-import { URL } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
 import { DeterministicRng } from '@boardgame/game-sdk';
+import { releaseCapabilities } from './runtime-compatibility.mjs';
+import { packagePublicResultContractSchema } from '../apps/api/dist/registry/package-public-result.js';
 
 const registry = createRegistry(false);
 if (!registry.get('demo.counter-room', '1.0.0') || !registry.hasResourcePack('demo.counter-room', '1.0.0')) {
@@ -13,6 +15,17 @@ if (!registry.get('demo.counter-room', '1.0.0') || !registry.hasResourcePack('de
 console.log('production API loads compiled game modules and resources');
 
 const runtime = await PackageRuntime.create();
+const capabilities = await releaseCapabilities(fileURLToPath(new URL('..', import.meta.url)));
+if (JSON.stringify(capabilities) !== JSON.stringify([packagePublicResultContractSchema.value])) {
+  throw new Error('Release capabilities do not match the compiled package runtime');
+}
+const projected = runtime.publicResult('var game = { getPublicResult: function(outcome) { return { winners: outcome.winners }; } };')(
+  { status: 'finished', winners: ['a'] }, ['a', 'b'],
+);
+if (!projected?.players[0]?.winner || projected.players[1]?.winner) {
+  throw new Error('Production public result projection is unavailable');
+}
+console.log('production runtime verifies advertised package result capabilities');
 const extension = runtime.extension(await readFile(new URL('../apps/api/game-package-example/server.txt', import.meta.url), 'utf8'));
 const initial = extension.setup({ seats: ['a', 'b'], options: extension.validateOptions({}), rng: new DeterministicRng(123) });
 const updated = extension.applyAction(initial.state, { kind: 'seat', seatId: 'a', controllerEpoch: 0 }, { type: 'claim' }, new DeterministicRng(123));

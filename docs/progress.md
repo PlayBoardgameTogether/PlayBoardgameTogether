@@ -1,5 +1,19 @@
 # 开发进度
 
+## D21 续作：整合 D20 与 1.4.1 候选复验（2026-11-15）
+
+- 重新获取 main **a3dbfac / 1.4.0**，复用干净的 D21 工作区，合入 D20 并解决四文件冲突，完整保留其成长组件、E2E 与生产交付记录。D21 运行兼容保护不变，候选改为 **1.4.0 → 1.4.1（PATCH）**；README、当前运维说明一致，原 1.3.1 为同批历史候选，无第二次升版。
+- 本轮全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 通过；相关单测 **32/32**、备份/更新流程 **13/13**，原隔离 D21 库准备链下集成 **30/30、17.15 秒**，均无 skip。初次 lint IPC 受限后获准原命令通过。D20 文件与 main、D21 运行脚本与原候选逐项一致，无 UI 行为变化，不重复无变化 E2E。
+- **10:01:36（北京时间）** 只读核对 current.json、真实 API cwd/package.json 一致 **a3dbfac / 1.4.0**，服务 active/running、NRestarts=0，实际 API/监督入口 ready 均 200、database.ready=true。监督程序尚无本批保护，本轮没有重启、游戏发布/安装或生产数据操作。
+- [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已更新，整合提交 **4b2355a** 已推送，open / mergeable、精确 head 一致，pins success；尚未合并。原目录与其他任务保留。UNO 1.3.0 仍须等待生产保护加载及实机验收，ADR-011 保持 Proposed；D22 改在独立 main 工作区验证，不夹入本 PR。完整命令、环境诊断与历史边界见 [D21 记录](daily-runtime-compatibility-2026-11-15.md#本轮续作整合-d202026-11-15)。
+
+## 每日任务 D21：结果包运行兼容与发布门槛（2026-11-15，候选 1.3.1）
+
+- 从最新 main `95e017f / 1.3.0` 建独立工作区，保留原目录改动和 D20 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)。新增受生产构建核验的能力声明及有界只读一致性检查；更新器在候选排空前、每次启动及失败恢复前阻断不兼容发布，维护部署复用同一工具。下架版本仍受保护，数据库不可达或损坏元数据也阻断；不修改安装、规则摘要、迁移、API/WS/SDK 或游戏副本。
+- 全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 通过；版本补齐后仅重建 Web/bundle，最终受影响脚本作定向检查。Vitest 32 个独立用例、原部署备份 13/13 通过；原独立 D21 测试库准备链下首轮集成 29/29，后续查询/脱敏调整及迁移前结构补测最终三项 3/3，其余 27 项筛选未运行，合计 30 个独立集成用例分批通过。环境失败、探针断言修正、命令及未验范围见 [D21](daily-runtime-compatibility-2026-11-15.md)。没有 UI 改动，不重复无变化 E2E/截图。
+- 平台 **1.3.0 → 1.3.1（PATCH）**，兼容性缺陷修复，README 同步。目录登记已核对无需改动，来源锁/游戏版本保持。UNO #5 精确 head `2165c0f` 仍 open、远程 check success；正式 1.2.1 三附件存在，1.3.0 Release 为 404。真实新候选/正式旧 ZIP 摘要与旧解析器拒绝验证通过，不发布/安装候选。
+- **09:26:22（北京时间）** 只读确认生产 current.json、API cwd/package.json 一致 **95e017f / 1.3.0**，服务 active/running、NRestarts=0、ready/database 就绪；启动器尚无本批保护，候选尚未同步或重启。必须先合并并按原维护流程加载/实机验收保护，再按授权发布 UNO；直接绕过新版启动器执行旧 API 不受保护。ADR-011 继续 Proposed，D3/D5 条件及真机/WebKit/收费模型限制保持，D22 未开始。主提交 `b7b705e` 已推送至 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81)，未合并，分支保留待审。
+
 ## D20 已合并与平台 1.4.0 生产验收（2026-11-15）
 
 - 用户明确批准后，最新 main、完整 10 文件/2 提交、固定 head `4f9c443`、pins success 和无阻塞审查核对通过；[PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80) 以 merge commit **2d00ebfdf52410dcb7323e6e50865015b39bd97f** 合入 main，GitHub 已确认 merged，合并树等于已验证候选。没有合并其他任务或发布游戏。

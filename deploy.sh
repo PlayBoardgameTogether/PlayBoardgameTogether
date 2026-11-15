@@ -130,6 +130,7 @@ if [[ "$INITIALIZED" == t ]]; then backup_data; fi
 echo '3/6 安装依赖、构建生产代码和媒体处理器'
 pnpm install --frozen-lockfile --prod=false
 pnpm build
+node scripts/runtime-compatibility.mjs "$ROOT"
 "${COMPOSE[@]}" build web
 docker build -t boardgame-media:1 "$ROOT/scripts/media"
 echo '4/6 数据库迁移、游戏和原创资源同步'
