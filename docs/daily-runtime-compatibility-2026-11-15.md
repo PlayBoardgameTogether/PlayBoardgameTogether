@@ -51,3 +51,9 @@ UNO [PR #5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5) 
 **09:26:22（北京时间）**，生产 current.json、实际 API cwd、运行 package.json 一致 **95e017f / 1.3.0**，服务 active/running、NRestarts=0、ready 200、database.ready=true。**09:27:44** 启动文件核对确认尚无本批保护/能力元数据。没有读取玩家私密 View、写生产安装、触发订阅、迁移、重启或覆盖服务器补丁。
 
 平台提交/PR 仍待审查和获准合并；保护加载、UNO 发布与订阅安装是尚未完成的实机门槛。ADR-011 保持 Proposed，待门槛通过再记录 Accepted。D3 生产注册闭环、D5 其余头像候选及既有设备/外部服务条件保持，本批不推进 D22。
+
+## 提交与待审 PR
+
+主提交 **b7b705e62836be4379b6493d432df80af2826fae** 已推送至 `codex/d21-runtime-compatibility`，创建面向 main 的 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81)，open、未合并。完整差异仅本批 18 文件，无 D20 或其他任务祖先；分支/工作区保留待审。GitHub 应用创建接口 403 后，复用已成功推送的 Git helper 内存认证，经 gh 先查重再创建，无凭据输出或落盘。新增文档链接、README/版本及实际 Web 版本注入检查通过；未重复无变化业务验证。
+
+主提交远程来源锁检查 [run 43663794915](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43663794915) completed/success，仅代表 pins CI，不冒充远程业务全测；原目录仍有 36 项已有改动，全部保留。后续只补本文与 progress 交付链接，不再升版或重复代码检查。
