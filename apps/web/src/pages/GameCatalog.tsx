@@ -12,7 +12,9 @@ export function GameAvatar({ game }: { game: AvailableGame }) {
   return (
     <GameArtwork
       src={art.iconUrl ?? art.coverUrl}
-      className={art.iconUrl ? 'game-cover game-avatar' : 'game-cover game-avatar game-avatar--cover'}
+      className={
+        art.iconUrl ? 'game-cover game-avatar' : 'game-cover game-avatar game-avatar--cover'
+      }
       name={game.name}
     />
   );
@@ -46,15 +48,14 @@ export function GameCatalog() {
     );
   });
   return (
-    <section className="game-catalog discovery-catalog" aria-label="选择游戏">
+    <section className="game-catalog discovery-catalog home-catalog" aria-label="选择游戏">
       {featured && (
         <section className="discovery-spotlight" aria-label="先试一手">
           <div className="discovery-spotlight-copy">
             <p className="eyebrow">免登录单人练习</p>
             <h2>
-              好朋友，
-              <br />
-              来一桌。
+              <span>好朋友，</span>
+              <span>来一桌。</span>
             </h2>
             <p>{gameDiscovery(featured)?.invitation ?? `从 ${featured.name} 的第一手开始。`}</p>
             <div className="discovery-spotlight-actions">
@@ -87,111 +88,121 @@ export function GameCatalog() {
           </a>
         </section>
       )}
-      <div className="catalog-section-heading">
-        <h2>全部游戏</h2>
-        <p className="discovery-result-count" role="status" aria-live="polite">
-          {games.length > 0 ? `${visible.length} 款游戏${practiceOnly ? ' · 可先试玩' : ''}` : ''}
-        </p>
-      </div>
-      {!games.length && <p role="status">暂无可用游戏，请稍后重试。</p>}
-      {!!games.length && (
-        <div className="catalog-discovery">
-          <label className="catalog-search">
-            <PixelSearchIcon />
-            <span className="visually-hidden">搜索游戏</span>
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="今天想玩什么？"
-            />
-          </label>
-          <div className="catalog-filters" role="group" aria-label="按游玩人数筛选">
-            {(
-              [
-                ['all', '全部游戏'],
-                ['two', '双人对战'],
-                ['group', '多人聚会'],
-              ] as const
-            ).map(([value, label]) => (
+      <div className="home-library" aria-labelledby="home-library-title">
+        <div className="home-library-heading">
+          <div className="catalog-section-heading">
+            <h2 id="home-library-title">全部游戏</h2>
+            <p className="discovery-result-count" role="status" aria-live="polite">
+              {games.length > 0
+                ? `${visible.length} 款游戏${practiceOnly ? ' · 可先试玩' : ''}`
+                : ''}
+            </p>
+          </div>
+          {!!games.length && (
+            <label className="catalog-search">
+              <PixelSearchIcon />
+              <span className="visually-hidden">搜索游戏</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="今天想玩什么？"
+              />
+            </label>
+          )}
+        </div>
+        {!games.length && <p role="status">暂无可用游戏，请稍后重试。</p>}
+        {!!games.length && (
+          <div className="catalog-discovery">
+            <div className="catalog-filters" role="group" aria-label="按游玩人数筛选">
+              {(
+                [
+                  ['all', '全部游戏'],
+                  ['two', '双人对战'],
+                  ['group', '多人聚会'],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  type="button"
+                  className="secondary"
+                  key={value}
+                  aria-pressed={players === value && (value !== 'all' || !practiceOnly)}
+                  onClick={() => {
+                    setPlayers(value);
+                    if (value === 'all') setPracticeOnly(false);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
               <button
                 type="button"
                 className="secondary"
-                key={value}
-                aria-pressed={players === value && (value !== 'all' || !practiceOnly)}
-                onClick={() => {
-                  setPlayers(value);
-                  if (value === 'all') setPracticeOnly(false);
-                }}
+                aria-pressed={practiceOnly}
+                onClick={() => setPracticeOnly((value) => !value)}
               >
-                {label}
+                可先试玩
               </button>
-            ))}
+            </div>
+          </div>
+        )}
+        {!!games.length && !visible.length && (
+          <div className="discovery-empty">
+            <h3>还没找到合适的游戏</h3>
+            <p className="muted">换个关键词或筛选条件试试吧。</p>
             <button
-              type="button"
               className="secondary"
-              aria-pressed={practiceOnly}
-              onClick={() => setPracticeOnly((value) => !value)}
+              onClick={() => {
+                setSearch('');
+                setPlayers('all');
+                setPracticeOnly(false);
+              }}
             >
-              可先试玩
+              清除筛选
             </button>
           </div>
-        </div>
-      )}
-      {!!games.length && !visible.length && (
-        <div className="discovery-empty">
-          <h3>还没找到合适的游戏</h3>
-          <p className="muted">换个关键词或筛选条件试试吧。</p>
-          <button
-            className="secondary"
-            onClick={() => {
-              setSearch('');
-              setPlayers('all');
-              setPracticeOnly(false);
-            }}
-          >
-            清除筛选
-          </button>
-        </div>
-      )}
-      <div className="game-catalog-grid">
-        {visible.map((game) => (
-          <a
-            className="game-card"
-            href={gamePath(game)}
-            key={`${game.id}@${game.version}`}
-            aria-label={`查看 ${game.name}`}
-          >
-            <div className="discovery-card-art">
-              <GameAvatar game={game} />
-              {clientTutorial(game.id, game.version) && (
-                <span className="discovery-practice-tag">可练习</span>
-              )}
-            </div>
-            <div className="game-card-info">
-              <div className="game-card-heading">
-                <GameArtwork
-                  src={gameArt(game).iconUrl}
-                  className="game-card-icon"
-                  name={game.name}
-                />
-                <h3>{game.name}</h3>
+        )}
+        <div className="game-catalog-grid">
+          {visible.map((game) => (
+            <a
+              className="game-card"
+              href={gamePath(game)}
+              key={`${game.id}@${game.version}`}
+              aria-label={`查看 ${game.name}`}
+            >
+              <div className="discovery-card-art">
+                <GameAvatar game={game} />
+                {clientTutorial(game.id, game.version) && (
+                  <span className="discovery-practice-tag">可练习</span>
+                )}
               </div>
-              <p className="game-card-desc">{gameDiscovery(game)?.firstMove ?? game.description}</p>
-              <div className="game-card-footer">
-                <span className="game-card-players">
-                  {game.players.min}–{game.players.max} 人
-                </span>
-                <span className="game-card-action">
-                  查看房间{' '}
-                  <span className="game-card-arrow" aria-hidden="true">
-                    →
+              <div className="game-card-info">
+                <div className="game-card-heading">
+                  <GameArtwork
+                    src={gameArt(game).iconUrl}
+                    className="game-card-icon"
+                    name={game.name}
+                  />
+                  <h3>{game.name}</h3>
+                </div>
+                <p className="game-card-desc">
+                  {gameDiscovery(game)?.firstMove ?? game.description}
+                </p>
+                <div className="game-card-footer">
+                  <span className="game-card-players">
+                    {game.players.min}–{game.players.max} 人
                   </span>
-                </span>
+                  <span className="game-card-action">
+                    查看房间{' '}
+                    <span className="game-card-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  </span>
+                </div>
               </div>
-            </div>
-          </a>
-        ))}
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -1,5 +1,14 @@
 # 开发进度
 
+## 首页 Mobbin 参考改版（2026-11-15，候选 1.4.2）
+
+- 从最新 main **db96906 / 1.4.1** 新建独立 `.data/worktrees/home-redesign` / `codex/home-redesign`，没有切换或改动原目录的后台功能分支及用户未提交文档。核对远程新增头像来源与旧封面回退，完整保留其实现；没有改游戏分仓、锁定副本、SDK、认证、房间、数据库或部署脚本。
+- 经 Mobbin 查看 [The New York Times Games](https://mobbin.com/screens/a577ad95-251d-4cc4-8939-3921a8639115) 的重点区/游戏目录和 [Givingli](https://mobbin.com/screens/0c4089c4-9ff1-42e9-b47b-080dde12f1a2) 的搜索/分类/图片目录结构。收紧试玩推荐、将搜索移至目录标题旁、筛选独立成行、桌面四列完整游戏头像；手机保留双列并重排推荐与筛选。借用结构，继续使用现有暖色像素主题、文案、插画和真实公开目录；未增加热度/在线人数等数据。新样式只匹配首页外壳，继续房间保持优先，其他页面与棋桌不继承该布局。
+- **验证通过**：冻结离线安装、`pnpm typecheck`、`pnpm lint`（20 根 AST）、`pnpm build`（含生产 bundle/API runtime）和差异检查。`pnpm test:ui mobile-discovery.spec.ts --output .data/home-ui` **12 passed / 2 skipped / 41.6s**：两项原手机专用用例在桌面项目中跳过，对应手机项目已通过；搜索/人数组合、清除筛选、精确链接、头像/封面/背景用途、旧版本画廊、新版本与自定义图、导航、教程隔离均通过。手机标题断行修正后定向 Web 构建/bundle、ESLint/Prettier 和 `--grep 'pixel lobby'` **2/2、9.9s** 复验通过，其余未变范围未重复检查。
+- 实际查看 1440×1000 与 390×844 首页亮暗截图；既有 UI 用例另检查 1280/1440/390/320px、手机 700px、焦点、减少动态效果及无横向溢出。前后对比 PNG/内嵌截图 HTML 保存在本次 Codex 可视化目录，使用同一组明确的公开目录夹具（含两款无图回退），不是生产目录或真实联机证据；无新增持久测试或生成物进入提交。
+- **未验证**：真实登录/建房 E2E 所需本地 PostgreSQL `5434` 返回 **ECONNREFUSED**，Docker 的 `dockerDesktopLinuxEngine` 管道不存在。只读诊断已确认；未执行测试清库、未覆盖 `.env`、未连接生产数据库，也不把 UI 夹具视作真实身份验收。真实 E2E 应在独立 `playboard_home_test_20261115`（须先按原准备脚本确认与开发库隔离）运行现有 `lobby.spec.ts`。此次没有后端逻辑变化，不额外运行无关集成或全库业务测试。
+- 平台 **1.4.1 → 1.4.2（PATCH）**：兼容的首页视觉与布局调整，无新增业务功能，README 同步。本批待 PR 审查/合并，未同步服务器，不能声称已上线；保持生产既有 1.4.1 运行记录。下一步补齐独立库真实 E2E 后，按合并与生产验收规则交付发布分支。
+
 ## D21/D22 已合并与 1.4.1 生产保护验收（2026-11-15）
 
 - 用户批准后固定 head/最新 main/完整差异/CI 核对，D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 合并为 **e9b01a2**；D22 仅解决两份记录冲突、保留所有测试与实现，[PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83) 固定新 head **b2b4073** 合并为 **b5cb5c6**，两合并树均等于已审候选。来源锁 CI success，不将其冒充新一轮业务全测。
