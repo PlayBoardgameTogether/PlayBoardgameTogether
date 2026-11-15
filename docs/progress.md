@@ -5,7 +5,7 @@
 - 重新获取 main **a3dbfac / 1.4.0**，复用干净的 D21 工作区，合入 D20 并解决四文件冲突，完整保留其成长组件、E2E 与生产交付记录。D21 运行兼容保护不变，候选改为 **1.4.0 → 1.4.1（PATCH）**；README、当前运维说明一致，原 1.3.1 为同批历史候选，无第二次升版。
 - 本轮全 typecheck、lint（20 根 AST）、生产 build/bundle/API runtime 通过；相关单测 **32/32**、备份/更新流程 **13/13**，原隔离 D21 库准备链下集成 **30/30、17.15 秒**，均无 skip。初次 lint IPC 受限后获准原命令通过。D20 文件与 main、D21 运行脚本与原候选逐项一致，无 UI 行为变化，不重复无变化 E2E。
 - **10:01:36（北京时间）** 只读核对 current.json、真实 API cwd/package.json 一致 **a3dbfac / 1.4.0**，服务 active/running、NRestarts=0，实际 API/监督入口 ready 均 200、database.ready=true。监督程序尚无本批保护，本轮没有重启、游戏发布/安装或生产数据操作。
-- [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 更新交付中，尚未合并；原目录与其他任务保留。UNO 1.3.0 仍须等待生产保护加载及实机验收，ADR-011 保持 Proposed，D22 未开始。完整命令、环境诊断与历史边界见 [D21 记录](daily-runtime-compatibility-2026-11-15.md#本轮续作整合-d202026-11-15)。
+- [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已更新，整合提交 **4b2355a** 已推送，open / mergeable、精确 head 一致，pins success；尚未合并。原目录与其他任务保留。UNO 1.3.0 仍须等待生产保护加载及实机验收，ADR-011 保持 Proposed；D22 改在独立 main 工作区验证，不夹入本 PR。完整命令、环境诊断与历史边界见 [D21 记录](daily-runtime-compatibility-2026-11-15.md#本轮续作整合-d202026-11-15)。
 
 ## 每日任务 D21：结果包运行兼容与发布门槛（2026-11-15，候选 1.3.1）
 

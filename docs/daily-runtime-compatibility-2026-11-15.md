@@ -16,7 +16,7 @@
 - `bash -n deploy.sh`、差异/版本一致性检查通过。逐项核对 D20 的三个 Web 文件、原 E2E、徽章说明和交付记录均与 main 完全一致；D21 运行脚本及兼容测试与已审候选完全一致。没有 UI 变更，不重复 D20 的 E2E 或渲染验收，也没有新增测试/依赖/游戏版本。
 - **10:01:36（北京时间）**，生产 current.json、真实 API cwd/package.json 一致 **a3dbfac / 1.4.0**；systemd active/running、NRestarts=0，API 与实际 UPDATE_HOST 入口 `/health/ready` 都为 **200 / database.ready=true**。初次误用默认 8080 返回 HTML、再按端口读回环被拒；只读监听及配置定位到服务器实际绑定地址后通过，未改服务。监督脚本仍无本批保护，本轮没有重启、安装、迁移或生产写入。
 
-本轮日志保留在忽略的 `.data/d21/refresh-*`。PR 更新和最终提交以下方交付段为准；本轮尚未合并/上线，生产保护加载及 UNO 发布门槛保持，D22 未开始。
+本轮日志保留在忽略的 `.data/d21/refresh-*`。整合提交 **4b2355a21c4d7050f8d88fde8e013f57cdc445c4** 已推送，[PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已改为 1.4.1，并确认 open / mergeable、精确 head 一致，pins [run 43665902067](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43665902067) success。应用编辑接口 403、gh 旧版 GraphQL 字段失败后，使用仓库既有认证的 REST API 更新成功，没有输出或落盘凭据。D21 仍未合并/上线，生产保护加载及 UNO 发布门槛保持；下一项 D22 在独立 main 工作区验证，不夹入本 PR。
 
 ## 范围与实现
 
