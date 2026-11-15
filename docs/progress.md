@@ -1,5 +1,12 @@
 # 开发进度
 
+## D21/D22 已合并与 1.4.1 生产保护验收（2026-11-15）
+
+- 用户批准后固定 head/最新 main/完整差异/CI 核对，D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 合并为 **e9b01a2**；D22 仅解决两份记录冲突、保留所有测试与实现，[PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83) 固定新 head **b2b4073** 合并为 **b5cb5c6**，两合并树均等于已审候选。来源锁 CI success，不将其冒充新一轮业务全测。
+- 原更新器完成 **1.4.0 → 1.4.1（PATCH）** 构建/排空/备份/切换；**update-ni5W04 / 76 文件 / 8,152,043 字节** 只读复验通过。私有备份 6 个现有启动/服务文件后，加载新版监督入口及兼容模块，正常停启 1183 ms；真实生产预检和 ready 通过，服务、drop-in、环境与其他运维模块保留，无新迁移/数据库恢复/游戏发布安装。
+- **10:30:46（北京时间）**，运行 current.json、API cwd/package.json 一致 **b5cb5c6 / 1.4.1**、服务 active/running、NRestarts=0；四视口匿名页面/刷新/版本、ready/database、运行 JS/CSS 与原字节核验通过，无 pageerror/整页溢出。两源分支按已合并 head 安全清理，工作区/证据与原目录 36 项改动保留。
+- 公开开发指南同步 1.4.1 的部署入口兼容保护和直接执行旧程序不受保护的边界，属于同批补充说明，不重复升版或业务检查。平台保护已实机加载，UNO #5 未合并/发布/安装，ADR-011 及 D3/D5/设备/收费模型限制保持，D23 未开始。完整维护、备份、保护与分支证据见 [D21 交付](daily-runtime-compatibility-2026-11-15.md#已批准合并生产保护加载与分支清理2026-11-15) 与 [D22 交付](daily-result-recovery-2026-11-15.md#已批准合并生产保护加载与分支清理2026-11-15)。
+
 ## 每日任务 D22：断线与未知结果验收（2026-11-15，平台保持 1.4.0）
 
 - 在 main **a3dbfac** 建独立 `codex/d22-result-recovery`，新增平台样例 ZIP 的真实双账户 E2E，覆盖终局回复丢失/刷新/同请求去重、真实断网/连接重建/延迟旧 WS，以及待确认期间真实 session 撤销/清除桌面和请求/停止重试。单 SQL 摘要审计核对结果、State/RNG、动作/回放/回执与房间/座位，不伪造服务端结果、不读取生产玩家数据。

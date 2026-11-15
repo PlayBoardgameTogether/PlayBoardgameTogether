@@ -50,3 +50,13 @@
 用户批准合并后，重新获取 main 并核对两个 PR 的完整差异、精确 head、pins success 和无阻塞审查。D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 固定 head **0bd6b766d2ef3a51de29d6e695c3c543847550f3**，以 merge commit **e9b01a220f762d69d1cac55b47ef007ba4be9819** 合入 main；合并树与已验证候选完全相同。
 
 本 D22 分支随后合入新 main，仅解决计划/进度两份文档冲突，保留 D21 全部记录及运行保护、D22 全部测试和历史验收。平台沿用 D21 的 **1.4.1**，D22 仍只含测试/内部记录，不再升号。运行代码及测试逐字比较与各自已验证候选相同；只作差异/链接/版本一致性核对，不重复无变化业务测试。D22 PR 的新 head 和实际合并结果以最终交付为准。监督程序仍待按原维护流程加载，游戏发布/安装不在本次合并范围。
+
+## 已批准合并、生产保护加载与分支清理（2026-11-15）
+
+- 用户明确批准后，重新获取 main，核对 D21 完整 18 文件/4 提交与 D22 完整 4 文件、固定 head、pins success 及无阻塞审查。D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) head **0bd6b766d2ef3a51de29d6e695c3c543847550f3**，以 merge commit **e9b01a220f762d69d1cac55b47ef007ba4be9819** 合入 main。D22 先合入新 main，仅解决计划/进度两份文档冲突，测试与运行代码逐字保持；[PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83) 固定新 head **b2b40738faf16a194b6cfaff4f451cce9347bba5**、pins success，以 merge commit **b5cb5c681bebd8c0305ce2510e9a070f1c0873be** 合并。GitHub 均确认 merged，两个合并树均等于已审候选。
+- 原更新器由 **a3dbfac / 1.4.0** 自动完成构建、排空、备份与切换至 **b5cb5c6 / 1.4.1**。新备份 **update-ni5W04 / 76 文件 / 8,152,043 字节** 的文件集合、大小、SHA-256、数据库归档签名与前后提交复验通过。无新增迁移、数据库恢复或游戏发布/安装。
+- 确认更新器空闲且当前发布准确后，先执行真实生产只读兼容预检；既有 update-backup/control/command 模块与已审发布一致。私有 **maintenance-d21-20261115T022853868530Z** 备份 6 个现有启动/服务文件，并记录新模块原先不存在。只加载已合并的 online-update.mjs、runtime-compatibility.mjs；正常停止释放锁、再启动。**10:29:06（北京时间）**，监督 PID **3541955 → 2258586**，停启至 ready **1183 ms**；服务单元、drop-in、两份生产环境文件及其他运维模块摘要保持。没有往旧启动仓库复制能力声明，没有改写 current.json、覆盖 .env/资源或自动回退数据库。
+- **10:30:46**，current.json、真实 API cwd/package.json 一致 **b5cb5c6 / 1.4.1**，服务 active/running、NRestarts=0。公网 **1440×900、1280×800、390×844、320×740** 首页、详情/电脑刷新、页脚、ready/database 就绪、实际 JS/CSS 与运行字节比较通过；业务页无 pageerror 或整页溢出，匿名对局与本人徽章保护保持。仅匿名 GET；没有操作生产玩家、收费模型或撤销生产会话。导航取消的懒加载图像与 Cloudflare rum 记录为 ERR_ABORTED，不作为业务失败。
+- 两功能分支均核对 merged、精确远程 head/main 祖先、工作区干净及无其他开放 PR 后，远程以期望 SHA 约束删除，本地用 -d 安全删除；保留 detached 工作区和忽略目录证据，原主目录 36 项改动、其他任务与生产旧发布目录保持。
+- 公开开发指南原 D16 段仍写“没有自动降级阻断”，本次同步为 1.4.1 部署入口的实际检查及手动绕过边界；只补同批发布说明，平台仍 **1.4.1**，不重复升版。其余收尾为内部记录，差异/路径/链接/版本核对；运行代码和测试没有改变，不重复已通过业务检查。公开文案随原更新器同步，后续运行 SHA 以最终交付核验为准。
+- 平台保护加载门槛已通过；UNO [#5](https://github.com/PlayBoardgameTogether/playboard-game-uno/pull/5) 没有合并、打标签、发布或生产安装，游戏发布与安装不属于本次合并范围。ADR-011 保持 Proposed；游戏发布与安装仍独立验收。D3/D5 原条件、真机/WebKit、屏幕阅读器和真实付费供应商限制保持，D23 未开始。
