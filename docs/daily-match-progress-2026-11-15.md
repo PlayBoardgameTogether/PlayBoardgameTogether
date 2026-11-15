@@ -47,3 +47,17 @@ D15–D19 平台能力已经合并并通过生产验收，因此继续 D20 可�
 主提交 **5dfc535d0ee173d1bde28a21aeab5fc845e1ea2a** 已推送到 `codex/d20-match-progress`，创建面向 main 的 [PR #80](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/80)，open、未合并。完整差异仅本批 10 个文件，无其他任务祖先；功能分支及工作区保留待审查，原主目录保持。
 
 GitHub 应用创建接口返回 403（Resource not accessible by integration），随后复用既有命令行认证先查重再创建成功，无凭据输出/落盘。首次提交缺少本机默认作者配置，仅为该命令使用本仓库既有 Codex 身份，没有修改全局 Git 配置。当前未获本批 main 合并授权，按项目规则交付待审 PR，未同步候选或宣称上线；适用服务器同步随获准合并后的实际发布流程验收。后续仅补交付链接，不重复已通过且无变化的代码检查。
+
+## 已批准合并、生产验收与分支清理（2026-11-15）
+
+用户明确批准后，重新获取 main，核对 PR #80 的完整 10 文件/2 提交、固定 head **4f9c443767628a1f37e08927e3817180aaf01d8a**、pins success 及空 review/review thread；没有新提交、冲突或阻塞审查。通过 merge commit **2d00ebfdf52410dcb7323e6e50865015b39bd97f** 合入 main，GitHub 已确认 merged，合并树与已验证候选完全一致。GitHub 应用合并接口仍返回 403，随后复用既有命令行认证重验 main/head 并以 sha 约束成功合并，无凭据输出或落盘，不绕过分支保护。
+
+原生产更新器完成构建、排空、备份和切换，没有人工重启、配置覆盖、生产恢复或新增迁移。本次备份 **update-A1f3yP / 76 文件 / 8,152,043 字节**，创建于北京时间 **09:47:40**；以原 `verifyUpdateBackup` 只读复验文件集合、长度、SHA-256、PGDMP 签名及 previous **95e017f** / candidate **2d00ebf** 全部通过。
+
+**09:50:03（北京时间）**，current.json、实际 API cwd 与运行 package.json 一致 **2d00ebf / 1.4.0**，boardgame-local.service active/running、NRestarts=0，ready 200、database.ready=true。匿名公网 Chromium 四视口 **1440×900、1280×800、390×844、320×740** 首页/详情/电脑刷新均 200，页脚 1.4.0、无 pageerror 或检查到的整页横向溢出；实际全局 CSS、电脑页 JS、成长组件 JS 和结果 CSS 与运行文件逐字节一致。
+
+四视口均确认匿名对局页显示会话已失效、没有成长数据，本人徽章 API 为 401 且 no-store。公开结果指南仍能读取；离页导致图片和 Cloudflare rum 的 ERR_ABORTED 仅记为探针日志，不当作产品错误或已加载证据。本次仅匿名 GET，没有生产登录、建房、行动、发信、付费模型或游戏安装；生产身份下成长交互未额外操作，真实完整局证据仍使用本批隔离测试的 2/2，不将静态资源校验当作生产真人完局。
+
+GitHub merged、源分支 head/祖先、无其他开放 PR 和干净工作区全部核对后，删除本地/远程 **codex/d20-match-progress**；本地使用 `-d`，远程删除以期望完整 SHA 约束，随后 prune。原 worktree 与所有 `.data/d20/`、`.data/d20-delivery/` 证据保留，主目录 36 项已有改动及 D21 等其他任务分支不动。合并/备份/公网/清理结果分别保存在 merge.json、backup-verified.json、production-health.json、cleanup.json。
+
+本轮只补内部交付记录，平台保持 **1.4.0**，不重复已通过且无变化的本地业务检查。D21 兼容发布门槛、UNO #5 未发布/安装、D3/D5 外部条件和真机/WebKit 等限制继续保留。此后文档按既有同步机制验收，不因记录再次增加版本。
