@@ -10,7 +10,7 @@ D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull
 
 原排期保留，已按用户继续推进的要求提前执行；完成标记仅代表列明验收范围。D4 的七套附件、三个旧安装摘要差异及六个未发布候选见 [D4 记录](daily-release-audit-2026-11-06.md)，D5 历史验证见 [订阅记录](daily-subscription-validation-2026-11-07.md)。D6 的隔离恢复与 1.2.3 上线证据保留在 [恢复记录](daily-recovery-drill-2026-11-08.md)。
 
-最新增量（2026-11-15）：**D22 断线与未知结果隔离验收完成**，新增与既有共 12 个独立双端 E2E 分批通过，平台保持 1.4.0，见 [D22](daily-result-recovery-2026-11-15.md)。**D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已整合 D20、复验通过，候选 1.4.1，仍待审查合并与生产监督保护加载**；UNO 1.3.0 继续暂停发布，ADR-011 保持 Proposed。本轮没有生产写入/重启，D23 未开始，真实模型须先核对凭据与明确费用上限。上方 D20 状态保留其实际交付事实。
+最新增量（2026-11-15）：**D22 断线与未知结果隔离验收完成，[PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83) 待审查合并**，新增与既有共 12 个独立双端 E2E 分批通过，平台保持 1.4.0，见 [D22](daily-result-recovery-2026-11-15.md)。**D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已整合 D20、复验通过，候选 1.4.1，仍待审查合并与生产监督保护加载**；UNO 1.3.0 继续暂停发布，ADR-011 保持 Proposed。本轮没有生产写入/重启，D23 未开始，真实模型须先核对凭据与明确费用上限。上方 D20 状态保留其实际交付事实。
 
 ## 本月目标与排期假设
 

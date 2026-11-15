@@ -38,3 +38,9 @@
 没有重新验证正式 UNO 结果包、真实收费模型、物理手机、WebKit、屏幕阅读器、网络设备切换或生产会话撤销。D21 的实机保护加载、UNO #5 发布/安装，以及 D3/D5 原外部条件保持。本批不推进 D23；该项须先核对真实供应商凭据和明确费用上限。
 
 提交与 PR 交付结果见下节；本批不以测试通过代表已合并或已上线。
+
+## 提交与待审 PR
+
+主提交 **02b78ff6f86769896c5694bb11fb42753021ed99** 已推送至 `codex/d22-result-recovery`，创建面向 main 的 [PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83)，open、未合并。提交前再次 fetch main，仍为 a3dbfac，完整差异仅上述四文件；D21、游戏和原目录改动没有夹入。GitHub 应用的 PR 写权限不足，复用仓库既有 gh 认证，经 REST API 先查重再创建，没有凭据输出或落盘。分支/工作区保留待审，服务器不因本测试批次重启。
+
+主提交的来源锁 CI [run 43667061681](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43667061681) completed/success，PR 精确 head 已核对且 mergeable。该 CI 仅校验 pins，不代表远程重新运行上述 E2E；后续内部记录不重复升版或业务验证。

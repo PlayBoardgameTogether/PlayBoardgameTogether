@@ -5,7 +5,7 @@
 - 在 main **a3dbfac** 建独立 `codex/d22-result-recovery`，新增平台样例 ZIP 的真实双账户 E2E，覆盖终局回复丢失/刷新/同请求去重、真实断网/连接重建/延迟旧 WS，以及待确认期间真实 session 撤销/清除桌面和请求/停止重试。单 SQL 摘要审计核对结果、State/RNG、动作/回放/回执与房间/座位，不伪造服务端结果、不读取生产玩家数据。
 - 冻结离线安装、全 typecheck、lint（20 根 AST）、新测试严格 tsc 和定向格式检查通过。独立 **playboard_d22_test_20261115 / 15441** 原准备链下，新增三场景双端 **6 个独立用例分批通过**；既有开局丢失、提交前同请求重试和旧 HTTP 快照交错 **6/6、51.9 秒**，合计 12 个独立 E2E、无 skip。共用导航等待和终局断言时序修正、初轮失败/中断及定向复验详见 [D22](daily-result-recovery-2026-11-15.md)，没有提高限时或削弱业务断言。
 - 实际查看 1440×900 / 390×844 恢复棋桌、结算和会话失效截图，终局无整页横向溢出。平台样例不是 UNO/正式包或物理手机验收；没有发现需要修改产品的缺陷，仅新增测试/内部记录，平台 **1.4.0 → 1.4.0**，README 一致，不重复生产 build/重启或无关全库回归。
-- 本轮另在 D21 原分支整合 D20 并复验，更新 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 为 1.4.1，head **0bd6b76**、open / mergeable；与本批独立，没有将其保护代码合入 D22。10:01:36 只读核对服务器 **a3dbfac / 1.4.0**、真实 API cwd 一致、active/running / ready 200，保护仍未加载。无生产写入/重启/发布/安装；UNO #5 和 D3/D5 原条件保持，下一项 D23 须先核对供应商凭据与明确费用上限。
+- 本轮另在 D21 原分支整合 D20 并复验，更新 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 为 1.4.1，head **0bd6b76**、open / mergeable；与本批独立，没有将其保护代码合入 D22。10:01:36 只读核对服务器 **a3dbfac / 1.4.0**、真实 API cwd 一致、active/running / ready 200，保护仍未加载。无生产写入/重启/发布/安装；UNO #5 和 D3/D5 原条件保持，下一项 D23 须先核对供应商凭据与明确费用上限。 本批主提交 **02b78ff** 已推送至 [PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83)，open、未合并，独立分支保留待审。
 
 ## D20 已合并与平台 1.4.0 生产验收（2026-11-15）
 
