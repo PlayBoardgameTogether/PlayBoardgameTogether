@@ -44,3 +44,9 @@
 主提交 **02b78ff6f86769896c5694bb11fb42753021ed99** 已推送至 `codex/d22-result-recovery`，创建面向 main 的 [PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83)，open、未合并。提交前再次 fetch main，仍为 a3dbfac，完整差异仅上述四文件；D21、游戏和原目录改动没有夹入。GitHub 应用的 PR 写权限不足，复用仓库既有 gh 认证，经 REST API 先查重再创建，没有凭据输出或落盘。分支/工作区保留待审，服务器不因本测试批次重启。
 
 主提交的来源锁 CI [run 43667061681](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/actions/runs/43667061681) completed/success，PR 精确 head 已核对且 mergeable。该 CI 仅校验 pins，不代表远程重新运行上述 E2E；后续内部记录不重复升版或业务验证。
+
+## 获准合并：整合 D21（2026-11-15）
+
+用户批准合并后，重新获取 main 并核对两个 PR 的完整差异、精确 head、pins success 和无阻塞审查。D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 固定 head **0bd6b766d2ef3a51de29d6e695c3c543847550f3**，以 merge commit **e9b01a220f762d69d1cac55b47ef007ba4be9819** 合入 main；合并树与已验证候选完全相同。
+
+本 D22 分支随后合入新 main，仅解决计划/进度两份文档冲突，保留 D21 全部记录及运行保护、D22 全部测试和历史验收。平台沿用 D21 的 **1.4.1**，D22 仍只含测试/内部记录，不再升号。运行代码及测试逐字比较与各自已验证候选相同；只作差异/链接/版本一致性核对，不重复无变化业务测试。D22 PR 的新 head 和实际合并结果以最终交付为准。监督程序仍待按原维护流程加载，游戏发布/安装不在本次合并范围。

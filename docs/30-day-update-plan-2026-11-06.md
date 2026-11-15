@@ -10,7 +10,7 @@ D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull
 
 原排期保留，已按用户继续推进的要求提前执行；完成标记仅代表列明验收范围。D4 的七套附件、三个旧安装摘要差异及六个未发布候选见 [D4 记录](daily-release-audit-2026-11-06.md)，D5 历史验证见 [订阅记录](daily-subscription-validation-2026-11-07.md)。D6 的隔离恢复与 1.2.3 上线证据保留在 [恢复记录](daily-recovery-drill-2026-11-08.md)。
 
-最新增量（2026-11-15）：**D22 断线与未知结果隔离验收完成，[PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83) 待审查合并**，新增与既有共 12 个独立双端 E2E 分批通过，平台保持 1.4.0，见 [D22](daily-result-recovery-2026-11-15.md)。**D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已整合 D20、复验通过，候选 1.4.1，仍待审查合并与生产监督保护加载**；UNO 1.3.0 继续暂停发布，ADR-011 保持 Proposed。本轮没有生产写入/重启，D23 未开始，真实模型须先核对凭据与明确费用上限。上方 D20 状态保留其实际交付事实。
+最新增量（2026-11-15）：**D22 断线与未知结果隔离验收完成，[PR #83](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/83) 待审查合并**，新增与既有共 12 个独立双端 E2E 分批通过，平台保持 1.4.0，见 [D22](daily-result-recovery-2026-11-15.md)。**D21 [PR #81](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/81) 已整合 D20、复验通过，已按用户授权合并为 **e9b01a2 / 1.4.1**，生产监督保护加载与最终运行版本仍待本轮核验**；UNO 1.3.0 继续暂停发布，ADR-011 保持 Proposed。本轮没有生产写入/重启，D23 未开始，真实模型须先核对凭据与明确费用上限。上方 D20 状态保留其实际交付事实。
 
 ## 本月目标与排期假设
 
@@ -84,7 +84,7 @@ D14 [PR #72](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull
 | D18 · 11-23 | **隔离验收已合并交付（PR #77）** · [记录](daily-result-history-2026-11-14.md) | P1 · 结算和战绩衔接 | 将试点结果接入既有结算卡和本人游戏筛选记录；复用回放与回房间入口 | 在线试点与内置游戏使用一致的公开结果展示；未知结果明确显示；分页、筛选和切换账号不会串数据，不读取对手私密视图 |
 | D19 · 11-24 | **已合并并随 1.3.0 验收，D21 发布门槛仍待** · [记录](daily-result-compatibility-2026-11-14.md) | P0 · 事务与兼容验收 | 集中验证新结果能力的重试、回滚、精确版本、进程恢复和读取权限，检查旧包与内置游戏 | 原准备脚本下的相关集成/E2E 通过；覆盖共同获胜、无分数和非法输出；新旧游戏可共存，没有篡改历史结果或绕过沙箱 |
 | D20 · 11-25 | **已合并，1.4.0 已上线（PR #80）** · [记录](daily-match-progress-2026-11-15.md) | P2 · 单局收获提示 | 若本周主功能已通过，复用本人徽章接口，在结算后展示当前完成场次/成长进度及已有徽章入口 | 只展示本人真实当前进度；无可靠前后对比时不声称“本局新解锁”；刷新不重复庆祝，不新增永久授予或胜率推算体系 |
-| D21 · 11-26 | **1.4.1 已整合 D20 并复验，PR #81 待审及生产保护加载** · [记录](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/blob/0bd6b766d2ef3a51de29d6e695c3c543847550f3/docs/daily-runtime-compatibility-2026-11-15.md) | P1 · 第三周缓冲 | 修复结果链路问题，完成跨仓兼容说明与发布顺序检查 | 先让平台具备兼容能力，再发布依赖它的新游戏包；订阅不得给不兼容运行时安装候选；无法保证兼容时暂停发布并记为阻塞 |
+| D21 · 11-26 | **PR #81 已合并（e9b01a2 / 1.4.1），生产保护待加载** · [记录](daily-runtime-compatibility-2026-11-15.md) | P1 · 第三周缓冲 | 修复结果链路问题，完成跨仓兼容说明与发布顺序检查 | 先让平台具备兼容能力，再发布依赖它的新游戏包；订阅不得给不兼容运行时安装候选；无法保证兼容时暂停发布并记为阻塞 |
 
 **周末检查点：** 至少一个在线游戏的新版本能把正确的公开结果写入个人记录，同时旧包、旧局、隐私边界和事务恢复保持有效。
 

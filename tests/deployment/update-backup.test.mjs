@@ -135,6 +135,7 @@ test('backup failure resumes old service without running database preparation or
   const events = [];
   const previous = { sha: 'old' };
   const deps = {
+    check: async () => {},
     drain: async () => true, current: () => previous,
     stop: async () => { events.push('stop'); },
     backup: async () => { events.push('backup'); throw new Error('backup failed'); },
@@ -152,6 +153,7 @@ test('service stops before backup, then migrates, verifies and publishes in orde
   const previous = { sha: 'old' };
   const candidate = { sha: 'new' };
   const deps = {
+    check: async () => {},
     drain: async () => true, current: () => previous,
     stop: async () => { events.push('stop'); },
     backup: async (old, next) => { assert.equal(old, previous); assert.equal(next, candidate); events.push('backup'); },
