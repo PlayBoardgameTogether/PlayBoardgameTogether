@@ -8,12 +8,14 @@ import { MatchService } from '../../apps/api/src/matches.js';
 import { AiScheduler } from '../../apps/api/src/ai-scheduler.js';
 import { normalizeConfig } from '../../apps/api/src/config.js';
 import { OfficialAiService } from '../../apps/api/src/official-ai/service.js';
-import { MockModelAdapter } from '../../apps/api/src/model-ai.js';
+import { MockModelAdapter, type ModelAdapter } from '../../apps/api/src/model-ai.js';
+import { aiPointBillsSchema, aiPointLedgerSchema } from '../../packages/protocol/src/index.js';
 
 process.loadEnvFile('.env');
 const url = process.env.TEST_DATABASE_URL;
 const origin = 'http://127.0.0.1:5173';
 type Session = { cookie: string; csrf: string; id: string };
+const mockAdapter: ModelAdapter = MockModelAdapter.prototype;
 
 describe.skipIf(!url)('official AI points and authoritative actions', () => {
   let db: Database;
@@ -60,13 +62,13 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
     session: Session,
     method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     path: string,
-    payload?: unknown,
+    payload?: Record<string, unknown>,
   ) {
     return app.inject({
       method,
       url: `/api/v1${path}`,
       headers: { origin, cookie: session.cookie, 'x-csrf-token': session.csrf },
-      payload,
+      ...(payload === undefined ? {} : { payload }),
     });
   }
   async function get(session: Session, path: string) {
@@ -676,9 +678,9 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       },
     });
     expect(
-      (await get(alice, '/me/ai-points/bills')).items.find(
-        (item) => item.matchId === match.matchId,
-      ),
+      aiPointBillsSchema
+        .parse(await get(alice, '/me/ai-points/bills'))
+        .items.find((item) => item.matchId === match.matchId),
     ).toMatchObject({
       delta: -4,
       actionCount: 1,
@@ -712,13 +714,11 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       await tokenOffer();
       await grant(20);
       const match = await activeMatch();
-      const reply = vi
-        .spyOn(MockModelAdapter.prototype, 'decide')
-        .mockImplementation(async (input) => ({
-          raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]!.id }),
-          inputTokens: mode === 'missing' ? null : mode === 'over-cap' ? 100000 : 1000,
-          outputTokens: mode === 'over-cap' ? 1000 : null,
-        }));
+      const reply = vi.spyOn(mockAdapter, 'decide').mockImplementation(async (input) => ({
+        raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]!.id }),
+        inputTokens: mode === 'missing' ? null : mode === 'over-cap' ? 100000 : 1000,
+        outputTokens: mode === 'over-cap' ? 1000 : null,
+      }));
       const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
         ...config,
         AI_GLOBAL_CONCURRENCY: 1,
@@ -826,7 +826,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       await db.query("UPDATE ai_tasks SET lease_until=now()-interval '1 second' WHERE id=$1", [
         match.taskId,
       ]);
-      const reply = vi.spyOn(MockModelAdapter.prototype, 'decide').mockImplementation(async () => {
+      const reply = vi.spyOn(mockAdapter, 'decide').mockImplementation(async () => {
         throw new Error('fixture: unrelated later decisions also fall back for free');
       });
       const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
@@ -867,7 +867,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
   it('records invalid provider usage but commits a free script fallback without charging points', async () => {
     await grant(20);
     const match = await activeMatch();
-    const reply = vi.spyOn(MockModelAdapter.prototype, 'decide').mockResolvedValue({
+    const reply = vi.spyOn(mockAdapter, 'decide').mockResolvedValue({
       raw: '{"choiceId":"forged"}',
       inputTokens: 5,
       outputTokens: 3,
@@ -966,7 +966,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
         AI_GLOBAL_CONCURRENCY: 1,
         AI_SCAN_INTERVAL_MS: 100,
       });
-      const decide = vi.spyOn(MockModelAdapter.prototype, 'decide');
+      const decide = vi.spyOn(mockAdapter, 'decide');
       if (mode === 'token')
         decide.mockImplementation(async (input) => ({
           raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]?.id }),
@@ -1025,7 +1025,7 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
         AI_GLOBAL_CONCURRENCY: 1,
         AI_SCAN_INTERVAL_MS: 100,
       });
-      const decide = vi.spyOn(MockModelAdapter.prototype, 'decide');
+      const decide = vi.spyOn(mockAdapter, 'decide');
       if (mode === 'token')
         decide.mockImplementation(async (input) => ({
           raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]?.id }),
@@ -1103,6 +1103,192 @@ describe.skipIf(!url)('official AI points and authoritative actions', () => {
       ).toBe('succeeded');
     } finally {
       await scheduler.close();
+    }
+  }, 15000);
+
+  it('reconciles a complete controlled match with its successful actions, token bill and capped free continuation', async () => {
+    await tokenOffer(6, 8);
+    await grant(20);
+    const created = await write(alice, 'POST', '/rooms', {
+      requestId: randomUUID(),
+      name: 'Controlled billing acceptance',
+      gameId: 'color-match',
+      version: '1.0.0',
+      options: {},
+      seatCount: 2,
+      computerOpponents: true,
+      computerModelProfileId: profileId,
+    });
+    expect(created.statusCode, created.body).toBe(200);
+    const { roomId } = created.json().data;
+    await roomCommand(roomId, 'my-ready', { ready: true });
+    const { matchId } = await roomCommand(roomId, 'start');
+    const reply = vi.spyOn(mockAdapter, 'decide').mockImplementation(async (input) => ({
+      raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]!.id }),
+      requestId: `controlled-${input.decisionId}`,
+      model: 'controlled-d23',
+      inputTokens: 1000,
+      outputTokens: 1000,
+    }));
+    const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
+      ...config,
+      AI_GLOBAL_CONCURRENCY: 1,
+      AI_SCAN_INTERVAL_MS: 100,
+    });
+    scheduler.start();
+    try {
+      await expect
+        .poll(
+          async () => {
+            const snapshot = await get(alice, `/matches/${matchId}/view`);
+            if (snapshot.status === 'finished') return snapshot.status;
+            if (snapshot.view.currentPlayerId === snapshot.view.viewingSeatId) {
+              const extension = registry.get('color-match', '1.0.0')!;
+              const action = await write(alice, 'POST', `/matches/${matchId}/actions`, {
+                requestId: randomUUID(),
+                expectedRevision: snapshot.revision,
+                expectedControllerEpoch: 0,
+                action: extension.getFallbackAction(snapshot.view, snapshot.actionSpec),
+              });
+              expect(action.statusCode, action.body).toBe(200);
+            }
+            return 'active';
+          },
+          { timeout: 20000, interval: 20 },
+        )
+        .toBe('finished');
+      await scheduler.close();
+      expect(reply).toHaveBeenCalledTimes(2);
+      expect(await service.wallet(alice.id)).toEqual({ balance: 12, reserved: 0, available: 12 });
+      expect(
+        (await service.profiles(alice.id)).find((profile) => profile.id === profileId)
+          ?.official_match_budget,
+      ).toBe(8);
+      const details = aiPointLedgerSchema.parse(
+        await get(alice, `/me/ai-points/ledger?matchId=${matchId}`),
+      );
+      expect(details.items).toHaveLength(2);
+      expect(details.nextCursor).toBeNull();
+      for (const item of details.items)
+        expect(item).toMatchObject({
+          kind: 'action',
+          matchId,
+          delta: -4,
+          usage: { inputTokens: 1000, outputTokens: 1000 },
+          tokenBilling: { offerId, chargedPoints: 4 },
+        });
+      const bills = aiPointBillsSchema.parse(await get(alice, '/me/ai-points/bills'));
+      expect(bills.items.filter((item) => item.matchId === matchId)).toMatchObject([
+        {
+          kind: 'action',
+          delta: -8,
+          actionCount: 2,
+          inputTokens: 2000,
+          outputTokens: 2000,
+          missingUsageCount: 0,
+        },
+      ]);
+      // Every debit must point to a distinct applied task and its authoritative action.
+      const charged = await db.query<{ task_id: string; request_id: string }>(
+        `
+        SELECT t.id AS task_id,a.provider_request_id AS request_id
+        FROM official_ai_reservations r
+        JOIN ai_point_ledger l ON l.id=r.ledger_id AND l.account_id=r.account_id
+        JOIN model_attempts a ON a.id=r.attempt_id
+        JOIN ai_tasks t ON t.id=r.task_id AND t.status='succeeded'
+        JOIN match_actions m ON m.match_id=t.match_id AND m.revision=t.applied_revision
+        WHERE r.match_id=$1 AND r.status='charged'`,
+        [matchId],
+      );
+      expect(charged.rows).toHaveLength(2);
+      expect(new Set(charged.rows.map((row) => row.task_id)).size).toBe(2);
+      for (const row of charged.rows) expect(row.request_id).toBe(`controlled-${row.task_id}`);
+      expect(
+        (
+          await db.query(
+            `SELECT 1 FROM ai_tasks WHERE match_id=$1
+        AND status='succeeded' AND safe_error_code='AI_FALLBACK_USED'`,
+            [matchId],
+          )
+        ).rowCount,
+      ).toBeGreaterThan(0);
+      expect(
+        aiPointLedgerSchema.parse(await get(bob, `/me/ai-points/ledger?matchId=${matchId}`)).items,
+      ).toEqual([]);
+      expect(aiPointBillsSchema.parse(await get(bob, '/me/ai-points/bills')).items).toEqual([]);
+      expect(await get(alice, `/rooms/${roomId}`)).toMatchObject({
+        status: 'waiting',
+        activeMatchId: null,
+      });
+    } finally {
+      await scheduler.close();
+      reply.mockRestore();
+    }
+  }, 30000);
+
+  it('never bills a valid provider reply arriving after the human reclaims control', async () => {
+    await tokenOffer();
+    await grant(20);
+    const match = await activeMatch(true);
+    let respond!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      respond = resolve;
+    });
+    const reply = vi.spyOn(mockAdapter, 'decide').mockImplementation(async (input) => {
+      await gate;
+      return {
+        raw: JSON.stringify({ decisionId: input.decisionId, choiceId: input.choices[0]!.id }),
+        inputTokens: 1000,
+        outputTokens: 1000,
+      };
+    });
+    const scheduler = new AiScheduler(db, registry, new MatchService(db, registry), {
+      ...config,
+      AI_GLOBAL_CONCURRENCY: 1,
+      AI_SCAN_INTERVAL_MS: 100,
+    });
+    scheduler.start();
+    try {
+      await expect.poll(() => reply.mock.calls.length).toBe(1);
+      expect(await service.wallet(alice.id)).toEqual({ balance: 20, reserved: 6, available: 14 });
+      const reclaimed = await write(alice, 'PUT', `/matches/${match.matchId}/my-controller`, {
+        requestId: randomUUID(),
+        expectedControllerEpoch: 1,
+        controllerType: 'human',
+      });
+      expect(reclaimed.statusCode, reclaimed.body).toBe(200);
+      respond();
+      await scheduler.close();
+      await service.recover();
+      expect(reply).toHaveBeenCalledTimes(1);
+      expect(await service.wallet(alice.id)).toEqual({ balance: 20, reserved: 0, available: 20 });
+      expect(await get(alice, `/matches/${match.matchId}/view`)).toMatchObject({
+        revision: 0,
+        status: 'active',
+      });
+      expect(
+        (await db.query('SELECT 1 FROM match_actions WHERE match_id=$1', [match.matchId])).rowCount,
+      ).toBe(0);
+      expect(
+        aiPointLedgerSchema.parse(await get(alice, `/me/ai-points/ledger?matchId=${match.matchId}`))
+          .items,
+      ).toEqual([]);
+      expect(
+        aiPointBillsSchema
+          .parse(await get(alice, '/me/ai-points/bills'))
+          .items.filter((item) => item.kind === 'action'),
+      ).toEqual([]);
+      expect(
+        (
+          await db.query('SELECT status FROM official_ai_reservations WHERE task_id=$1', [
+            match.taskId,
+          ])
+        ).rows,
+      ).toEqual([{ status: 'released' }]);
+    } finally {
+      respond();
+      await scheduler.close();
+      reply.mockRestore();
     }
   }, 15000);
 
