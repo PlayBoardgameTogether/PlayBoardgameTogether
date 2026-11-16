@@ -1,5 +1,11 @@
 # 开发进度
 
+## D23 已合并、内部文档同步与分支清理（2026-11-16）
+
+- 用户批准后重新核对最新 main、四文件/两提交、固定 head **353aae0**、来源锁 CI success 和无审查阻塞，以 merge commit **b893d380d15b75297b905e282782cfe34cfdf3fc** 合并 [PR #86](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/86)；GitHub merged、目标包含源 head、合并树与已验证候选一致。本轮无运行变更，不重复业务检查。
+- 三份已合并内部文档按 Git 原字节/SHA-256 同步到服务器私有 document-sync 快照；**22:45:46（北京时间）** 实际运行仍 **db96906 / 1.4.1**，current.json/API cwd/package.json 一致，服务 active/running、NRestarts=0，API/监督 ready 均 200/database.ready=true。文档同步不等于运行 SHA 切换；无人工重启、强制更新、迁移或游戏发布安装。
+- 源分支 **codex/d23-ai-billing** 已按 merged、精确 head、祖先、无其他开放 PR 和干净工作区核对后安全清理本地/远程，工作区和原有改动保留。平台 **1.4.1 → 1.4.1**，仅测试/内部记录；真实模型费用与配置授权仍待，D24 未推进。详见 [D23 合并交付](daily-ai-billing-2026-11-16.md#已批准合并文档同步与分支清理2026-11-16)。
+
 ## 每日任务 D23：官方 AI 与按局账单受控验收（2026-11-16，平台保持 1.4.1）
 
 - 从最新 main **db96906** 建立独立 `codex/d23-ai-billing`，保留旧主工作区及其他任务。扩展官方 AI 集成测试，用受控模型完成真实 session/规则/调度/数据库下的 Color Match：本次 24 次行动，2 次模型扣 8 点，10 次免费脚本接续；用量、按局账单、原调用与成功动作关联一致，无残留预留、不提高上限，其他账户账单隔离。新增真人收回控制后有效回复迟到的 fencing 回归：无动作/扣费，预留释放。
