@@ -61,3 +61,11 @@ pnpm 运行带既有 `--config.verify-deps-before-run=false`，无依赖或锁�
 **22:51:36（北京时间）** 只读核对服务器：私有 current.json **37bd6d5**、真实 API cwd 与该发布目录一致、运行 package.json **1.4.1**；boardgame-local.service active/running、NRestarts=0，实际 API ready **200**、database.ready=true。无生产写入、强制更新/重启、迁移、游戏发布或安装；该 SHA 为既有发布结果，不代表 D24 候选上线。
 
 本批交付功能分支和面向 main 的 PR，尚未授权合并，不同步未审候选到服务器、不清理待审分支。D23 已合并及真实供应商费用/配置条件、D3/D5、UNO #5/ADR-011 和设备边界保持；提交/PR 状态完成后补记。
+
+## 提交与 PR
+
+主提交 **2b5212f4517b2823871adbeab0e8d257f0dd6b54** 已推送至 `codex/d24-performance-baseline`，创建 [PR #88](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/88)，面向 main、open / mergeable；七个本轮文件、一个主提交，无其他任务提交。精确 head 的来源锁 CI **pins SUCCESS**、审查列表为空；它不是远程再次执行本地性能/业务验收的证据。后续只补交付记录，不重复代码检查。
+
+GitHub 连接器创建 PR 返回 403。自动审批拒绝读取 Git 凭据并转交给 gh 的方式，该命令未执行；随后直接使用项目已配置的 gh 标准登录创建成功，没有读取/转换/落盘凭据或改变认证配置。原 origin 的旧仓库地址由 GitHub 重定向到已确认组织仓库，未改用户远程。
+
+**未合并、未同步服务器文档、未部署候选**；独立功能分支与本地证据保留待审，无分支清理。平台仍 **1.4.1**，D25 尚未开始。

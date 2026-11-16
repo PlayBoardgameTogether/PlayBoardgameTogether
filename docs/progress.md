@@ -5,7 +5,7 @@
 - 独立 `codex/d24-performance-baseline` 保留旧主目录 36 项改动及其他任务，新增显式性能配置、独立 API 进程与真实 TCP/认证/数据库/WS 基线，默认测试不误收集。10 个四人 Color Match、40 个不同账户，200 次测量动作、10 次集中重连，10 局全部结束；本人投影/跨桌 404/重复终局/230 动作与 240 回放帧/房间复位及心跳通过，无意外错误。
 - 原准备链在 **playboard_d24_test_20261116 / 15441** 完整运行，新基线 **1/1、16.30 秒、无 skip**。10.001 秒窗口 HTTP P50/P95 **21.627/28.659 ms**，四人快照送达 **54.072/60.943 ms**，10 次重连 **15.468/19.832 ms**；API 平均单核 CPU **13.639%**、采样 RSS 峰值 **251.70 MiB**。池等待采样峰值 33，数据库无回滚/死锁；本机闭环短时/源码运行限制见 [D24](daily-performance-baseline-2026-11-16.md)，不推断生产容量或直接改池。
 - 冻结离线安装、全 typecheck、lint（20 根 AST）及新测试/夹具 strict tsc 通过；无运行/UI/协议/迁移/游戏副本/来源锁/登记变化，平台 **1.4.1 → 1.4.1**，README 一致，不升版、不跑无影响 build/E2E 或无关全库回归。交付前 main 仅新增 D23 交付记录，审查后快进保留，运行/测试未变，不重复检查。
-- **22:51:36（北京时间）** 只读核对生产 current.json、真实 API cwd/package.json 一致 **37bd6d5 / 1.4.1**，服务 active/running、NRestarts=0，API ready 200/database.ready=true；无生产写入/重启/发布安装，D24 尚未合并或同步服务器。D23 外部费用与配置、D3/D5、UNO #5/ADR-011 和设备限制保持；下一项 D25。
+- **22:51:36（北京时间）** 只读核对生产 current.json、真实 API cwd/package.json 一致 **37bd6d5 / 1.4.1**，服务 active/running、NRestarts=0，API ready 200/database.ready=true；无生产写入/重启/发布安装。主提交 **2b5212f** 已推送至 [PR #88](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/88)，open / mergeable、来源锁 pins SUCCESS、审查列表为空；未合并/同步服务器，功能分支保留待审。D23 外部费用与配置、D3/D5、UNO #5/ADR-011 和设备限制保持；下一项 D25。
 
 ## D23 已合并、内部文档同步与分支清理（2026-11-16）
 
