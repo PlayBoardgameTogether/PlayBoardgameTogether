@@ -5,7 +5,7 @@
 - 从最新 main **db96906** 建立独立 `codex/d23-ai-billing`，保留旧主工作区及其他任务。扩展官方 AI 集成测试，用受控模型完成真实 session/规则/调度/数据库下的 Color Match：本次 24 次行动，2 次模型扣 8 点，10 次免费脚本接续；用量、按局账单、原调用与成功动作关联一致，无残留预留、不提高上限，其他账户账单隔离。新增真人收回控制后有效回复迟到的 fencing 回归：无动作/扣费，预留释放。
 - 冻结离线安装、全工作区 typecheck、lint（20 根 AST）、最终测试定向 ESLint/格式及严格 tsc 通过；模型适配器单测 **11/11**。原准备链在独立 **playboard_d23_test_20261116 / 15441** 串行执行，官方 AI **28 个独立用例分批通过**；首轮导入无法收集、第二轮 27/28（整局演示夹具不支持 AI）、改正式 Color Match 后仅失败项 1/1。没有关闭校验或伪造账单，详细命令、故障与筛选边界见 [D23 记录](daily-ai-billing-2026-11-16.md)。
 - 本轮仅测试/内部文档，平台 **1.4.1 → 1.4.1**，README 一致，不升版；无产品/协议/迁移/游戏副本/来源锁/登记变化，不重复无影响生产 build、全库集成/E2E 或 UI 验收。**真实供应商尚未调用**，可用配置与明确货币费用/调用次数授权待补，已交付联调步骤；受控结果不代表真实服务或货币账单通过，D24 未推进。
-- **22:20:29（北京时间）** 只读核对生产 current.json、真实 API cwd/package.json 一致 **db96906 / 1.4.1**，服务 active/running、NRestarts=0、ready 200/database.ready=true；无生产写入/重启/游戏发布或安装。本轮提交/PR 与文档同步状态另记，原 D3/D5、UNO #5/ADR-011 及真机/WebKit 等条件保持。
+- **22:20:29（北京时间）** 只读核对生产 current.json、真实 API cwd/package.json 一致 **db96906 / 1.4.1**，服务 active/running、NRestarts=0、ready 200/database.ready=true；无生产写入/重启/游戏发布或安装。主提交 **95ba93e** 已推送至 [PR #86](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/86)，open / mergeable，主提交来源锁 CI success、审查列表为空；后续仅补记录，不重复代码检查。未合并/同步服务器文档，独立功能分支保留待审；原 D3/D5、UNO #5/ADR-011 及真机/WebKit 等条件保持。
 
 ## D21/D22 已合并与 1.4.1 生产保护验收（2026-11-15）
 

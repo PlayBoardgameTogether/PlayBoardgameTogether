@@ -29,7 +29,7 @@
 | `pnpm exec vitest run tests/unit/model-ai.test.ts tests/unit/model-transport.test.ts` | **11/11**，含 choiceId/SSRF 和 HTTPS 适配器 400/401/403/404/429 脱敏错误；DNS/HTTPS 为受控传输，无真实网络调用 |
 | `pnpm test:integration --config .data/d23/vitest.config.mjs` | 第二轮 **27/28**；仅新增整局夹具选错游戏失败，迟到回复及原 26 项通过 |
 | 同一入口追加 `--testNamePattern='reconciles a complete controlled match'` | 修正为 Color Match 后 **1/1、2.57 秒**；其余 27 项按名称筛选未执行，不计重复通过。总计 **28 个独立用例分批通过** |
-| `git diff --check`、新增文档链接/版本核对 | 交付前执行，结果以提交记录为准 |
+| `git diff --check`、新增文档链接/版本核对 | 通过；三条新文档相对链接、代码围栏、D23 状态与版本一致性已核对 |
 
 首轮集成已经完成准备链，但新增测试误从根目录未声明的 `@boardgame/protocol` 依赖导入，导致无法收集，**不计任何用例通过**；改用既有源码入口。第二轮原 26 项和迟到回复通过，整局初版选择 `demo.counter-room`，被原接口以 `AI_NOT_SUPPORTED` 正确拒绝；该演示不提供 `getDecisionContext`，不能用它宣称电脑整局通过。保持产品校验不动，改为真正支持 AI 的 Color Match 后仅重跑失败场景。严格 tsc 还识别了原夹具 unknown/可选 payload、mock 只推导 null 用量及账单回调类型，均在测试内修正。
 
@@ -66,3 +66,11 @@ export default defineConfig({
 **22:20:29（北京时间）**，只读核对已确认的 `/opt/boardgame`：私有 current.json、实际 API cwd 和运行 package.json 一致为 **db96906 / 1.4.1**；`boardgame-local.service` active/running、NRestarts=0；实际 API `/health/ready` 200、database.ready=true。没有生产写入、重启、手工更新、游戏发布或安装；本轮测试和文档仍是候选，服务器运行 SHA 不能当作本轮已合并的证据。
 
 本地证据保留于 `.data/d23/`，不提交配置、日志、SQL 结果或生成物。源分支保留供 PR 审查；实际提交、推送、PR 与文档同步结果在完成后另记。D3 生产注册闭环、其余头像候选、UNO #5/1.3.0 发布条件、ADR-011 Proposed 与真机等既有边界保持，不将其算作本轮完成。
+
+## 提交与 PR（2026-11-16）
+
+主提交 **95ba93e8c3efeba5b0dd00552fc51ac1d44f44bc** 已推送到 `codex/d23-ai-billing`，创建 [PR #86](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/86)，面向 main、open / mergeable，审查列表为空。主提交的来源锁 CI **success**，不当作远程重跑本地业务测试的证据。交付前再次 fetch main 仍为 db96906，PR 仅四个本轮文件、一个主提交，无其他任务祖先；后续仅补本段与进度，不重复代码验证。
+
+当前会话缺少 Git 作者配置，首次 commit 被拒；核对 D22 的既有作者后，仅当前命令沿用 Codex 身份，未更改全局配置或伪造用户作者。GitHub 连接器创建 PR 返回 403，使用本仓库既有 Git HTTPS 授权在内存中交给 gh 后创建成功，未输出或落盘凭据。
+
+**未合并、未同步服务器文档、未部署候选**；遵守生产只同步已审查发布分支的约束，功能分支/独立工作区保留待审，无分支清理。服务器此前只读健康结果保持，不能将 PR 创建或本地通过写成上线。真实模型的费用与配置条件继续保留。
