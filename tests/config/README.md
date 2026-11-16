@@ -22,3 +22,9 @@
 2026-10-25 整理后，原根目录的 `developers`、`ui`、`admin-ui`、`packages-ui`、`updates-ui`、`social-ui`、`public-chat`、`shell-social` 配置合并为 `ui.config.ts`，使用文件参数选取范围，同一文件在全量 UI 入口只运行一次；其余游戏配置迁入本目录。历史进度中的旧命令保留当时事实，当前执行方式以本文为准。
 
 界面夹具、公开 View 和隔离棋桌检查不代表真实登录或联机验收。真实流程仍使用 `pnpm test:e2e`，不要直接运行带数据库初始化的默认配置绕过隔离准备。
+
+## 显式性能基线
+
+`pnpm test:integration --config tests/config/performance.config.ts` 通过原隔离准备链执行单 API 10 局 / 40 个认证连接的真实 HTTP/WS 基线。`performance-baseline.perf.ts` 仅由该配置收集，不加入默认业务集成；API 夹具为独立进程，详细结果写入忽略的 `.data/d24/baseline.json`。
+
+此项会清理独立测试库。只能使用回环 PostgreSQL 上以 `playboard_d24_test_` 开头的专用 TEST_DATABASE_URL，必须不同于 DATABASE_URL 的 scratch 库，且不能与清理同库的其他测试并行。环境要求、负载节奏、计时边界及历史结果见 [D24 记录](../../docs/daily-performance-baseline-2026-11-16.md)。
