@@ -304,11 +304,12 @@ test('admin updates navigation and progress bar are unobstructed and fully reach
           ok: true,
           data: {
             accounts: 10,
-            rooms: 2,
-            matches: 5,
+            disabledAccounts: 0,
+            openRooms: 2,
+            activeMatches: 5,
             pendingSubmissions: 0,
-            installedPackages: 3,
-            updatedAt: new Date().toISOString(),
+            installedGames: 3,
+            enabledGames: 3,
           },
           traceId: 'ui-test',
         },
@@ -318,14 +319,19 @@ test('admin updates navigation and progress bar are unobstructed and fully reach
     await route.abort();
   });
 
+  const navigation = page.getByRole('navigation', { name: '后台导航' });
+  const updateLink = navigation.getByRole('link', { name: '服务更新', exact: true });
   if (info.project.name === 'desktop') {
     await page.setViewportSize({ width: 1366, height: 768 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/admin');
-    const updateLink = page.getByRole('link', { name: '服务更新' });
+    await expect(page.getByLabel('平台统计')).toBeVisible();
     await expect(updateLink).toBeVisible();
     const navBox = await updateLink.boundingBox();
     expect(navBox).toBeTruthy();
     expect(navBox.y + navBox.height).toBeLessThanOrEqual(768);
+    await expect(updateLink).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: info.outputPath('updates-navigation-1366x768.png') });
 
     await updateLink.click();
     await page.waitForURL('**/admin/updates');
@@ -350,8 +356,27 @@ test('admin updates navigation and progress bar are unobstructed and fully reach
       { x: step4Box.x + step4Box.width / 2, y: step4Box.y + step4Box.height / 2 },
     );
     expect(isStep4Covered).toBe(false);
+
+    await page.goto('/admin');
+    await navigation.getByRole('link', { name: '邮件设置', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(updateLink).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/admin\/updates$/);
+    await expect(updateLink).toHaveAttribute('aria-current', 'page');
   } else {
-    await page.goto('/admin/updates');
+    await page.goto('/admin');
+    await expect(page.getByLabel('平台统计')).toBeVisible();
+    await expect(navigation).toBeVisible();
+    await navigation.evaluate((element) => {
+      element.scrollLeft = element.scrollWidth;
+    });
+    // Horizontal scroll offsets round to whole pixels, while the link can end at a fraction.
+    await expect(updateLink).toBeInViewport({ ratio: 0.99 });
+    await page.screenshot({ path: info.outputPath('updates-navigation-mobile.png') });
+    await updateLink.tap();
+    await expect(page).toHaveURL(/\/admin\/updates$/);
+    await expect(updateLink).toHaveAttribute('aria-current', 'page');
     const button = page.getByRole('button', { name: '更新进行中…' });
     await expect(button).toBeVisible();
     await button.scrollIntoViewIfNeeded();
