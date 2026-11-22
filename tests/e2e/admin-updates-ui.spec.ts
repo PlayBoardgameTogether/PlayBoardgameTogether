@@ -97,6 +97,7 @@ test('updates show actual server versions, stages, reconnection and actionable f
   };
   await expect(panel.getByRole('alert')).toContainText('失败步骤：安装构建依赖');
   await expect(panel.getByRole('alert')).toContainText('网络连接失败');
+  await expect(panel.getByRole('alert')).not.toContainText('本次未执行数据库迁移或游戏同步。');
   await expect(page.getByRole('button', { name: '重试更新', exact: true })).toBeEnabled();
   await panel.getByText('版本详情与诊断', { exact: true }).click();
   await expect(page.getByLabel('诊断信息', { exact: true })).toHaveValue(/原因代码：network/);
@@ -120,6 +121,60 @@ test('updates show actual server versions, stages, reconnection and actionable f
     await page.screenshot({ path: info.outputPath(`updates-${width}.png`), fullPage: true });
   }
 });
+
+for (const [reason, recoveryText] of [
+  ['permission', '旧服务已重新启动并通过就绪检查。'],
+  ['recovery_failed', '旧服务恢复失败'],
+] as const) {
+  test(`backup failure reports migration and recovery in the alert and clipboard (${reason})`, async ({
+    context,
+    page,
+  }, info) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const state: AdminUpdateStatus = {
+      ...fixture(),
+      phase: 'failed',
+      stage: 'backup',
+      failure: {
+        stage: 'migrate',
+        reason,
+        exitCode: null,
+        occurredAt: '2026-11-22T00:00:00.000Z',
+      },
+    };
+    await page.route('**/api/**', async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/api/v1/auth/me' || path === '/api/v1/admin/updates') {
+        const data = path === '/api/v1/auth/me' ? sessionFixture({ role: 'administrator' }) : state;
+        await route.fulfill({ json: { ok: true, data, traceId: 'ui-test' } });
+      } else {
+        await route.abort();
+      }
+    });
+
+    await page.goto('/admin/updates');
+    const panel = page.getByRole('region', { name: '服务更新', exact: true });
+    const alert = panel.getByRole('alert');
+    const migrationText = '本次未执行数据库迁移或游戏同步。';
+    await expect(alert).toContainText('失败步骤：自动备份并校验');
+    await expect(alert).toContainText(migrationText);
+    await expect(alert).toContainText(recoveryText);
+    await panel.getByText('版本详情与诊断', { exact: true }).click();
+    await panel.getByRole('button', { name: '复制诊断信息', exact: true }).click();
+    await expect(panel.getByText('诊断已复制', { exact: true })).toBeVisible();
+    const diagnostic = await page.evaluate(() => navigator.clipboard.readText());
+    expect(diagnostic.replaceAll('\r\n', '\n')).toBe(
+      await panel.getByLabel('诊断信息', { exact: true }).inputValue(),
+    );
+    expect(diagnostic).toContain(`原因代码：${reason}`);
+    expect(diagnostic).toContain(migrationText);
+    expect(diagnostic).toContain(recoveryText);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath('backup-failure.png'), fullPage: true });
+  });
+}
 
 test('lost command replies retain request identity even after successful polling', async ({
   page,
@@ -249,11 +304,12 @@ test('admin updates navigation and progress bar are unobstructed and fully reach
           ok: true,
           data: {
             accounts: 10,
-            rooms: 2,
-            matches: 5,
+            disabledAccounts: 0,
+            openRooms: 2,
+            activeMatches: 5,
             pendingSubmissions: 0,
-            installedPackages: 3,
-            updatedAt: new Date().toISOString(),
+            installedGames: 3,
+            enabledGames: 3,
           },
           traceId: 'ui-test',
         },
@@ -263,14 +319,19 @@ test('admin updates navigation and progress bar are unobstructed and fully reach
     await route.abort();
   });
 
+  const navigation = page.getByRole('navigation', { name: '后台导航' });
+  const updateLink = navigation.getByRole('link', { name: '服务更新', exact: true });
   if (info.project.name === 'desktop') {
     await page.setViewportSize({ width: 1366, height: 768 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/admin');
-    const updateLink = page.getByRole('link', { name: '服务更新' });
+    await expect(page.getByLabel('平台统计')).toBeVisible();
     await expect(updateLink).toBeVisible();
     const navBox = await updateLink.boundingBox();
     expect(navBox).toBeTruthy();
     expect(navBox.y + navBox.height).toBeLessThanOrEqual(768);
+    await expect(updateLink).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: info.outputPath('updates-navigation-1366x768.png') });
 
     await updateLink.click();
     await page.waitForURL('**/admin/updates');
@@ -295,8 +356,27 @@ test('admin updates navigation and progress bar are unobstructed and fully reach
       { x: step4Box.x + step4Box.width / 2, y: step4Box.y + step4Box.height / 2 },
     );
     expect(isStep4Covered).toBe(false);
+
+    await page.goto('/admin');
+    await navigation.getByRole('link', { name: '邮件设置', exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(updateLink).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/admin\/updates$/);
+    await expect(updateLink).toHaveAttribute('aria-current', 'page');
   } else {
-    await page.goto('/admin/updates');
+    await page.goto('/admin');
+    await expect(page.getByLabel('平台统计')).toBeVisible();
+    await expect(navigation).toBeVisible();
+    await navigation.evaluate((element) => {
+      element.scrollLeft = element.scrollWidth;
+    });
+    // Horizontal scroll offsets round to whole pixels, while the link can end at a fraction.
+    await expect(updateLink).toBeInViewport({ ratio: 0.99 });
+    await page.screenshot({ path: info.outputPath('updates-navigation-mobile.png') });
+    await updateLink.tap();
+    await expect(page).toHaveURL(/\/admin\/updates$/);
+    await expect(updateLink).toHaveAttribute('aria-current', 'page');
     const button = page.getByRole('button', { name: '更新进行中…' });
     await expect(button).toBeVisible();
     await button.scrollIntoViewIfNeeded();
