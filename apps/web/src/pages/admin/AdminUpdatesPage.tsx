@@ -151,6 +151,14 @@ function UpdatePanel() {
   const failure = status?.phase === 'failed' ? status.failure : null;
   const failureStage =
     status?.stage === 'backup' && failure?.stage === 'migrate' ? 'backup' : failure?.stage;
+  const backupOutcome =
+    failure && failureStage === 'backup'
+      ? `本次未执行数据库迁移或游戏同步。${
+          failure.reason === 'recovery_failed'
+            ? failureReasons.recovery_failed
+            : '旧服务已重新启动并通过就绪检查。'
+        }`
+      : null;
   const diagnostics = status
     ? [
         'PlayBoard 服务更新诊断',
@@ -165,6 +173,7 @@ function UpdatePanel() {
               `原因代码：${failure.reason}`,
               `退出码：${failure.exitCode ?? '无'}`,
               `失败时间：${failure.occurredAt}`,
+              ...(backupOutcome ? [backupOutcome] : []),
             ]
           : []),
       ].join('\n')
@@ -294,11 +303,13 @@ function UpdatePanel() {
           <h3>
             {failureStage ? `失败步骤：${failureStages[failureStage]}` : '更新器未提供失败详情'}
           </h3>
-          <p>
-            {failure
-              ? failureReasons[failure.reason]
-              : '请维护者升级并重启更新托管进程，才能获取具体失败原因。'}
-          </p>
+          {(!backupOutcome || failure?.reason !== 'recovery_failed') && (
+            <p>
+              {failure
+                ? failureReasons[failure.reason]
+                : '请维护者升级并重启更新托管进程，才能获取具体失败原因。'}
+            </p>
+          )}
           {failure && (
             <p className="muted">
               {date(failure.occurredAt)}
@@ -306,7 +317,8 @@ function UpdatePanel() {
             </p>
           )}
           <p className="muted">
-            更新器会尝试恢复原服务；代码恢复不会回退数据库。服务是否可用请结合就绪检查和日志确认。
+            {backupOutcome ??
+              '更新器会尝试恢复原服务；代码恢复不会回退数据库。服务是否可用请结合就绪检查和日志确认。'}
           </p>
         </section>
       )}
