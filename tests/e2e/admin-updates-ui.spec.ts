@@ -97,6 +97,7 @@ test('updates show actual server versions, stages, reconnection and actionable f
   };
   await expect(panel.getByRole('alert')).toContainText('失败步骤：安装构建依赖');
   await expect(panel.getByRole('alert')).toContainText('网络连接失败');
+  await expect(panel.getByRole('alert')).not.toContainText('本次未执行数据库迁移或游戏同步。');
   await expect(page.getByRole('button', { name: '重试更新', exact: true })).toBeEnabled();
   await panel.getByText('版本详情与诊断', { exact: true }).click();
   await expect(page.getByLabel('诊断信息', { exact: true })).toHaveValue(/原因代码：network/);
@@ -120,6 +121,60 @@ test('updates show actual server versions, stages, reconnection and actionable f
     await page.screenshot({ path: info.outputPath(`updates-${width}.png`), fullPage: true });
   }
 });
+
+for (const [reason, recoveryText] of [
+  ['permission', '旧服务已重新启动并通过就绪检查。'],
+  ['recovery_failed', '旧服务恢复失败'],
+] as const) {
+  test(`backup failure reports migration and recovery in the alert and clipboard (${reason})`, async ({
+    context,
+    page,
+  }, info) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const state: AdminUpdateStatus = {
+      ...fixture(),
+      phase: 'failed',
+      stage: 'backup',
+      failure: {
+        stage: 'migrate',
+        reason,
+        exitCode: null,
+        occurredAt: '2026-11-22T00:00:00.000Z',
+      },
+    };
+    await page.route('**/api/**', async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/api/v1/auth/me' || path === '/api/v1/admin/updates') {
+        const data = path === '/api/v1/auth/me' ? sessionFixture({ role: 'administrator' }) : state;
+        await route.fulfill({ json: { ok: true, data, traceId: 'ui-test' } });
+      } else {
+        await route.abort();
+      }
+    });
+
+    await page.goto('/admin/updates');
+    const panel = page.getByRole('region', { name: '服务更新', exact: true });
+    const alert = panel.getByRole('alert');
+    const migrationText = '本次未执行数据库迁移或游戏同步。';
+    await expect(alert).toContainText('失败步骤：自动备份并校验');
+    await expect(alert).toContainText(migrationText);
+    await expect(alert).toContainText(recoveryText);
+    await panel.getByText('版本详情与诊断', { exact: true }).click();
+    await panel.getByRole('button', { name: '复制诊断信息', exact: true }).click();
+    await expect(panel.getByText('诊断已复制', { exact: true })).toBeVisible();
+    const diagnostic = await page.evaluate(() => navigator.clipboard.readText());
+    expect(diagnostic.replaceAll('\r\n', '\n')).toBe(
+      await panel.getByLabel('诊断信息', { exact: true }).inputValue(),
+    );
+    expect(diagnostic).toContain(`原因代码：${reason}`);
+    expect(diagnostic).toContain(migrationText);
+    expect(diagnostic).toContain(recoveryText);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath('backup-failure.png'), fullPage: true });
+  });
+}
 
 test('lost command replies retain request identity even after successful polling', async ({
   page,
