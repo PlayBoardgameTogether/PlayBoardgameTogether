@@ -1,88 +1,108 @@
-/* Comprehensive Platform Pixel Theme.
+/* Comprehensive Platform C3 Theme (Warm Porcelain x Soft Jewel Tactile).
    Covers platform shell, navigation, lobby, room waiting, social/chat,
    profile, coins, badges, admin, auth and developer guides.
    Strictly isolated: does not alter game boards, tables, or canvases. */
 @layer theme {
   .desktop-shell--pixel,
   .desktop-shell--pixel-lobby {
-    --bg: #f6efdc;
-    --panel: #fffbed;
-    --panel-raised: #eee4c9;
-    --panel-hover: #e7dbb8;
-    --text: #3f3229;
-    --text-secondary: #655342;
-    --muted: #75624d;
-    --line: #d7c8a8;
-    --line-strong: #514030;
-    --control-line: #8b765b;
-    --accent: #f4c45e;
-    --accent-hover: #f8d17d;
-    --accent-active: #e1ad40;
-    --accent-soft: #f8e6b5;
-    --accent-text: #3f3229;
-    --accent-gradient: #f4c45e;
-    --link: #365e3c;
-    --success: #365e3c;
-    --success-soft: #e0ead1;
-    --warning: #76551b;
-    --danger: #a0342a;
-    --danger-soft: #fbe4d9;
-    --neutral-rgb: 63 50 41;
-    --surface-rgb: 255 251 237;
-    --radius-sm: 0px;
-    --radius: 0px;
-    --radius-lg: 0px;
-    --radius-pill: 0px;
-    --shadow-card: 4px 4px 0 var(--line);
-    --shadow-sm: 2px 2px 0 var(--line);
+    --bg: #f7f6f2;
+    --panel: #ffffff;
+    --panel-raised: #f1efe9;
+    --panel-hover: #eae6dd;
+    --text: #1c1917;
+    --text-secondary: #44403c;
+    --muted: #78716c;
+    --line: rgba(28, 25, 23, 0.09);
+    --line-strong: rgba(28, 25, 23, 0.16);
+    --control-line: #d6d3cd;
+    --control-shadow: #e7e5e4;
+    --accent: #059669;
+    --accent-hover: #10b981;
+    --accent-active: #047857;
+    --accent-shadow: #047857;
+    --accent-soft: #ecfdf5;
+    --accent-text: #ffffff;
+    --accent-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --nav-active-bg: #fff7ed;
+    --nav-active-border: #fed7aa;
+    --nav-active-text: #c2410c;
+    --link: #047857;
+    --success: #059669;
+    --success-soft: #ecfdf5;
+    --warning: #b45309;
+    --warning-soft: #fef3c7;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --neutral-rgb: 28 25 23;
+    --surface-rgb: 255 255 255;
+    --radius-sm: 12px;
+    --radius: 18px;
+    --radius-lg: 24px;
+    --radius-pill: 9999px;
+    --shadow-card: 0 2px 10px rgba(28, 25, 23, 0.04), 0 3px 0 rgba(28, 25, 23, 0.05);
+    --shadow-sm: 0 2px 0 rgba(28, 25, 23, 0.06);
     color: var(--text);
     background: var(--bg);
-    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    font-family:
+      'PingFang SC',
+      'Microsoft YaHei',
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
   :root[data-theme='dark'] .desktop-shell--pixel,
   :root[data-theme='dark'] .desktop-shell--pixel-lobby {
-    --bg: #242720;
-    --panel: #303329;
-    --panel-raised: #3b3e31;
-    --panel-hover: #474a3a;
-    --text: #fff2d3;
-    --text-secondary: #e0d5b7;
-    --muted: #bfb496;
-    --line: #545846;
-    --line-strong: #b8ac8c;
-    --control-line: #a1977d;
-    --accent: #f4c45e;
-    --accent-hover: #f8d17d;
-    --accent-active: #e1ad40;
-    --accent-soft: #51462a;
-    --accent-text: #3f3229;
-    --link: #b8d49a;
-    --success: #b8d49a;
-    --success-soft: #384a32;
-    --warning: #f4c45e;
-    --danger: #ffb3a0;
-    --danger-soft: #51352e;
-    --neutral-rgb: 255 242 211;
-    --surface-rgb: 48 51 41;
-    --shadow-card: 4px 4px 0 var(--line);
-    --shadow-sm: 2px 2px 0 var(--line);
+    --bg: #151412;
+    --panel: #1f1e1b;
+    --panel-raised: #292723;
+    --panel-hover: #33302b;
+    --text: #f5f5f4;
+    --text-secondary: #d6d3d1;
+    --muted: #a8a29e;
+    --line: rgba(245, 245, 244, 0.09);
+    --line-strong: rgba(245, 245, 244, 0.16);
+    --control-line: #44403c;
+    --control-shadow: #0c0a09;
+    --accent: #10b981;
+    --accent-hover: #34d399;
+    --accent-active: #059669;
+    --accent-shadow: #065f46;
+    --accent-soft: rgba(16, 185, 129, 0.16);
+    --accent-text: #042f2e;
+    --accent-gradient: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    --nav-active-bg: rgba(234, 88, 12, 0.18);
+    --nav-active-border: rgba(251, 146, 60, 0.45);
+    --nav-active-text: #fdba74;
+    --link: #34d399;
+    --success: #34d399;
+    --success-soft: rgba(52, 211, 153, 0.16);
+    --warning: #fbbf24;
+    --warning-soft: rgba(251, 191, 36, 0.16);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.16);
+    --neutral-rgb: 245 245 244;
+    --surface-rgb: 31 30 27;
+    --shadow-card: 0 4px 18px rgba(0, 0, 0, 0.35), 0 3px 0 rgba(0, 0, 0, 0.45);
+    --shadow-sm: 0 2px 0 rgba(0, 0, 0, 0.4);
   }
 
   /* --------------------------------------------------------------------------
-     1. Shell, Header, Brand & Navigation
+     1. Shell, Header, Brand & Navigation (C3 Porcelain Sidebar + Colorful Icons)
      -------------------------------------------------------------------------- */
   .desktop-shell--pixel .workspace,
   .desktop-shell--pixel-lobby .workspace {
     background-color: var(--bg);
-    background-image: radial-gradient(var(--line) 0.8px, transparent 0.8px);
-    background-size: 14px 14px;
+    background-image:
+      radial-gradient(circle at 18% 0%, rgba(16, 185, 129, 0.055) 0%, transparent 42%),
+      radial-gradient(circle at 86% 12%, rgba(234, 88, 12, 0.045) 0%, transparent 38%);
+    background-size: auto;
   }
 
   .desktop-shell--pixel .site-header,
   .desktop-shell--pixel-lobby .site-header {
-    background: var(--panel);
-    border-right: 2px solid var(--line-strong);
+    background: var(--bg);
+    border-right: 1px solid var(--line);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -94,37 +114,39 @@
 
   .desktop-shell--pixel .brand,
   .desktop-shell--pixel-lobby .brand {
-    padding: 12px 6px 28px;
+    padding: 14px 8px 24px;
+    gap: 10px;
   }
 
   .desktop-shell--pixel .brand .brand-name,
   .desktop-shell--pixel-lobby .brand .brand-name {
-    font-family: 'Courier New', monospace;
-    font-size: 20px;
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    font-size: 19px;
     font-weight: 900;
-    letter-spacing: -1px;
+    letter-spacing: -0.02em;
   }
 
   .desktop-shell--pixel .brand-name > span,
   .desktop-shell--pixel-lobby .brand-name > span {
-    margin-top: 8px;
+    margin-top: 5px;
     color: var(--muted);
-    font-family: 'Microsoft YaHei', sans-serif;
-    font-size: 10px;
-    letter-spacing: 2px;
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
   }
 
   .desktop-shell--pixel .pixel-wordmark,
   .desktop-shell--pixel-lobby .pixel-wordmark {
     display: block;
-    width: 132px;
+    width: 126px;
     height: auto;
-    image-rendering: pixelated;
+    image-rendering: auto;
   }
 
   :root[data-theme='dark'] .desktop-shell--pixel .pixel-wordmark,
   :root[data-theme='dark'] .desktop-shell--pixel-lobby .pixel-wordmark {
-    filter: brightness(0) saturate(100%) invert(93%) sepia(12%) saturate(614%) hue-rotate(338deg);
+    filter: brightness(0) saturate(100%) invert(96%) sepia(6%) saturate(200%) hue-rotate(330deg);
   }
 
   .desktop-shell--pixel .brand-symbol,
@@ -134,32 +156,34 @@
 
   .desktop-shell--pixel .brand-symbol.pixel-symbol,
   .desktop-shell--pixel-lobby .brand-symbol.pixel-symbol {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
+    padding: 4px;
     flex-shrink: 0;
-    image-rendering: pixelated;
+    image-rendering: auto;
     object-fit: contain;
-    border-radius: 0;
-    background: transparent;
+    border-radius: 10px;
+    background: #ea580c;
+    box-shadow: 0 3px 0 #c2410c;
   }
 
   .desktop-shell--pixel .brand-symbol rect,
   .desktop-shell--pixel-lobby .brand-symbol rect {
-    rx: 0;
-    fill: var(--accent);
-    stroke: var(--line-strong);
-    stroke-width: 2px;
+    rx: 8px;
+    fill: #ea580c;
+    stroke: #c2410c;
+    stroke-width: 1.5px;
   }
 
   .desktop-shell--pixel .brand-symbol path,
   .desktop-shell--pixel-lobby .brand-symbol path {
-    fill: var(--accent-text);
+    fill: #ffffff;
   }
 
   .desktop-shell--pixel .platform-navigation,
   .desktop-shell--pixel-lobby .platform-navigation {
-    margin-top: 12px;
-    gap: 10px;
+    margin-top: 8px;
+    gap: 8px;
   }
 
   .desktop-shell--pixel .site-header .platform-navigation > a,
@@ -167,11 +191,16 @@
   .desktop-shell--pixel-lobby .site-header .platform-navigation > a,
   .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary {
     min-height: 46px;
-    border: 2px solid transparent;
-    border-radius: 0;
+    padding: 8px 12px;
+    border: 1.5px solid transparent;
+    border-radius: 14px;
     color: var(--text-secondary);
     font-weight: 700;
-    transition: none;
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease,
+      transform 120ms ease;
   }
 
   .desktop-shell--pixel.desktop-shell .site-header .platform-navigation > a[aria-current='page'],
@@ -179,10 +208,10 @@
     .site-header
     .platform-navigation
     > a[aria-current='page'] {
-    color: var(--accent-text);
-    background: var(--accent);
-    border-color: var(--line-strong);
-    box-shadow: 3px 3px 0 var(--line-strong);
+    color: var(--nav-active-text);
+    background: var(--nav-active-bg);
+    border-color: var(--nav-active-border);
+    box-shadow: 0 2px 0 rgba(234, 88, 12, 0.12);
   }
 
   .desktop-shell--pixel .site-header .platform-navigation > a:hover,
@@ -194,11 +223,44 @@
     transform: none;
   }
 
+  /* C3 Colorful Icon Badges on Desktop Sidebar */
   .desktop-shell--pixel .platform-navigation svg,
   .desktop-shell--pixel-lobby .platform-navigation svg {
-    stroke-linecap: square;
-    stroke-linejoin: miter;
-    image-rendering: pixelated;
+    width: 28px;
+    height: 28px;
+    padding: 5px;
+    border-radius: 9px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    image-rendering: auto;
+    color: #ffffff;
+    background: #78716c;
+    flex-shrink: 0;
+  }
+
+  .desktop-shell--pixel .platform-navigation > a[href='/'] svg,
+  .desktop-shell--pixel-lobby .platform-navigation > a[href='/'] svg {
+    background: #ea580c;
+  }
+
+  .desktop-shell--pixel .platform-navigation > a[href='/friends'] svg,
+  .desktop-shell--pixel-lobby .platform-navigation > a[href='/friends'] svg {
+    background: #10b981;
+  }
+
+  .desktop-shell--pixel .platform-navigation > a[href='/chat'] svg,
+  .desktop-shell--pixel-lobby .platform-navigation > a[href='/chat'] svg {
+    background: #0ea5e9;
+  }
+
+  .desktop-shell--pixel .platform-navigation > a[href='/profile'] svg,
+  .desktop-shell--pixel-lobby .platform-navigation > a[href='/profile'] svg {
+    background: #8b5cf6;
+  }
+
+  .desktop-shell--pixel .platform-navigation .nav-tools > summary svg,
+  .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary svg {
+    background: #f59e0b;
   }
 
   .desktop-shell--pixel .nav-tools > div,
@@ -207,43 +269,56 @@
   .desktop-shell--pixel-lobby .nav-tools > div,
   .desktop-shell--pixel-lobby .shell-help a,
   .desktop-shell--pixel-lobby.desktop-shell .chat-dock {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius);
     background: var(--panel);
-    box-shadow: 4px 4px 0 var(--line);
+    box-shadow:
+      0 10px 30px rgba(28, 25, 23, 0.1),
+      0 3px 0 var(--control-shadow);
+  }
+
+  .desktop-shell--pixel .sidebar-note,
+  .desktop-shell--pixel-lobby .sidebar-note {
+    border-radius: 16px;
+    background: var(--panel);
+    border: 1.5px solid var(--line);
+    padding: 12px 14px;
+    box-shadow: 0 2px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel .workspace-toolbar,
   .desktop-shell--pixel-lobby .workspace-toolbar {
-    background: var(--panel);
-    border-bottom: 2px solid var(--line);
+    background: rgb(var(--surface-rgb) / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
     color: var(--muted);
   }
 
   .desktop-shell--pixel footer,
   .desktop-shell--pixel-lobby footer {
-    border-top: 2px solid var(--line);
+    border-top: 1px solid var(--line);
     color: var(--muted);
-    font-family: 'Courier New', 'Microsoft YaHei', monospace;
-    background: var(--panel);
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    background: transparent;
   }
 
   /* --------------------------------------------------------------------------
-     2. Global Typography & Common Primitives
+     2. Global Typography & Common Primitives (C3 Tactile 3D Buttons & Porcelain Cards)
      -------------------------------------------------------------------------- */
   .desktop-shell--pixel :is(h1, h2, h3, h4),
   .desktop-shell--pixel-lobby :is(h1, h2, h3, h4) {
     color: var(--text);
-    font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
     font-weight: 800;
-    letter-spacing: 0;
+    letter-spacing: -0.015em;
   }
 
   .desktop-shell--pixel .eyebrow,
   .desktop-shell--pixel-lobby .eyebrow {
-    font-size: 10px;
-    letter-spacing: 2px;
-    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    font-weight: 700;
   }
 
   .desktop-shell--pixel
@@ -251,9 +326,9 @@
   .desktop-shell--pixel-lobby
     :is(.panel, .card, .auth-card, .not-found-card, .page-feedback, .error-notice) {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
   }
 
   /* Standard Buttons */
@@ -261,14 +336,18 @@
     :is(button:not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person), .button-link),
   .desktop-shell--pixel-lobby
     :is(button:not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person), .button-link) {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    font-weight: 700;
-    transition: none;
+    border: 1.5px solid transparent;
+    border-radius: 14px;
+    font-weight: 800;
+    transition:
+      transform 80ms ease,
+      box-shadow 80ms ease,
+      background-color 140ms ease,
+      border-color 140ms ease;
     cursor: pointer;
   }
 
-  /* Primary Button */
+  /* Primary Button — C3 Signature 3D Tactile Push */
   .desktop-shell--pixel
     :is(
       button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
@@ -280,10 +359,11 @@
       .button-link:not(.secondary)
     ) {
     min-height: 44px;
-    padding: 9px 18px;
+    padding: 9px 20px;
     background: var(--accent);
     color: var(--accent-text);
-    box-shadow: 3px 3px 0 var(--line-strong);
+    border-color: var(--accent-shadow);
+    box-shadow: 0 4px 0 var(--accent-shadow);
   }
 
   .desktop-shell--pixel
@@ -311,19 +391,20 @@
       button:not(.secondary):not(.has-artwork):not(.badge-pin-preview):not(.public-chat-person),
       .button-link:not(.secondary)
     ):active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--line-strong);
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--accent-shadow);
   }
 
-  /* Secondary Button */
+  /* Secondary Button — C3 Warm Porcelain Tactile */
   .desktop-shell--pixel :is(button.secondary:not(.public-chat-person), .button-link.secondary),
   .desktop-shell--pixel-lobby
     :is(button.secondary:not(.public-chat-person), .button-link.secondary) {
     min-height: 44px;
-    padding: 8px 16px;
+    padding: 8px 18px;
     background: var(--panel);
     color: var(--text);
-    box-shadow: 3px 3px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    box-shadow: 0 3px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel
@@ -338,8 +419,8 @@
     :is(button.secondary:not(.public-chat-person), .button-link.secondary):active,
   .desktop-shell--pixel-lobby
     :is(button.secondary:not(.public-chat-person), .button-link.secondary):active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--line);
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--control-shadow);
   }
 
   /* Public Chat Person Avatar Button Reset */
@@ -357,12 +438,15 @@
   .desktop-shell--pixel :is(select, textarea, input:not([type='checkbox']):not([type='radio'])),
   .desktop-shell--pixel-lobby
     :is(select, textarea, input:not([type='checkbox']):not([type='radio'])) {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 2px 2px 0 var(--line);
+    border: 1.5px solid var(--control-line);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 2px rgba(28, 25, 23, 0.04);
     color: var(--text);
     min-height: 44px;
-    padding: 8px 12px;
+    padding: 8px 14px;
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease;
   }
 
   :root[data-theme='light']
@@ -385,44 +469,30 @@
 
   .desktop-shell--pixel :is(a, button, summary, input, select):focus-visible,
   .desktop-shell--pixel-lobby :is(a, button, summary, input, select):focus-visible {
-    outline: 3px solid var(--success);
-    outline-offset: 3px;
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
   }
 
   /* Tags, Badges & Pills */
   .desktop-shell--pixel :is(.tag, .status, .unread-count, .status-indicator),
   .desktop-shell--pixel-lobby :is(.tag, .status, .unread-count, .status-indicator) {
-    border-radius: 0;
+    border-radius: 9999px;
   }
 
   .desktop-shell--pixel .status-indicator,
   .desktop-shell--pixel-lobby .status-indicator {
     width: 8px;
     height: 8px;
-    border-radius: 0;
+    border-radius: 9999px;
   }
 
   /* --------------------------------------------------------------------------
-     3. Lobby Specific Layout (Retained and Enhanced)
+     3. Lobby Specific Layout (C3 Soft Jewel Stage + Tactile Game Grid)
      -------------------------------------------------------------------------- */
   .desktop-shell--pixel main,
   .desktop-shell--pixel-lobby main {
-    width: min(1200px, calc(100% - 80px));
-    padding-top: 32px;
-  }
-
-  .desktop-shell--pixel-lobby .lobby-heading {
-    margin-bottom: 28px;
-  }
-
-  .desktop-shell--pixel-lobby .lobby-heading h1 {
-    margin-block: 8px;
-    font-size: 30px;
-  }
-
-  .desktop-shell--pixel-lobby .lobby-heading-copy > p:last-child {
-    color: var(--muted);
-    font-size: 13px;
+    width: min(1200px, calc(100% - 72px));
+    padding-top: 28px;
   }
 
   .desktop-shell--pixel-lobby .lobby-heading {
@@ -431,7 +501,18 @@
     justify-content: space-between;
     align-items: flex-end;
     gap: 16px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading h1 {
+    margin-block: 6px;
+    font-size: 30px;
+    font-weight: 900;
+  }
+
+  .desktop-shell--pixel-lobby .lobby-heading-copy > p:last-child {
+    color: var(--muted);
+    font-size: 13px;
   }
 
   .desktop-shell--pixel-lobby .lobby-heading .lobby-invite {
@@ -449,21 +530,21 @@
     align-items: center;
     gap: 8px;
     padding: 9px 18px;
-    min-height: 40px;
-    background: var(--panel-raised, #fff8ec);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
+    min-height: 42px;
+    background: var(--panel);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 14px;
+    box-shadow: 0 3px 0 var(--control-shadow);
     color: var(--text);
-    font-weight: 700;
+    font-weight: 800;
     font-size: 13px;
     cursor: pointer;
     list-style: none;
     user-select: none;
     transition:
-      transform 120ms ease,
-      box-shadow 120ms ease,
-      background-color 120ms ease;
+      transform 80ms ease,
+      box-shadow 80ms ease,
+      background-color 140ms ease;
   }
 
   .desktop-shell--pixel-lobby .lobby-heading .lobby-invite > summary::-webkit-details-marker {
@@ -471,18 +552,19 @@
   }
 
   .desktop-shell--pixel-lobby .lobby-heading .lobby-invite > summary:hover {
-    background: var(--accent-soft, #f7dfa4);
+    background: var(--panel-raised);
   }
 
   .desktop-shell--pixel-lobby .lobby-heading .lobby-invite > summary:active {
-    transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 var(--line);
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel-lobby .lobby-heading .lobby-invite[open] > summary {
-    background: var(--accent, #e5a93c);
-    color: var(--accent-text, #2c1a0e);
-    box-shadow: 2px 2px 0 var(--line-strong);
+    background: var(--text);
+    color: var(--panel);
+    border-color: var(--text);
+    box-shadow: 0 2px 0 rgba(28, 25, 23, 0.3);
   }
 
   .desktop-shell--pixel-lobby .lobby-heading .lobby-invite-body {
@@ -492,9 +574,11 @@
     width: 340px;
     max-width: min(340px, 92vw);
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 6px 6px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    box-shadow:
+      0 16px 40px rgba(28, 25, 23, 0.14),
+      0 4px 0 var(--control-shadow);
     padding: 18px 20px 20px;
     z-index: 100;
   }
@@ -504,8 +588,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed var(--line);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
   }
 
   .desktop-shell--pixel-lobby .lobby-invite-popover-title {
@@ -522,21 +606,116 @@
     padding: 0 4px;
     cursor: pointer;
     color: var(--muted);
+    box-shadow: none;
+    min-height: auto;
   }
 
   .desktop-shell--pixel-lobby .lobby-invite-popover-close:hover {
     color: var(--text);
+    background: transparent;
   }
 
+  /* C3 Soft Jewel Spotlight Stage */
   .desktop-shell--pixel-lobby .discovery-spotlight {
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: 24px;
-    padding: 32px 32px 24px;
-    margin-bottom: 40px;
-    background: var(--panel);
-    border: 3px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 6px 6px 0 var(--line);
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(16, 185, 129, 0.22), transparent 52%),
+      linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    --stage-cta: #059669;
+    --stage-cta-hover: #10b981;
+    --stage-cta-shadow: #047857;
+    --stage-dot: #10b981;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 28px;
+    padding: 30px 32px;
+    margin-bottom: 34px;
+    background: var(--stage-bg);
+    border: 1.5px solid rgba(28, 25, 23, 0.08);
+    border-radius: 26px;
+    box-shadow:
+      0 8px 28px rgba(28, 25, 23, 0.06),
+      0 4px 0 rgba(28, 25, 23, 0.05);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight[data-stage-tone='cobalt'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(37, 99, 235, 0.2), transparent 52%),
+      linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    --stage-cta: #2563eb;
+    --stage-cta-hover: #3b82f6;
+    --stage-cta-shadow: #1d4ed8;
+    --stage-dot: #2563eb;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight[data-stage-tone='amber'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(245, 158, 11, 0.24), transparent 52%),
+      linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    --stage-cta: #d97706;
+    --stage-cta-hover: #f59e0b;
+    --stage-cta-shadow: #b45309;
+    --stage-dot: #d97706;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight[data-stage-tone='rose'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(225, 29, 72, 0.18), transparent 52%),
+      linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+    --stage-cta: #e11d48;
+    --stage-cta-hover: #f43f5e;
+    --stage-cta-shadow: #be123c;
+    --stage-dot: #e11d48;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight[data-stage-tone='violet'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(124, 58, 237, 0.18), transparent 52%),
+      linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    --stage-cta: #7c3aed;
+    --stage-cta-hover: #8b5cf6;
+    --stage-cta-shadow: #6d28d9;
+    --stage-dot: #7c3aed;
+  }
+
+  :root[data-theme='dark'] .desktop-shell--pixel-lobby .discovery-spotlight {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(16, 185, 129, 0.22), transparent 55%),
+      linear-gradient(135deg, #162621 0%, #1c2420 100%);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.42),
+      0 4px 0 rgba(0, 0, 0, 0.5);
+  }
+
+  :root[data-theme='dark']
+    .desktop-shell--pixel-lobby
+    .discovery-spotlight[data-stage-tone='cobalt'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(59, 130, 246, 0.24), transparent 55%),
+      linear-gradient(135deg, #162033 0%, #1b2230 100%);
+  }
+
+  :root[data-theme='dark']
+    .desktop-shell--pixel-lobby
+    .discovery-spotlight[data-stage-tone='amber'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(245, 158, 11, 0.22), transparent 55%),
+      linear-gradient(135deg, #2b2113 0%, #241f19 100%);
+  }
+
+  :root[data-theme='dark']
+    .desktop-shell--pixel-lobby
+    .discovery-spotlight[data-stage-tone='rose'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(244, 63, 94, 0.22), transparent 55%),
+      linear-gradient(135deg, #2c171d 0%, #241a1d 100%);
+  }
+
+  :root[data-theme='dark']
+    .desktop-shell--pixel-lobby
+    .discovery-spotlight[data-stage-tone='violet'] {
+    --stage-bg:
+      radial-gradient(circle at 82% 28%, rgba(139, 92, 246, 0.24), transparent 55%),
+      linear-gradient(135deg, #211a33 0%, #1e1c29 100%);
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-copy .eyebrow {
@@ -544,43 +723,131 @@
     align-items: center;
     gap: 8px;
     margin: 0;
-    color: var(--success);
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: rgb(var(--surface-rgb) / 0.85);
+    border: 1px solid var(--line);
+    color: var(--text-secondary);
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-copy .eyebrow::before {
     content: '';
     width: 8px;
     height: 8px;
-    background: var(--success);
-    box-shadow: 3px 3px 0 var(--success-soft);
+    border-radius: 9999px;
+    background: var(--stage-dot);
+    box-shadow: 0 0 0 3px rgb(var(--surface-rgb) / 0.9);
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 {
-    margin: 18px 0;
-    font-size: clamp(36px, 4vw, 58px);
+    margin: 14px 0 12px;
+    font-size: clamp(30px, 3.4vw, 44px);
     font-weight: 900;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-    text-shadow: 3px 3px 0 var(--panel-raised);
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+    text-shadow: none;
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-copy > p:not(.eyebrow) {
     font-size: 14px;
-    line-height: 1.8;
+    line-height: 1.7;
+    color: var(--text-secondary);
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-copy > small {
-    font-size: 11px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions {
+    margin-top: 18px;
+    gap: 10px;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions .button-link {
+    background: var(--stage-cta);
+    color: #ffffff;
+    border-color: var(--stage-cta-shadow);
+    box-shadow: 0 4px 0 var(--stage-cta-shadow);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions .button-link:hover {
+    background: var(--stage-cta-hover);
+    color: #ffffff;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions > a:not(.button-link) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 18px;
+    border-radius: 14px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1.5px solid var(--line-strong);
+    box-shadow: 0 3px 0 var(--control-shadow);
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+      transform 80ms ease,
+      box-shadow 80ms ease,
+      background-color 140ms ease;
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions > a:not(.button-link):hover {
+    background: var(--panel-raised);
+  }
+
+  .desktop-shell--pixel-lobby .discovery-spotlight-actions > a:not(.button-link):active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--control-shadow);
+  }
+
+  /* Quick Game Switcher Strip Inside Spotlight */
+  .desktop-shell--pixel-lobby .c3-stage-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .desktop-shell--pixel-lobby .c3-stage-pill {
+    min-height: 32px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    border: 1.5px solid var(--line-strong);
+    background: rgb(var(--surface-rgb) / 0.72);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: none;
+  }
+
+  .desktop-shell--pixel-lobby .c3-stage-pill:hover {
+    background: var(--panel);
+    color: var(--text);
+  }
+
+  .desktop-shell--pixel-lobby .c3-stage-pill[aria-pressed='true'] {
+    background: var(--text);
+    color: var(--panel);
+    border-color: var(--text);
+    box-shadow: 0 2px 0 rgba(28, 25, 23, 0.2);
   }
 
   .desktop-shell--pixel-lobby .discovery-spotlight-art {
     align-self: center;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
+    padding: 14px;
+    background: rgb(var(--surface-rgb) / 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgb(var(--surface-rgb) / 0.95);
+    border-radius: 22px;
+    box-shadow: 0 10px 28px rgba(28, 25, 23, 0.08);
     transform: none;
   }
 
@@ -588,34 +855,39 @@
     display: block;
     width: 100%;
     height: auto;
-    max-height: 268px;
+    max-height: 248px;
     object-fit: contain;
-    background: #eef1d9;
-    image-rendering: pixelated;
-    border: 2px solid var(--line-strong);
+    background: var(--panel-raised);
+    image-rendering: auto;
+    border: 1px solid var(--line);
+    border-radius: 14px;
   }
 
   .desktop-shell--pixel-lobby .discovery-art-caption {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr);
     align-items: center;
     justify-content: start;
     column-gap: 12px;
     row-gap: 2px;
-    padding: 14px 0 0;
+    padding: 12px 4px 2px;
   }
 
   .desktop-shell--pixel-lobby .discovery-art-caption strong {
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 800;
   }
 
   .desktop-shell--pixel-lobby .discovery-art-caption > span:last-child {
-    font-size: 11px;
+    font-size: 12px;
+    color: var(--muted);
   }
 
   .desktop-shell--pixel-lobby .pixel-featured-cover {
     grid-row: span 2;
-    border: 2px solid var(--line-strong);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 12px;
+    overflow: hidden;
   }
 
   .desktop-shell--pixel-lobby .pixel-featured-cover .game-cover {
@@ -625,29 +897,31 @@
   .desktop-shell--pixel-lobby .catalog-section-heading h2 {
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 21px;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: 900;
   }
 
   .desktop-shell--pixel-lobby .catalog-section-heading h2::before {
     content: '';
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
     background: var(--accent);
-    border: 2px solid var(--line-strong);
-    box-shadow: 3px 3px 0 var(--line);
+    border: none;
+    box-shadow: 0 0 0 4px var(--accent-soft);
   }
 
   .desktop-shell--pixel-lobby .catalog-discovery {
-    margin-bottom: 24px;
+    margin-bottom: 22px;
   }
 
   .desktop-shell--pixel-lobby .catalog-search {
     min-height: 46px;
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 14px;
     background: var(--panel);
-    box-shadow: 3px 3px 0 var(--line);
+    box-shadow: 0 2px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel-lobby .catalog-search input {
@@ -655,7 +929,7 @@
     border: 0;
     box-shadow: none;
     color: var(--text);
-    padding-left: 46px !important;
+    padding-left: 44px !important;
     padding-right: 16px !important;
   }
 
@@ -665,6 +939,7 @@
     top: 50%;
     transform: translateY(-50%);
     pointer-events: none;
+    color: var(--muted);
   }
 
   .desktop-shell--pixel .model-search-box input,
@@ -706,9 +981,9 @@
     min-height: 44px;
     padding: 8px 16px;
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 14px;
+    box-shadow: 0 3px 0 var(--control-shadow);
     color: var(--text);
     font-weight: 700;
     font-size: 13px;
@@ -716,9 +991,9 @@
     list-style: none;
     user-select: none;
     transition:
-      transform 120ms ease,
-      box-shadow 120ms ease,
-      background-color 120ms ease;
+      transform 80ms ease,
+      box-shadow 80ms ease,
+      background-color 140ms ease;
   }
 
   .desktop-shell--pixel .model-more > summary::-webkit-details-marker {
@@ -736,25 +1011,26 @@
   }
 
   .desktop-shell--pixel .model-more > summary:active {
-    transform: translate(1px, 1px);
-    box-shadow: 2px 2px 0 var(--line);
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel .model-more[open] > summary {
-    background: var(--accent, #e5a93c);
-    color: var(--accent-text, #2c1a0e);
-    box-shadow: 2px 2px 0 var(--line-strong);
+    background: var(--text);
+    color: var(--panel);
+    border-color: var(--text);
+    box-shadow: 0 2px 0 rgba(28, 25, 23, 0.25);
   }
 
   .desktop-shell--pixel .model-more .model-more-actions {
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    min-width: 140px;
+    min-width: 150px;
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(28, 25, 23, 0.14);
     padding: 6px;
     display: flex;
     flex-direction: column;
@@ -770,8 +1046,8 @@
     font-weight: 700;
     text-align: left;
     justify-content: flex-start;
-    border: 2px solid transparent;
-    border-radius: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
     box-shadow: none;
     background: transparent;
     color: var(--text);
@@ -785,66 +1061,77 @@
   }
 
   .desktop-shell--pixel .model-more .model-more-actions button.danger {
-    color: var(--danger, #ef4444);
+    color: var(--danger);
   }
 
   .desktop-shell--pixel .model-more .model-more-actions button.danger:hover:not(:disabled) {
-    background: var(--danger-soft, #fee2e2);
-    border-color: var(--danger, #ef4444);
-    color: var(--danger, #b91c1c);
+    background: var(--danger-soft);
+    border-color: var(--danger);
+    color: var(--danger);
   }
 
   .desktop-shell--pixel-lobby .catalog-filters button {
-    min-height: 44px;
-    padding: 8px 14px;
+    min-height: 40px;
+    padding: 7px 15px;
     background: var(--panel);
     color: var(--text-secondary);
-    border: 2px solid var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 9999px;
     font-size: 12px;
     font-weight: 700;
-    box-shadow: none;
+    box-shadow: 0 2px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel-lobby .catalog-filters button[aria-pressed='true'] {
-    background: var(--success-soft);
-    color: var(--success);
-    border-color: var(--success);
-    box-shadow: 2px 2px 0 var(--line);
+    background: var(--text);
+    color: var(--panel);
+    border-color: var(--text);
+    box-shadow: 0 2px 0 rgba(28, 25, 23, 0.25);
   }
 
   .desktop-shell--pixel-lobby .game-catalog-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
+    gap: 20px;
   }
 
   .desktop-shell--pixel-lobby .discovery-catalog .game-card {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
-    transition: none;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 140ms ease,
+      border-color 140ms ease,
+      box-shadow 140ms ease;
   }
 
   .desktop-shell--pixel-lobby .discovery-catalog .game-card:hover {
-    border-color: var(--success);
-    box-shadow: 4px 4px 0 var(--success);
-    transform: none;
+    border-color: var(--accent);
+    box-shadow:
+      0 10px 26px rgba(28, 25, 23, 0.08),
+      0 4px 0 var(--accent-soft);
+    transform: translateY(-2px);
   }
 
   .desktop-shell--pixel-lobby .discovery-catalog .game-card .game-cover {
-    aspect-ratio: 1;
+    aspect-ratio: 16 / 11;
     border-radius: 0;
-    border-bottom: 2px solid var(--line-strong);
+    border-bottom: 1px solid var(--line);
   }
 
   .desktop-shell--pixel-lobby .discovery-practice-tag {
-    inset: 10px auto auto 10px;
-    padding: 3px 7px;
-    background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 2px 2px 0 var(--line-strong);
-    font-size: 10px;
+    inset: 12px auto auto 12px;
+    padding: 4px 10px;
+    background: rgb(var(--surface-rgb) / 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--line-strong);
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(28, 25, 23, 0.08);
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--success);
   }
 
   .desktop-shell--pixel-lobby .game-card-icon {
@@ -860,34 +1147,37 @@
   }
 
   .desktop-shell--pixel-lobby .game-card-info {
-    padding: 16px;
+    padding: 16px 18px;
   }
 
   .desktop-shell--pixel-lobby .game-card-heading h3 {
     font-size: 16px;
+    font-weight: 800;
   }
 
   .desktop-shell--pixel-lobby .game-card-desc {
     font-size: 12px;
-    line-height: 1.8;
+    line-height: 1.65;
+    color: var(--muted);
   }
 
   .desktop-shell--pixel-lobby .game-card-footer {
     gap: 8px;
-    border-top: 1px dashed var(--line);
+    border-top: 1px solid var(--line);
     padding-top: 12px;
   }
 
   .desktop-shell--pixel-lobby .game-card-action {
     color: var(--success);
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 800;
   }
 
   .desktop-shell--pixel-lobby :is(.discovery-empty, .guest-welcome-banner, .discovery-resume) {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 22px;
+    box-shadow: var(--shadow-card);
   }
 
   /* --------------------------------------------------------------------------
@@ -900,7 +1190,7 @@
 
   .desktop-shell--pixel .room-heading {
     padding-bottom: 16px;
-    border-bottom: 2px dashed var(--line);
+    border-bottom: 1px solid var(--line);
     margin-bottom: 24px;
   }
 
@@ -911,9 +1201,9 @@
 
   .desktop-shell--pixel .room-page .seat-card {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
     padding: 18px;
     min-height: 150px;
   }
@@ -926,11 +1216,13 @@
 
   .desktop-shell--pixel .room-page .seat-card--ready {
     border-color: var(--success);
-    box-shadow: 4px 4px 0 var(--success);
+    box-shadow:
+      0 4px 16px rgba(5, 150, 105, 0.14),
+      0 3px 0 var(--accent-soft);
   }
 
   .desktop-shell--pixel .room-disclosure {
-    border-bottom: 2px solid var(--line);
+    border-bottom: 1px solid var(--line);
     padding-block: 10px;
   }
 
@@ -941,17 +1233,17 @@
 
   .desktop-shell--pixel .game-rules-card {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
     padding: 20px;
   }
 
   .desktop-shell--pixel .room-create-shell {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 6px 6px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 24px;
+    box-shadow: var(--shadow-card);
     padding: 28px 24px;
   }
 
@@ -972,60 +1264,60 @@
 
   .desktop-shell--pixel .social-nav a {
     min-height: 40px;
-    padding: 8px 14px;
+    padding: 8px 16px;
     background: var(--panel);
-    border: 2px solid var(--line);
-    border-radius: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 9999px;
     color: var(--text-secondary);
     font-weight: 700;
   }
 
   .desktop-shell--pixel .social-nav a[aria-current='page'] {
-    background: var(--accent);
-    color: var(--accent-text);
-    border-color: var(--line-strong);
-    box-shadow: 2px 2px 0 var(--line-strong);
+    background: var(--text);
+    color: var(--panel);
+    border-color: var(--text);
+    box-shadow: 0 2px 0 rgba(28, 25, 23, 0.2);
   }
 
   .desktop-shell--pixel .friend-id-card {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
     padding: 22px;
   }
 
   .desktop-shell--pixel .friend-id-card code.friend-id {
     background: var(--panel-raised);
     border: 1px solid var(--line-strong);
-    border-radius: 0;
+    border-radius: 10px;
     padding: 6px 12px;
-    font-family: 'Courier New', monospace;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
     font-weight: 800;
-    font-size: 16px;
+    font-size: 15px;
     display: inline-block;
   }
 
   .desktop-shell--pixel .friend-row,
   .desktop-shell--pixel .person-row {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 16px;
+    box-shadow: 0 2px 0 var(--control-shadow);
     padding: 14px 18px;
     margin-bottom: 12px;
   }
 
   .desktop-shell--pixel .chat-bubble {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 2px 2px 0 var(--line);
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    box-shadow: 0 1px 4px rgba(28, 25, 23, 0.05);
     padding: 10px 14px;
   }
 
   .desktop-shell--pixel .chat-bubble--mine {
     background: var(--accent-soft);
-    border-color: var(--line-strong);
+    border-color: rgba(5, 150, 105, 0.25);
   }
 
   .desktop-shell--pixel .chat-bubble--peer {
@@ -1034,16 +1326,17 @@
   }
 
   .desktop-shell--pixel .notification-list {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
     background: var(--panel);
-    box-shadow: 6px 6px 0 var(--line-strong);
+    box-shadow: 0 16px 40px rgba(28, 25, 23, 0.14);
     padding: 16px;
   }
 
   .desktop-shell--pixel .notification-row {
-    border-bottom: 1px dashed var(--line);
+    border-bottom: 1px solid var(--line);
     padding: 10px 8px;
+    border-radius: 10px;
   }
 
   .desktop-shell--pixel .notification-row:hover {
@@ -1055,23 +1348,23 @@
      -------------------------------------------------------------------------- */
   .desktop-shell--pixel .profile-card {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 5px 5px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 22px;
+    box-shadow: var(--shadow-card);
     padding: 24px;
   }
 
   .desktop-shell--pixel .profile-options summary {
-    border-radius: 0;
-    border: 2px solid var(--line-strong);
-    box-shadow: 2px 2px 0 var(--line);
+    border-radius: 12px;
+    border: 1.5px solid var(--line-strong);
+    box-shadow: 0 2px 0 var(--control-shadow);
     background: var(--panel);
   }
 
   .desktop-shell--pixel .profile-options-popover {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 18px;
+    box-shadow: 0 14px 32px rgba(28, 25, 23, 0.12);
     background: var(--panel);
     padding: 16px;
   }
@@ -1079,24 +1372,24 @@
   .desktop-shell--pixel .coin-balance-card,
   .desktop-shell--pixel .coin-action-panel {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 4px 4px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
     padding: 20px;
   }
 
   .desktop-shell--pixel .badge-preview-dialog {
-    border: 3px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 8px 8px 0 var(--line-strong);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(28, 25, 23, 0.22);
     background: var(--panel);
     padding: 24px;
   }
 
   .desktop-shell--pixel .badge-shelf {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
     background: var(--panel);
     padding: 16px;
   }
@@ -1114,8 +1407,11 @@
     max-width: 440px;
     width: 100%;
     padding: 32px 28px;
-    border: 3px solid var(--line-strong);
-    box-shadow: 6px 6px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 24px;
+    box-shadow:
+      0 12px 32px rgba(28, 25, 23, 0.08),
+      0 4px 0 var(--control-shadow);
   }
 
   .desktop-shell--pixel .auth-card h1 {
@@ -1138,70 +1434,73 @@
   }
 
   .desktop-shell--pixel .developer-sidebar {
-    border-right: 2px solid var(--line);
+    border-right: 1px solid var(--line);
   }
 
   .desktop-shell--pixel .developer-markdown pre {
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 16px;
     background: var(--panel-raised);
-    box-shadow: 3px 3px 0 var(--line);
+    box-shadow: none;
     padding: 14px;
   }
 
   .desktop-shell--pixel .developer-markdown code:not(pre code) {
     background: var(--panel-raised);
     border: 1px solid var(--line);
-    border-radius: 0;
+    border-radius: 6px;
     padding: 2px 6px;
-    font-family: 'Courier New', monospace;
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   }
 
   .desktop-shell--pixel .developer-markdown table {
-    border-collapse: collapse;
-    border: 2px solid var(--line-strong);
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 14px;
+    overflow: hidden;
     width: 100%;
     margin-block: 16px;
   }
 
   .desktop-shell--pixel .developer-markdown th,
   .desktop-shell--pixel .developer-markdown td {
-    border: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
     padding: 8px 12px;
   }
 
   @media (max-width: 760px) {
     .desktop-shell--pixel .admin-nav {
-      border-bottom: 2px solid var(--line);
+      border-bottom: 1px solid var(--line);
       gap: 8px;
     }
   }
 
   .desktop-shell--pixel .admin-nav a {
-    border: 2px solid transparent;
-    border-radius: 0;
+    border: 1.5px solid transparent;
+    border-radius: 12px;
   }
 
   .desktop-shell--pixel .admin-nav a[aria-current='page'] {
-    background: var(--accent);
-    color: var(--accent-text);
-    border-color: var(--line-strong);
-    box-shadow: 2px 2px 0 var(--line-strong);
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+    border-color: var(--nav-active-border);
+    box-shadow: 0 2px 0 rgba(234, 88, 12, 0.12);
   }
 
   .desktop-shell--pixel .admin-metric-card,
   .desktop-shell--pixel .admin-shortcut-card {
     background: var(--panel);
-    border: 2px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 3px 3px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 18px;
+    box-shadow: var(--shadow-card);
     padding: 16px;
   }
 
   .desktop-shell--pixel .package-upload-dialog {
-    border: 3px solid var(--line-strong);
-    border-radius: 0;
-    box-shadow: 8px 8px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(28, 25, 23, 0.22);
   }
 
   /* --------------------------------------------------------------------------
@@ -1212,8 +1511,9 @@
     margin-inline: auto;
     text-align: center;
     padding: 40px 24px;
-    border: 3px solid var(--line-strong);
-    box-shadow: 6px 6px 0 var(--line);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 24px;
+    box-shadow: var(--shadow-card);
   }
 
   .desktop-shell--pixel .not-found-card .empty-illustration {
@@ -1237,8 +1537,6 @@
     box-shadow: none;
     background: transparent url('/platform-art/playboard-dice-animated.gif') no-repeat center /
       contain;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
   }
 
   .desktop-shell--pixel .page-feedback-spinner::before,
@@ -1251,7 +1549,7 @@
     display: none;
   }
 
-  /* Pixel Loading Dice Component */
+  /* Loading Dice Component */
   .pixel-loading-dice {
     display: inline-flex;
     align-items: center;
@@ -1261,8 +1559,6 @@
     box-shadow: none;
     background: transparent;
     overflow: hidden;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
   }
 
   .pixel-loading-dice-img {
@@ -1270,8 +1566,6 @@
     height: 100%;
     object-fit: contain;
     display: block;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
   }
 
   /* Model Settings Loading Panel */
@@ -1293,8 +1587,6 @@
     box-shadow: none;
     background: transparent url('/platform-art/playboard-dice-animated.gif') no-repeat center /
       contain;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1346,7 +1638,7 @@
     .desktop-shell--pixel-lobby .site-header {
       padding: 14px 18px;
       border-right: 0;
-      border-bottom: 2px solid var(--line-strong);
+      border-bottom: 1px solid var(--line);
     }
 
     .desktop-shell--pixel .brand,
@@ -1365,10 +1657,20 @@
       margin: 0;
       padding-inline: 8px;
       gap: 4px;
-      background: var(--panel);
-      border-top: 2px solid var(--line-strong);
+      background: rgb(var(--surface-rgb) / 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--line);
       border-radius: 0;
-      box-shadow: none;
+      box-shadow: 0 -4px 16px rgba(28, 25, 23, 0.05);
+    }
+
+    .desktop-shell--pixel .platform-navigation svg,
+    .desktop-shell--pixel-lobby .platform-navigation svg {
+      width: 22px;
+      height: 22px;
+      padding: 3px;
+      border-radius: 7px;
     }
 
     .desktop-shell--pixel .site-header .platform-navigation > a,
@@ -1376,7 +1678,7 @@
     .desktop-shell--pixel-lobby .site-header .platform-navigation > a,
     .desktop-shell--pixel-lobby .platform-navigation .nav-tools > summary {
       border: 0;
-      font-size: 10px;
+      font-size: 11px;
     }
 
     .desktop-shell--pixel.desktop-shell .site-header .platform-navigation > a[aria-current='page'],
@@ -1384,35 +1686,30 @@
       .site-header
       .platform-navigation
       > a[aria-current='page'] {
-      color: var(--success);
-      background: var(--success-soft);
+      color: var(--nav-active-text);
+      background: var(--nav-active-bg);
       border: 0;
       box-shadow: none;
     }
 
-    .desktop-shell--pixel .site-header .platform-navigation > a[aria-current='page'] svg,
-    .desktop-shell--pixel-lobby .site-header .platform-navigation > a[aria-current='page'] svg {
-      color: var(--success);
-    }
-
     .desktop-shell--pixel main,
     .desktop-shell--pixel-lobby main {
-      width: calc(100% - 36px);
-      padding-top: 24px;
+      width: calc(100% - 32px);
+      padding-top: 20px;
     }
 
     .desktop-shell--pixel-lobby .lobby-heading {
-      gap: 16px;
-      margin-bottom: 22px;
+      gap: 14px;
+      margin-bottom: 20px;
     }
 
     .desktop-shell--pixel-lobby .lobby-heading .eyebrow {
-      font-size: 9px;
-      letter-spacing: 1px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
     }
 
     .desktop-shell--pixel-lobby .lobby-heading h1 {
-      font-size: 25px;
+      font-size: 24px;
     }
 
     .desktop-shell--pixel-lobby .lobby-heading .lobby-invite,
@@ -1422,15 +1719,15 @@
 
     .desktop-shell--pixel-lobby .discovery-spotlight {
       grid-template-columns: minmax(0, 1fr);
-      gap: 20px;
-      padding: 22px 18px 18px;
-      margin-bottom: 32px;
-      box-shadow: 4px 4px 0 var(--line);
+      gap: 18px;
+      padding: 20px 18px;
+      margin-bottom: 28px;
+      border-radius: 22px;
     }
 
     .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 {
-      margin-block: 12px;
-      font-size: 38px;
+      margin-block: 10px;
+      font-size: 28px;
     }
 
     .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 br {
@@ -1438,19 +1735,20 @@
     }
 
     .desktop-shell--pixel-lobby .discovery-spotlight-copy > p:not(.eyebrow) {
-      font-size: 12px;
+      font-size: 13px;
     }
 
     .desktop-shell--pixel-lobby .discovery-spotlight-actions {
-      margin-top: 16px;
+      margin-top: 14px;
     }
 
     .desktop-shell--pixel-lobby .discovery-spotlight-art {
       order: 0;
+      padding: 10px;
     }
 
     .desktop-shell--pixel-lobby .pixel-club-art {
-      max-height: 160px;
+      max-height: 156px;
     }
 
     .desktop-shell--pixel-lobby .discovery-art-caption {
@@ -1467,11 +1765,11 @@
 
     .desktop-shell--pixel-lobby .discovery-catalog .game-card-info {
       gap: 8px;
-      padding: 12px 10px;
+      padding: 12px;
     }
 
     .desktop-shell--pixel-lobby .game-card-heading h3 {
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .desktop-shell--pixel-lobby .game-card-players {
@@ -1479,9 +1777,9 @@
     }
 
     .desktop-shell--pixel-lobby .discovery-practice-tag {
-      inset: 6px auto auto 6px;
-      padding: 2px 5px;
-      font-size: 9px;
+      inset: 8px auto auto 8px;
+      padding: 3px 8px;
+      font-size: 10px;
     }
 
     .desktop-shell--pixel-lobby .catalog-filters {
@@ -1490,18 +1788,18 @@
 
     .desktop-shell--pixel-lobby .catalog-filters button {
       flex: 1 1 auto;
-      padding-inline: 8px;
+      padding-inline: 10px;
       font-size: 11px;
     }
 
     .desktop-shell--pixel-lobby .catalog-section-heading h2 {
-      font-size: 19px;
+      font-size: 18px;
     }
   }
 
   @media (max-width: 360px) {
     .desktop-shell--pixel-lobby .discovery-spotlight-copy h2 {
-      font-size: 31px;
+      font-size: 24px;
     }
 
     .desktop-shell--pixel-lobby .discovery-spotlight-actions > a {
@@ -1511,7 +1809,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .desktop-shell--pixel :is(button, .button-link):active,
-    .desktop-shell--pixel-lobby :is(button, .button-link):active {
+    .desktop-shell--pixel-lobby :is(button, .button-link):active,
+    .desktop-shell--pixel-lobby .discovery-catalog .game-card:hover {
       transform: none;
     }
   }

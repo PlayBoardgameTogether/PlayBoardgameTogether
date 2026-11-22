@@ -18,11 +18,23 @@ export function GameAvatar({ game }: { game: AvailableGame }) {
   );
 }
 
+const STAGE_TONES = ['emerald', 'cobalt', 'amber', 'rose', 'violet'] as const;
+
+function stageTone(gameId: string, index: number): (typeof STAGE_TONES)[number] {
+  if (gameId.includes('azul')) return 'cobalt';
+  if (gameId.includes('catan')) return 'amber';
+  if (gameId.includes('uno')) return 'rose';
+  if (gameId.includes('puerto') || gameId.includes('grid')) return 'violet';
+  if (gameId.includes('splendor') || gameId.includes('color')) return 'emerald';
+  return STAGE_TONES[index % STAGE_TONES.length]!;
+}
+
 export function GameCatalog() {
   const { games, error, retry } = useGameCatalog();
   const [search, setSearch] = useState('');
   const [players, setPlayers] = useState<'all' | 'two' | 'group'>('all');
   const [practiceOnly, setPracticeOnly] = useState(false);
+  const [spotlightKey, setSpotlightKey] = useState<string | null>(null);
   if (error)
     return (
       <PageFeedback title="游戏加载失败" retry={retry}>
@@ -30,9 +42,17 @@ export function GameCatalog() {
       </PageFeedback>
     );
   if (!games) return <PageFeedback title="正在加载游戏…" loading />;
-  const featured =
+  const defaultFeatured =
     games.find((game) => game.id === 'color-match' && clientTutorial(game.id, game.version)) ??
-    games.find((game) => clientTutorial(game.id, game.version));
+    games.find((game) => clientTutorial(game.id, game.version)) ??
+    games[0];
+  const spotlightCandidates = games.slice(0, 6);
+  const featured =
+    (spotlightKey
+      ? games.find((game) => `${game.id}@${game.version}` === spotlightKey)
+      : undefined) ?? defaultFeatured;
+  const featuredIndex = featured ? Math.max(0, games.indexOf(featured)) : 0;
+  const featuredHasTutorial = featured ? !!clientTutorial(featured.id, featured.version) : false;
   const visible = games.filter((game) => {
     const text =
       `${game.name} ${game.description} ${gameDiscovery(game)?.firstMove ?? ''}`.toLocaleLowerCase();
@@ -48,27 +68,59 @@ export function GameCatalog() {
   return (
     <section className="game-catalog discovery-catalog" aria-label="选择游戏">
       {featured && (
-        <section className="discovery-spotlight" aria-label="先试一手">
+        <section
+          className="discovery-spotlight"
+          data-stage-tone={stageTone(featured.id, featuredIndex)}
+          aria-label="先试一手"
+        >
           <div className="discovery-spotlight-copy">
-            <p className="eyebrow">免登录单人练习</p>
-            <h2>
-              好朋友，
-              <br />
-              来一桌。
-            </h2>
-            <p>{gameDiscovery(featured)?.invitation ?? `从 ${featured.name} 的第一手开始。`}</p>
+            <p className="eyebrow">
+              {featuredHasTutorial ? '免登录单人练习' : `${featured.players.min}–${featured.players.max} 人桌游`}
+            </p>
+            <h2>来一局 {featured.name}</h2>
+            <p>{gameDiscovery(featured)?.invitation ?? featured.description ?? `从 ${featured.name} 的第一手开始。`}</p>
             <div className="discovery-spotlight-actions">
-              <a className="button-link" href={`${gamePath(featured)}/tutorial`}>
-                先试一手 <span aria-hidden="true">→</span>
-              </a>
-              <a href={gamePath(featured)}>查看 {featured.name} 房间</a>
+              {featuredHasTutorial ? (
+                <>
+                  <a className="button-link" href={`${gamePath(featured)}/tutorial`}>
+                    先试一手 <span aria-hidden="true">→</span>
+                  </a>
+                  <a href={gamePath(featured)}>查看 {featured.name} 房间</a>
+                </>
+              ) : (
+                <>
+                  <a className="button-link" href={gamePath(featured)}>
+                    立即开桌 <span aria-hidden="true">→</span>
+                  </a>
+                  <a href={`${gamePath(featured)}/computer`}>对战电脑</a>
+                </>
+              )}
             </div>
-            <small>随时练手，不计入战绩</small>
+            {spotlightCandidates.length > 1 && (
+              <div className="c3-stage-switcher" role="group" aria-label="切换推荐桌游">
+                {spotlightCandidates.map((item) => {
+                  const key = `${item.id}@${item.version}`;
+                  const active = `${featured.id}@${featured.version}` === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      className="secondary c3-stage-pill"
+                      aria-pressed={active}
+                      onClick={() => setSpotlightKey(key)}
+                    >
+                      {item.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <small>{featuredHasTutorial ? '随时练手，不计入战绩' : '支持真人联机与 AI 补位'}</small>
           </div>
           <a
             className="discovery-spotlight-art"
-            href={`${gamePath(featured)}/tutorial`}
-            aria-label={`试玩 ${featured.name}`}
+            href={featuredHasTutorial ? `${gamePath(featured)}/tutorial` : gamePath(featured)}
+            aria-label={featuredHasTutorial ? `试玩 ${featured.name}` : `进入 ${featured.name}`}
           >
             <img
               className="pixel-club-art"
@@ -82,7 +134,7 @@ export function GameCatalog() {
                 <GameAvatar game={featured} />
               </div>
               <strong>{featured.name}</strong>
-              <span>从第一手开始，边玩边学</span>
+              <span>{featuredHasTutorial ? '从第一手开始，边玩边学' : `${featured.players.min}–${featured.players.max} 人 · 点击查看房间`}</span>
             </div>
           </a>
         </section>
