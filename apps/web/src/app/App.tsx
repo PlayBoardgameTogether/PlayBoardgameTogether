@@ -45,13 +45,15 @@ function AppShell({ path }: { path: string }) {
       <div className="window-marks" aria-hidden="true"><i /><i /><i /></div>
       <a className="brand" href="/">
         {isPixel ? (
-          <img
-            className="brand-symbol pixel-symbol"
-            src="/platform-art/pixel-dice.svg"
-            alt=""
-            width="32"
-            height="32"
-          />
+          <svg className="brand-symbol pixel-symbol" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+            <rect x="2" y="2" width="32" height="32" rx="10" fill="#ea580c" />
+            <rect x="4" y="4" width="28" height="11" rx="7" fill="#ffffff" fillOpacity="0.18" />
+            <circle cx="11.5" cy="11.5" r="2.4" fill="#ffffff" />
+            <circle cx="24.5" cy="11.5" r="2.4" fill="#ffffff" />
+            <circle cx="18" cy="18" r="2.4" fill="#ffffff" />
+            <circle cx="11.5" cy="24.5" r="2.4" fill="#ffffff" />
+            <circle cx="24.5" cy="24.5" r="2.4" fill="#ffffff" />
+          </svg>
         ) : (
           <svg className="brand-symbol" viewBox="0 0 32 32" fill="none" aria-hidden="true">
             <rect x="4" y="4" width="24" height="24" rx="6" />
@@ -60,7 +62,7 @@ function AppShell({ path }: { path: string }) {
         )}
         <span className="brand-name">
           {isPixel ? (
-            <img className="pixel-wordmark" src="/platform-art/pixel-wordmark.svg" alt="PlayBoard" width="132" height="18" />
+            <span className="pixel-wordmark">PlayBoard</span>
           ) : 'PlayBoard'}
           <span>顶尖桌游联盟</span>
         </span>

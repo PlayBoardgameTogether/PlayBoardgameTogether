@@ -7,6 +7,13 @@
 - `pnpm exec playwright test --config tests/config/ui.config.ts admin-updates-ui.spec.ts` 首轮 9/14 通过。四个新增用例的内容一致，Windows 剪贴板将 LF 转为 CRLF。测试按同一种换行比较后，定向复跑四项全部通过，覆盖桌面 1440×900 和手机 390×844 的两种恢复结果，已查看截图。原桌面导航用例在进入更新页前失败，1366×768 下「服务更新」链接底边为 783.14px。该导航样式未在本轮调整。
 - 平台 `1.4.1 → 1.4.2`（PATCH，兼容性提示修复），README 同步。本轮交付候选分支，未合并或部署。下一项为 D27 的隔离更新恢复演练。
 
+## 每日任务 D24：单 API 10 局 / 40 连接性能基线（2026-11-16，平台保持 1.4.1）
+
+- 独立 `codex/d24-performance-baseline` 保留旧主目录 36 项改动及其他任务，新增显式性能配置、独立 API 进程与真实 TCP/认证/数据库/WS 基线，默认测试不误收集。10 个四人 Color Match、40 个不同账户，200 次测量动作、10 次集中重连，10 局全部结束；本人投影/跨桌 404/重复终局/230 动作与 240 回放帧/房间复位及心跳通过，无意外错误。
+- 原准备链在 **playboard_d24_test_20261116 / 15441** 完整运行，新基线 **1/1、16.30 秒、无 skip**。10.001 秒窗口 HTTP P50/P95 **21.627/28.659 ms**，四人快照送达 **54.072/60.943 ms**，10 次重连 **15.468/19.832 ms**；API 平均单核 CPU **13.639%**、采样 RSS 峰值 **251.70 MiB**。池等待采样峰值 33，数据库无回滚/死锁；本机闭环短时/源码运行限制见 [D24](daily-performance-baseline-2026-11-16.md)，不推断生产容量或直接改池。
+- 冻结离线安装、全 typecheck、lint（20 根 AST）及新测试/夹具 strict tsc 通过；无运行/UI/协议/迁移/游戏副本/来源锁/登记变化，平台 **1.4.1 → 1.4.1**，README 一致，不升版、不跑无影响 build/E2E 或无关全库回归。交付前 main 仅新增 D23 交付记录，审查后快进保留，运行/测试未变，不重复检查。
+- **22:51:36（北京时间）** 只读核对生产 current.json、真实 API cwd/package.json 一致 **37bd6d5 / 1.4.1**，服务 active/running、NRestarts=0，API ready 200/database.ready=true；无生产写入/重启/发布安装。主提交 **2b5212f** 已推送至 [PR #88](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/88)，open / mergeable、来源锁 pins SUCCESS、审查列表为空；未合并/同步服务器，功能分支保留待审。D23 外部费用与配置、D3/D5、UNO #5/ADR-011 和设备限制保持；下一项 D25。
+
 ## D23 已合并、内部文档同步与分支清理（2026-11-16）
 
 - 用户批准后重新核对最新 main、四文件/两提交、固定 head **353aae0**、来源锁 CI success 和无审查阻塞，以 merge commit **b893d380d15b75297b905e282782cfe34cfdf3fc** 合并 [PR #86](https://github.com/PlayBoardgameTogether/PlayBoardgameTogether/pull/86)；GitHub merged、目标包含源 head、合并树与已验证候选一致。本轮无运行变更，不重复业务检查。
