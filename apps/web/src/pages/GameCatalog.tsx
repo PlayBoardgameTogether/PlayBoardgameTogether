@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageFeedback } from '@boardgame/ui';
 import { clientTutorial } from '../game-registry.js';
 import { gamePath, useGameCatalog, type AvailableGame } from './game-catalog.js';
@@ -29,12 +29,49 @@ function stageTone(gameId: string, index: number): (typeof STAGE_TONES)[number] 
   return STAGE_TONES[index % STAGE_TONES.length]!;
 }
 
+const SPOTLIGHT_STORAGE_KEY = 'playboard.spotlight';
+
+function readSavedSpotlight(): string | null {
+  try {
+    return sessionStorage.getItem(SPOTLIGHT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 export function GameCatalog() {
   const { games, error, retry } = useGameCatalog();
   const [search, setSearch] = useState('');
   const [players, setPlayers] = useState<'all' | 'two' | 'group'>('all');
   const [practiceOnly, setPracticeOnly] = useState(false);
-  const [spotlightKey, setSpotlightKey] = useState<string | null>(null);
+  const [spotlightKey, setSpotlightKey] = useState<string | null>(() => readSavedSpotlight());
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key === '/' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)
+      ) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  function selectSpotlight(key: string) {
+    setSpotlightKey(key);
+    try {
+      sessionStorage.setItem(SPOTLIGHT_STORAGE_KEY, key);
+    } catch {
+      // ignore storage restrictions
+    }
+  }
   if (error)
     return (
       <PageFeedback title="游戏加载失败" retry={retry}>
@@ -107,7 +144,7 @@ export function GameCatalog() {
                       type="button"
                       className="secondary c3-stage-pill"
                       aria-pressed={active}
-                      onClick={() => setSpotlightKey(key)}
+                      onClick={() => selectSpotlight(key)}
                     >
                       {item.name}
                     </button>
@@ -152,10 +189,17 @@ export function GameCatalog() {
             <PixelSearchIcon />
             <span className="visually-hidden">搜索游戏</span>
             <input
+              ref={searchInputRef}
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="今天想玩什么？"
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && search) {
+                  event.stopPropagation();
+                  setSearch('');
+                }
+              }}
+              placeholder="今天想玩什么？（按 / 快速搜索）"
             />
           </label>
           <div className="catalog-filters" role="group" aria-label="按游玩人数筛选">
